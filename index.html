@@ -415,6 +415,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        let tapCount = 0;
+        let tapTimer = null;
+        document.body.addEventListener('touchend', () => {
+            tapCount++;
+            if (tapTimer) clearTimeout(tapTimer);
+            tapTimer = setTimeout(() => { tapCount = 0; }, 1500); // Reseta a contagem após 1.5s
+            if (tapCount === 4) {
+                tapCount = 0;
+                clearTimeout(tapTimer);
+                dataController.hardReset();
+            }
+        });
+
         window.addEventListener('keydown', (e) => {
             if (document.body.classList.contains('modal-open')) return;
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
