@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planilista</title>
+
+    <!-- INÍCIO: FAVICONS E MANIFESTO WEB APP (com caminhos atualizados para a pasta 'assets') -->
+    <link rel="icon" type="image/png" href="/assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+    <link rel="shortcut icon" href="/assets/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Planilista" />
+    <link rel="manifest" href="/assets/site.webmanifest" />
+    <meta name="theme-color" content="#0d1117">
+    <!-- FIM: FAVICONS E MANIFESTO WEB APP -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        @keyframes nebula { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        @keyframes floatIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeOut { to { opacity: 0; transform: scale(0.95); } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes bounce { 0%, 100% { transform: translateY(-5px) scale(1.1); } 50% { transform: translateY(-15px) scale(1.1); } }
+        
+        :root {
+            --accent-color: #00ffff; --accent-hover: #00c0c0;
+            --font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --text-color: #e0e0e0; --text-muted: #a0a0a0;
+            --dark-bg: #0d1117; --glass-bg: rgba(22, 27, 34, 0.6);
+            --danger-color: #ff4d4d; --success-color: #4dff88;
+            --transition-speed: 0.4s;
+            --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        body {
+            font-family: var(--font-family); color: var(--text-color); margin: 0; padding: 2rem;
+            background: linear-gradient(270deg, #0d1117, #161b22, #010409, #0d1117);
+            background-size: 600% 600%; animation: floatIn 1s ease-out, nebula 30s ease infinite;
+            min-height: 100vh;
+        }
+        body.modal-open { overflow: hidden; }
+
+        main { max-width: 900px; margin: auto; }
+        h1, h2, h3 { text-align: center; font-weight: 700; text-shadow: 0 0 10px rgba(0, 255, 255, 0.3); }
+        h1 { color: white; margin-top: 0; } h2, h3 { color: var(--text-color); }
+
+        .glass {
+            background: var(--glass-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border-radius: 1rem; border: 1px solid rgba(0, 255, 255, 0.2);
+            box-shadow: var(--shadow); padding: 2rem;
+        }
+        .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .btn {
+            background: transparent; border: 1px solid var(--accent-color); color: var(--accent-color); padding: 0.75rem 1.5rem; border-radius: 0.5rem;
+            cursor: pointer; font-weight: 600; font-size: 1rem;
+            transition: all var(--transition-speed) cubic-bezier(0.25, 0.8, 0.25, 1); display: inline-flex; align-items: center; gap: 0.5rem;
+        }
+        .btn:hover:not(:disabled) { background: rgba(0, 255, 255, 0.1); color: white; box-shadow: 0 0 15px rgba(0, 255, 255, 0.5); transform: translateY(-2px); }
+        .btn:disabled { cursor: not-allowed; opacity: 0.5; }
+        .btn-danger { border-color: var(--danger-color); color: var(--danger-color); }
+        .btn-danger:hover:not(:disabled) { background: rgba(255, 77, 77, 0.1); color: white; box-shadow: 0 0 15px rgba(255, 77, 77, 0.5); }
+        
+        .btn-icon {
+            width: 42px; height: 42px; padding: 0; justify-content: center; border-radius: 50%;
+        }
+        .btn-icon svg { stroke: var(--accent-color); transition: all var(--transition-speed) ease; }
+        .btn-icon:hover:not(:disabled) svg { stroke: white; transform: scale(1.1); }
+        
+        #upload-area {
+            margin-bottom: 2rem; text-align: center; position: relative; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; min-height: 250px; cursor: pointer; 
+            border-style: dashed; border-color: transparent; opacity: 0; transform: translateY(20px); 
+            transition: opacity 0.5s ease, transform 0.5s ease, background-color 0.3s ease;
+        }
+        #upload-area.visible { opacity: 1; transform: translateY(0); }
+        #upload-area:hover { background-color: rgba(0, 255, 255, 0.03); }
+        .upload-icon svg { width: 80px; height: 80px; stroke: var(--accent-color); stroke-width: 1.5; margin-bottom: 1.5rem; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        #upload-area:hover .upload-icon svg { animation: bounce 1.2s ease-in-out infinite; }
+        
+        .upload-text h3 { margin: 0 0 0.5rem 0; font-size: 1.25rem; }
+        .upload-link { color: var(--accent-color); font-weight: 600; }
+        .upload-hint { font-size: 0.85rem; color: var(--text-muted); margin-top: 1.5rem; }
+        #upload-area.drag-over { border-color: var(--accent-color); box-shadow: 0 0 25px rgba(0, 255, 255, 0.5); background-color: rgba(0, 255, 255, 0.05); }
+        #upload-area.drag-over .upload-icon svg { animation: bounce 1.2s ease-in-out infinite; transform: scale(1.2) translateY(-10px); }
+        #upload-area .drag-feedback { display: none; }
+        #upload-area.drag-over .default-text { display: none; }
+        #upload-area.drag-over .drag-feedback { display: block; }
+        
+        .loading-spinner { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 4px solid rgba(0, 255, 255, 0.2); border-top: 4px solid var(--accent-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        #upload-content.hidden { opacity: 0; filter: blur(2px); pointer-events: none; transition: opacity 0.3s, filter 0.3s; }
+        
+        #sheet-selector-area { display: none; margin-bottom: 2rem; }
+        #sheet-selector-area.visible { display: block; animation: floatIn 0.5s ease-out; }
+    
+        #results-area { display: none; }
+        #results-area.visible { display: block; animation: floatIn 0.6s ease-out forwards; }
+        
+        pre {
+            background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(0, 255, 255, 0.1); min-height: 150px;
+            line-height: 1.7; padding: 1.5rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center;
+            white-space: pre-wrap; overflow-wrap: break-word;
+        }
+        
+        .placeholder { color: var(--text-muted); text-align: center; }
+        .placeholder svg { width: 40px; height: 40px; stroke-width: 1.5; margin-bottom: 1rem; }
+        pre span { display: block; opacity: 0; animation: floatIn 0.6s ease-out forwards; }
+        
+        #diagnostico-container { margin-top: 1.5rem; }
+        .diagnostico-aviso { background: rgba(255, 193, 7, 0.1); border-left: 4px solid #ffc107; padding: 1rem; border-radius: 0.5rem; }
+        .diagnostico-aviso:not(:first-child) { margin-top: 1rem; }
+
+        #color-summary-container { display: none; margin-top: 1.5rem; }
+        #color-summary-container.visible { display: block; animation: floatIn 0.5s ease; }
+        .color-summary-list { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; }
+        .color-summary-item {
+            display: inline-flex; align-items: center; gap: 0.75rem; padding: 0.5rem 1rem; 
+            border-radius: 2rem; cursor: pointer; background: rgba(0,0,0,0.25); 
+            border: 1px solid rgba(0,255,255,0.1); transition: all 0.3s ease;
+        }
+        .color-summary-item:hover { background: rgba(0,255,255,0.1); border-color: var(--accent-color); transform: translateY(-2px); }
+        .color-swatch { width: 20px; height: 20px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.5); }
+        .color-hex { font-family: monospace; font-weight: 600; color: var(--text-color); }
+        .add-icon { margin-left: 0.5rem; color: var(--accent-color); font-weight: bold; font-size: 1.2rem; }
+    
+        .modal { display: flex; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; align-items: center; justify-content: center; background-color: rgba(0,0,0,0.6); opacity: 0; visibility: hidden; transition: opacity var(--transition-speed) ease, visibility 0s var(--transition-speed); }
+        .modal.open { opacity: 1; visibility: visible; transition-delay: 0s; }
+        
+        .modal-content { 
+            transform: scale(0.95); transition: transform var(--transition-speed) cubic-bezier(0.25, 0.8, 0.25, 1); 
+            max-width: 600px; width: 90%; display: flex; flex-direction: column; max-height: 90vh;
+        }
+        .modal.open .modal-content { transform: scale(1); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .close-btn { font-size: 2.5rem; font-weight: bold; color: var(--text-muted); cursor: pointer; transition: color 0.3s; }
+        .close-btn:hover { color: var(--accent-color); }
+        
+        .modal-body { overflow-y: auto; padding: 0 1rem; margin: 1.5rem 0; }
+        .modal-footer { text-align: left; padding-top: 1rem; border-top: 1px solid rgba(0, 255, 255, 0.2); }
+        
+        .form-group { position: relative; display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+        .form-group.fading-out { animation: fadeOut 0.4s ease-out forwards; }
+        .form-group label { flex-shrink: 0; width: 120px; text-align: right; }
+        input[type="text"], input[type="color"] { background: rgba(0,0,0,0.25); color: white; border: 1px solid rgba(0, 255, 255, 0.2); border-radius: 0.25rem; padding: 0.5rem; }
+        input[type="text"] { flex-grow: 1; }
+        input[type="text"]:invalid { border-color: var(--danger-color); box-shadow: 0 0 8px rgba(255, 77, 77, 0.5); }
+        input[type="color"] { padding: 0.2rem; height: 40px; }
+    
+        .save-feedback {
+            position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+            color: var(--success-color); font-size: 0.9em; font-weight: bold;
+            opacity: 0; transition: opacity 0.4s ease;
+        }
+        .form-group label + .save-feedback { right: auto; left: 130px; }
+        .save-feedback.visible { opacity: 1; }
+    
+        #confirm-modal .modal-body { text-align: center; font-size: 1.1rem; line-height: 1.6; }
+        #confirm-modal .modal-footer { display: flex; justify-content: flex-end; gap: 1rem; border-top: none; }
+    
+        @media (max-width: 768px) {
+            body { padding: 1rem; } .header-actions { flex-direction: column; gap: 1.5rem; }
+            h1 { font-size: 1.8rem; } .glass { padding: 1.5rem; }
+            .form-group { flex-direction: column; gap: 0.5rem !important; align-items: stretch !important; }
+            .form-group label { text-align: left; }
+            .save-feedback { top: -1.2rem; right: 0.5rem; }
+            .form-group label + .save-feedback { top: auto; bottom: -1.2rem; left: 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <div class="header-actions">
+            <h1>Planilista</h1>
+            <div>
+                <button class="btn btn-icon" id="settings-btn" title="Configurações" aria-label="Abrir Configurações"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>
+                <button class="btn btn-icon" id="clear-btn" title="Limpar Tudo" aria-label="Limpar resultados"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
+            </div>
+        </div>
+        
+        <div id="upload-area" class="glass">
+            <div id="upload-content">
+                <div class="upload-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                </div>
+                <div class="upload-text">
+                    <h3 class="default-text">Arraste um arquivo ou <span class="upload-link">clique para selecionar</span></h3>
+                    <h3 class="drag-feedback">Pode soltar o arquivo!</h3>
+                </div>
+                <p class="upload-hint">Formatos suportados: .xlsx, .xls, .csv</p>
+            </div>
+            <input type="file" id="file-input" accept=".xlsx, .xls, .csv" style="display:none;">
+        </div>
+    
+        <div id="sheet-selector-area" class="glass">
+            <h3>Selecione a Aba para Processar</h3>
+            <select id="sheet-selector" class="btn" style="width:100%; justify-content: space-between;"></select>
+        </div>
+    
+        <div id="results-area" class="glass">
+            <h2 id="results-title">Resultados</h2>
+            <pre id="generator-output"></pre>
+            <div id="diagnostico-container"></div>
+            <div id="color-summary-container">
+                <h3>Atalho para Configuração</h3>
+                <div id="color-summary-list" class="color-summary-list"></div>
+            </div>
+            <div class="results-buttons" style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem;">
+                <button class="btn" id="copy-btn" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copiar Lista</button>
+                <button class="btn" id="download-btn" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Baixar .txt</button>
+            </div>
+        </div>
+    </main>
+    
+    <div id="settings-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+        <div class="modal-content glass">
+            <div class="modal-header">
+                <h2 id="settings-modal-title">Configurações</h2>
+                <span class="close-btn" id="close-modal-btn" role="button" aria-label="Fechar modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-muted); text-align:center;">Suas alterações são salvas automaticamente.</p>
+                <hr style="border-color: rgba(0, 255, 255, 0.2); margin: 1.5rem 0;">
+                <h3>Configurações Gerais</h3>
+                <div class="form-group">
+                    <label for="target-column-input">Coluna Alvo:</label>
+                    <input type="text" id="target-column-input" placeholder="Ex: F" style="text-transform: uppercase;" pattern="[A-Z]+" title="Insira apenas letras maiúsculas (A, B, AA, etc.)">
+                    <span class="save-feedback">Salvo!</span>
+                </div>
+                <hr style="border-color: rgba(0, 255, 255, 0.2); margin: 1.5rem 0;">
+                <h3>Regras de Cores</h3>
+                <div id="color-rules-list" style="margin-top: 1rem;"></div>
+                <h3 style="margin-top: 2rem;">Adicionar Nova Regra</h3>
+                <div class="form-group">
+                    <label for="new-color-input">Cor:</label>
+                    <input type="color" id="new-color-input" value="#FF6600">
+                </div>
+                <div class="form-group">
+                    <label for="new-desc-input">Descrição:</label>
+                    <input type="text" id="new-desc-input" placeholder="Descrição da pendência">
+                </div>
+                <div style="text-align: right; margin-top: 1rem;">
+                    <button class="btn" id="add-rule-btn">Adicionar Regra</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="reset-settings-btn">Resetar Configurações</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="confirm-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+        <div class="modal-content glass" style="max-width: 450px;">
+            <div class="modal-header">
+                <h2 id="confirm-modal-title">Confirmar Ação</h2>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-modal-text">Você tem certeza?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" id="confirm-cancel-btn">Cancelar</button>
+                <button class="btn btn-danger" id="confirm-ok-btn">Confirmar</button>
+            </div>
+        </div>
+    </div>
+    
+    <template id="color-summary-item-template">
+        <button class="color-summary-item">
+            <div class="color-swatch"></div>
+            <span class="color-hex"></span>
+            <span class="add-icon">+</span>
+        </button>
+    </template>
+    <template id="color-rule-template">
+        <div class="form-group" style="animation: floatIn 0.5s ease-out forwards;">
+            <input type="color" disabled>
+            <input type="text" placeholder="Descrição da pendência">
+            <span class="save-feedback">Salvo!</span>
+            <button class="btn btn-icon btn-delete" aria-label="Excluir regra" style="border-color: var(--danger-color);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff4d4d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+        </div>
+    </template>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // =================================================================
+    // SETUP: Elementos do DOM e Configurações Padrão
+    // =================================================================
+    const getElement = (id) => document.getElementById(id);
+    const elements = {
+        uploadArea: getElement('upload-area'), uploadContent: getElement('upload-content'), fileInput: getElement('file-input'), 
+        sheetSelectorArea: getElement('sheet-selector-area'), sheetSelector: getElement('sheet-selector'), 
+        resultsArea: getElement('results-area'), resultsTitle: getElement('results-title'), 
+        generatorOutput: getElement('generator-output'), diagnosticoContainer: getElement('diagnostico-container'),
+        colorSummaryContainer: getElement('color-summary-container'), colorSummaryList: getElement('color-summary-list'),
+        clearBtn: getElement('clear-btn'), copyBtn: getElement('copy-btn'), downloadBtn: getElement('download-btn'), 
+        settingsBtn: getElement('settings-btn'), settingsModal: getElement('settings-modal'), 
+        closeModalBtn: getElement('close-modal-btn'), targetColumnInput: getElement('target-column-input'),
+        colorRulesList: getElement('color-rules-list'), newColorInput: getElement('new-color-input'), 
+        newDescInput: getElement('new-desc-input'), addRuleBtn: getElement('add-rule-btn'),
+        resetSettingsBtn: getElement('reset-settings-btn'),
+        colorRuleTemplate: getElement('color-rule-template'),
+        colorSummaryItemTemplate: getElement('color-summary-item-template'),
+        confirmModal: getElement('confirm-modal'), confirmModalText: getElement('confirm-modal-text'),
+        confirmOkBtn: getElement('confirm-ok-btn'), confirmCancelBtn: getElement('confirm-cancel-btn')
+    };
+    let settings = {};
+    let currentWorkbook = null;
+
+    const DEFAULT_SETTINGS = {
+        targetColumn: 'F',
+        colorMap: { '#008000': 'Tudo OK' },
+    };
+
+    // =================================================================
+    // UI CONTROLLER: Funções que manipulam a interface
+    // =================================================================
+    const uiController = {
+        setLoading(isLoading) {
+            const existingSpinner = elements.uploadArea.querySelector('.loading-spinner');
+            if (existingSpinner) existingSpinner.remove();
+            elements.uploadContent.classList.toggle('hidden', isLoading);
+            if (isLoading) {
+                const spinner = document.createElement('div');
+                spinner.className = 'loading-spinner';
+                elements.uploadArea.appendChild(spinner);
+            }
+        },
+        displayResults(fileName, { results, skippedRows, unmappedColors, uniqueHexCodes }) {
+            const baseName = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
+            elements.resultsTitle.textContent = `Resultados para: ${baseName}`;
+            
+            const categoryOrder = Object.keys(results); 
+            const listaDePendencias = [];
+            categoryOrder.forEach(category => {
+                if (results[category]?.length && category !== 'Tudo OK') {
+                    results[category].forEach(num => listaDePendencias.push(`${num} - ${category.toLowerCase()}`));
+                }
+            });
+
+            let formattedText = `*${baseName.toUpperCase()}*`;
+            if (listaDePendencias.length > 0) { formattedText += '\n' + listaDePendencias.join('\n'); }
+            
+            elements.generatorOutput.dataset.rawText = formattedText;
+            elements.generatorOutput.innerHTML = '';
+
+            if (listaDePendencias.length === 0 && unmappedColors.size === 0 && skippedRows.length === 0) {
+                elements.generatorOutput.innerHTML = `<div class="placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg><div>Nenhuma pendência encontrada.</div></div>`;
+                elements.generatorOutput.dataset.rawText += '\nNenhuma pendência encontrada.';
+            } else {
+                 formattedText.split('\n').forEach((line, index) => {
+                    const lineSpan = document.createElement('span');
+                    lineSpan.textContent = line || ' ';
+                    lineSpan.style.animationDelay = `${index * 30}ms`;
+                    lineSpan.style.textAlign = 'left';
+                    elements.generatorOutput.appendChild(lineSpan);
+                });
+            }
+
+            let diagnosticoHTML = '';
+            if (unmappedColors.size > 0) { diagnosticoHTML += `<div class="diagnostico-aviso"><strong>ATENÇÃO:</strong> Encontramos ${unmappedColors.size} item(ns) com cores não configuradas. Use o atalho abaixo para configurá-las.</div>`; }
+            if (skippedRows.length) { diagnosticoHTML += `<div class="diagnostico-aviso"><strong>Aviso:</strong> ${skippedRows.length} linha(s) ignorada(s) por não conterem um número válido.</div>`; }
+            elements.diagnosticoContainer.innerHTML = diagnosticoHTML;
+            
+            this.displayColorSummary(uniqueHexCodes);
+
+            elements.resultsArea.classList.add('visible');
+            elements.copyBtn.disabled = listaDePendencias.length === 0;
+            elements.downloadBtn.disabled = listaDePendencias.length === 0;
+        },
+        displayColorSummary(hexCodes) {
+            elements.colorSummaryList.innerHTML = '';
+            if (hexCodes.size === 0) {
+                elements.colorSummaryContainer.classList.remove('visible');
+                return;
+            }
+            elements.colorSummaryContainer.classList.add('visible');
+            hexCodes.forEach(hex => {
+                const item = elements.colorSummaryItemTemplate.content.cloneNode(true).firstElementChild;
+                item.querySelector('.color-swatch').style.backgroundColor = hex;
+                item.querySelector('.color-hex').textContent = hex;
+                item.addEventListener('click', () => dataController.handleColorChipClick(hex));
+                elements.colorSummaryList.appendChild(item);
+            });
+        },
+        clearAll() {
+            currentWorkbook = null;
+            elements.fileInput.value = '';
+            elements.resultsArea.classList.remove('visible');
+            elements.sheetSelectorArea.classList.remove('visible');
+            elements.colorSummaryContainer.classList.remove('visible');
+            elements.copyBtn.disabled = true;
+            elements.downloadBtn.disabled = true;
+            elements.generatorOutput.innerHTML = `<div class="placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg><div>Aguardando o envio da planilha...</div></div>`;
+            elements.diagnosticoContainer.innerHTML = '';
+        },
+        toggleModal(modal, open) {
+            if(open) {
+                modal.classList.add('open'); document.body.classList.add('modal-open');
+            } else {
+                modal.classList.remove('open'); document.body.classList.remove('modal-open');
+            }
+        },
+        showSaveFeedback(inputElement) {
+            const feedback = inputElement.parentElement.querySelector('.save-feedback');
+            if (feedback) {
+                feedback.classList.add('visible');
+                setTimeout(() => feedback.classList.remove('visible'), 2000);
+            }
+        },
+        showConfirmation(message) {
+            return new Promise(resolve => {
+                elements.confirmModalText.textContent = message;
+                this.toggleModal(elements.confirmModal, true);
+
+                elements.confirmOkBtn.onclick = () => {
+                    this.toggleModal(elements.confirmModal, false);
+                    resolve(true);
+                };
+                elements.confirmCancelBtn.onclick = () => {
+                    this.toggleModal(elements.confirmModal, false);
+                    resolve(false);
+                };
+            });
+        }
+    };
+
+    // =================================================================
+    // DATA CONTROLLER: Lógica de processamento e dados
+    // =================================================================
+    const dataController = {
+        async handleFile(file) {
+            if (!file) return; uiController.clearAll(); uiController.setLoading(true);
+            await new Promise(resolve => setTimeout(resolve, 500)); 
+            try {
+                const buffer = await file.arrayBuffer();
+                currentWorkbook = XLSX.read(buffer, { type: 'array', cellStyles: true });
+                const sheetNames = currentWorkbook.SheetNames;
+                elements.sheetSelector.innerHTML = '';
+                sheetNames.forEach(name => {
+                    const option = document.createElement('option');
+                    option.value = name; option.textContent = name;
+                    elements.sheetSelector.appendChild(option);
+                });
+                if (sheetNames.length > 1) {
+                    elements.sheetSelectorArea.classList.add('visible');
+                } else {
+                    elements.sheetSelectorArea.classList.remove('visible');
+                }
+                this.processSheet(currentWorkbook, sheetNames[0], file.name);
+            } catch (error) { console.error("Erro:", error); alert(`Ocorreu um erro: ${error.message}`);
+            } finally { uiController.setLoading(false); }
+        },
+        processSheet(workbook, sheetName, fileName) {
+            if (!workbook || !sheetName) return;
+            if (!elements.targetColumnInput.checkValidity()) {
+                alert(`A letra da coluna "${settings.targetColumn}" é inválida. Use apenas letras.`);
+                return;
+            }
+            const colIndex = this.columnLetterToIndex(settings.targetColumn);
+            const sheet = workbook.Sheets[sheetName];
+            const json = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+            const results = {}; const skippedRows = []; 
+            const unmappedColors = new Set(); const uniqueHexCodes = new Set(); 
+            for (let i = 1; i < json.length; i++) {
+                const row = json[i]; const lancamento = row[colIndex];
+                if (lancamento === undefined || lancamento === null || `${lancamento}`.trim() === '') continue;
+                if (isNaN(Number(lancamento))) { skippedRows.push(`Linha ${i + 1}`); continue; }
+                const cellAddress = XLSX.utils.encode_cell({ c: colIndex, r: i });
+                const cell = sheet[cellAddress];
+                let corHex = null;
+                if (cell?.s?.fgColor?.rgb && cell.s.fgColor.rgb !== '000000' && cell.s.fgColor.rgb !== 'FFFFFF') {
+                    let rawRgb = cell.s.fgColor.rgb.slice(-6).toUpperCase();
+                    corHex = '#' + rawRgb;
+                }
+                const desc = corHex ? settings.colorMap[corHex] : null;
+                if (desc) { if (!results[desc]) results[desc] = []; results[desc].push(lancamento);
+                } else if (corHex) { unmappedColors.add(`${lancamento} (Cor: ${corHex})`); uniqueHexCodes.add(corHex); }
+            }
+            uiController.displayResults(fileName, { results, skippedRows, unmappedColors, uniqueHexCodes });
+        },
+        handleColorChipClick(hex) {
+            uiController.toggleModal(elements.settingsModal, true);
+            elements.newColorInput.value = hex;
+            elements.newDescInput.value = '';
+            elements.newDescInput.focus();
+        },
+        columnLetterToIndex(letter) {
+            if (!letter || typeof letter !== 'string') return -1; let column = 0, length = letter.length;
+            for (let i = 0; i < length; i++) { column += (letter.toUpperCase().charCodeAt(i) - 64) * Math.pow(26, length - i - 1); }
+            return column - 1;
+        },
+        loadSettings() {
+            const saved = localStorage.getItem('spreadsheetToolSettings');
+            settings = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+            elements.targetColumnInput.value = settings.targetColumn || 'F'; this.renderColorRules();
+        },
+        saveSettings() {
+            settings.targetColumn = elements.targetColumnInput.value.trim().toUpperCase() || 'F';
+            localStorage.setItem('spreadsheetToolSettings', JSON.stringify(settings));
+        },
+        renderColorRules() {
+            elements.colorRulesList.innerHTML = '';
+            for (const color in settings.colorMap) {
+                const ruleDiv = elements.colorRuleTemplate.content.cloneNode(true).firstElementChild;
+                const desc = settings.colorMap[color];
+                ruleDiv.dataset.color = color;
+                const textInput = ruleDiv.querySelector('input[type="text"]');
+                ruleDiv.querySelector('input[type="color"]').value = color;
+                textInput.value = desc;
+                
+                textInput.addEventListener('change', (e) => {
+                    const newDesc = e.target.value.trim();
+                    if (newDesc) {
+                        settings.colorMap[color] = newDesc;
+                        this.saveSettings();
+                        uiController.showSaveFeedback(textInput);
+                    } else {
+                        e.target.value = desc; // Revert if empty
+                    }
+                });
+
+                ruleDiv.querySelector('.btn-delete').addEventListener('click', (e) => {
+                    const parentGroup = e.currentTarget.closest('.form-group');
+                    const colorToDelete = parentGroup.dataset.color;
+                    
+                    parentGroup.classList.add('fading-out');
+                    
+                    setTimeout(() => {
+                        delete settings.colorMap[colorToDelete];
+                        this.saveSettings();
+                        this.renderColorRules();
+                    }, 400); 
+                });
+                elements.colorRulesList.appendChild(ruleDiv);
+            }
+        },
+        addRule() {
+            const color = elements.newColorInput.value.toUpperCase(); const desc = elements.newDescInput.value.trim();
+            if (!desc) { return alert('A descrição não pode estar vazia.'); }
+            if (settings.colorMap[color]) { return alert('Esta cor já está configurada.'); }
+            settings.colorMap[color] = desc; elements.newDescInput.value = '';
+            this.saveSettings(); this.renderColorRules();
+            
+            uiController.toggleModal(elements.settingsModal, false);
+            if(currentWorkbook && elements.fileInput.files[0]) {
+                 const sheetName = elements.sheetSelector.value || currentWorkbook.SheetNames[0];
+                 this.processSheet(currentWorkbook, sheetName, elements.fileInput.files[0].name);
+            }
+        },
+        async resetSettings() {
+            const confirmed = await uiController.showConfirmation("Você tem certeza que quer apagar todas as suas regras e voltar para a configuração padrão?");
+            if (confirmed) {
+                localStorage.removeItem('spreadsheetToolSettings');
+                this.loadSettings();
+            }
+        }
+    };
+
+    // =================================================================
+    // INIT: Inicialização da aplicação e listeners de eventos
+    // =================================================================
+    function init() {
+        dataController.loadSettings();
+        uiController.clearAll();
+        setTimeout(() => { elements.uploadArea.classList.add('visible'); }, 100);
+        const addEventListeners = (el, events, fn) => events.forEach(e => el.addEventListener(e, fn));
+        
+        // Eventos de Upload
+        addEventListeners(elements.uploadArea, ['dragenter', 'dragover', 'dragleave', 'drop'], e => { e.preventDefault(); e.stopPropagation(); });
+        addEventListeners(elements.uploadArea, ['dragenter', 'dragover'], () => elements.uploadArea.classList.add('drag-over'));
+        addEventListeners(elements.uploadArea, ['dragleave', 'drop'], () => elements.uploadArea.classList.remove('drag-over'));
+        elements.uploadArea.addEventListener('drop', (e) => {
+            if (e.dataTransfer.files[0]) { elements.fileInput.files = e.dataTransfer.files; dataController.handleFile(e.dataTransfer.files[0]); }
+        });
+        elements.uploadArea.addEventListener('click', () => elements.fileInput.click());
+        elements.fileInput.addEventListener('change', (e) => dataController.handleFile(e.target.files[0]));
+        
+        // Eventos de Ação
+        elements.sheetSelector.addEventListener('change', (e) => {
+            if (currentWorkbook && elements.fileInput.files[0]) {
+                dataController.processSheet(currentWorkbook, e.target.value, elements.fileInput.files[0].name);
+            }
+        });
+        elements.clearBtn.addEventListener('click', uiController.clearAll);
+        elements.copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(elements.generatorOutput.dataset.rawText || '').then(() => {
+                const originalText = elements.copyBtn.textContent;
+                elements.copyBtn.textContent = 'Copiado!';
+                setTimeout(() => { elements.copyBtn.textContent = originalText; }, 2000);
+            });
+        });
+        elements.downloadBtn.addEventListener('click', () => {
+            const blob = new Blob([elements.generatorOutput.dataset.rawText || ''], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob); const a = document.createElement('a');
+            a.href = url; a.download = (elements.resultsTitle.textContent.split(': ')[1] || 'resultados') + '.txt';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+        });
+        
+        // Eventos do Modal
+        elements.settingsBtn.addEventListener('click', () => uiController.toggleModal(elements.settingsModal, true));
+        elements.closeModalBtn.addEventListener('click', () => uiController.toggleModal(elements.settingsModal, false));
+        window.addEventListener('click', (e) => { if (e.target == elements.settingsModal) uiController.toggleModal(elements.settingsModal, false); });
+        elements.addRuleBtn.addEventListener('click', () => dataController.addRule());
+        elements.resetSettingsBtn.addEventListener('click', () => dataController.resetSettings());
+        elements.targetColumnInput.addEventListener('change', (e) => {
+            if (e.target.checkValidity()) {
+                dataController.saveSettings();
+                uiController.showSaveFeedback(e.target);
+            }
+        });
+    }
+
+    init();
+});
+</script>
+</body>
+</html>
