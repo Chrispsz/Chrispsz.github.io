@@ -98,6 +98,15 @@
             background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(0, 255, 255, 0.1); min-height: 150px;
             line-height: 1.7; padding: 1.5rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center;
             white-space: pre-wrap; overflow-wrap: break-word;
+            /* ALTERAÇÃO 1: Definindo altura máxima e rolagem vertical */
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        /* ALTERAÇÃO 2: Nova classe para alinhar a lista de resultados ao topo */
+        pre.has-content {
+            justify-content: flex-start;
+            align-items: flex-start;
         }
         
         .placeholder { color: var(--text-muted); text-align: center; }
@@ -152,16 +161,9 @@
         .form-group label + .save-feedback { right: auto; left: 130px; }
         .save-feedback.visible { opacity: 1; }
 
-        /* NOVO ESTILO PARA A DICA */
         .settings-hint {
-            color: var(--text-muted);
-            font-size: 0.9em;
-            text-align: center;
-            font-style: italic;
-            margin: -0.5rem 0 1.5rem 0;
-            padding: 0.5rem;
-            background: rgba(0,0,0,0.15);
-            border-radius: 0.5rem;
+            color: var(--text-muted); font-size: 0.9em; text-align: center; font-style: italic;
+            margin: -0.5rem 0 1.5rem 0; padding: 0.5rem; background: rgba(0,0,0,0.15); border-radius: 0.5rem;
         }
     
         #confirm-modal .modal-body { text-align: center; font-size: 1.1rem; line-height: 1.6; }
@@ -238,7 +240,6 @@
                 </div>
                 <hr style="border-color: rgba(0, 255, 255, 0.2); margin: 1.5rem 0;">
                 <h3>Regras de Cores</h3>
-                <!-- NOVA DICA ADICIONADA AQUI -->
                 <p class="settings-hint">Dica: Itens com a descrição "OK" não aparecerão na lista final.</p>
                 <div id="color-rules-list" style="margin-top: 1rem;"></div>
                 <h3 style="margin-top: 2rem;">Adicionar Nova Regra</h3>
@@ -317,7 +318,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let settings = {};
     let currentWorkbook = null;
 
-    // ALTERAÇÃO: Removida a regra padrão. O usuário começa com um estado limpo.
     const DEFAULT_SETTINGS = {
         targetColumn: 'F',
         colorMap: {},
@@ -344,8 +344,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const categoryOrder = Object.keys(results); 
             const listaDePendencias = [];
             
-            // ALTERAÇÃO: A lógica agora checa por "OK" (case-insensitive)
-            // para ignorar itens na lista final de pendências.
             categoryOrder.forEach(category => {
                 if (results[category]?.length && category.toUpperCase() !== 'OK') {
                     results[category].forEach(num => listaDePendencias.push(`${num} - ${category.toLowerCase()}`));
@@ -358,11 +356,14 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.generatorOutput.dataset.rawText = formattedText;
             elements.generatorOutput.innerHTML = '';
 
+            // ALTERAÇÃO 3: Adicionar/Remover a classe 'has-content'
             if (listaDePendencias.length === 0 && unmappedColors.size === 0 && skippedRows.length === 0) {
+                elements.generatorOutput.classList.remove('has-content');
                 elements.generatorOutput.innerHTML = `<div class="placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg><div>Nenhuma pendência encontrada.</div></div>`;
                 elements.generatorOutput.dataset.rawText += '\nNenhuma pendência encontrada.';
             } else {
-                 formattedText.split('\n').forEach((line, index) => {
+                elements.generatorOutput.classList.add('has-content');
+                formattedText.split('\n').forEach((line, index) => {
                     const lineSpan = document.createElement('span');
                     lineSpan.textContent = line || ' ';
                     lineSpan.style.animationDelay = `${index * 30}ms`;
@@ -406,6 +407,8 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.copyBtn.disabled = true;
             elements.downloadBtn.disabled = true;
             elements.generatorOutput.innerHTML = `<div class="placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg><div>Aguardando o envio da planilha...</div></div>`;
+            // ALTERAÇÃO 4: Remover a classe ao limpar
+            elements.generatorOutput.classList.remove('has-content');
             elements.diagnosticoContainer.innerHTML = '';
         },
         toggleModal(modal, open) {
