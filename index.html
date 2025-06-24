@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Planilista</title>
 
-    <!-- INÍCIO: FAVICONS E MANIFESTO WEB APP (com caminhos atualizados para a pasta 'assets') -->
+    <!-- FAVICONS E MANIFESTO WEB APP -->
     <link rel="icon" type="image/png" href="/assets/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
     <link rel="shortcut icon" href="/assets/favicon.ico" />
@@ -13,7 +13,6 @@
     <meta name="apple-mobile-web-app-title" content="Planilista" />
     <link rel="manifest" href="/assets/site.webmanifest" />
     <meta name="theme-color" content="#0d1117">
-    <!-- FIM: FAVICONS E MANIFESTO WEB APP -->
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -152,6 +151,18 @@
         }
         .form-group label + .save-feedback { right: auto; left: 130px; }
         .save-feedback.visible { opacity: 1; }
+
+        /* NOVO ESTILO PARA A DICA */
+        .settings-hint {
+            color: var(--text-muted);
+            font-size: 0.9em;
+            text-align: center;
+            font-style: italic;
+            margin: -0.5rem 0 1.5rem 0;
+            padding: 0.5rem;
+            background: rgba(0,0,0,0.15);
+            border-radius: 0.5rem;
+        }
     
         #confirm-modal .modal-body { text-align: center; font-size: 1.1rem; line-height: 1.6; }
         #confirm-modal .modal-footer { display: flex; justify-content: flex-end; gap: 1rem; border-top: none; }
@@ -227,6 +238,8 @@
                 </div>
                 <hr style="border-color: rgba(0, 255, 255, 0.2); margin: 1.5rem 0;">
                 <h3>Regras de Cores</h3>
+                <!-- NOVA DICA ADICIONADA AQUI -->
+                <p class="settings-hint">Dica: Itens com a descrição "OK" não aparecerão na lista final.</p>
                 <div id="color-rules-list" style="margin-top: 1rem;"></div>
                 <h3 style="margin-top: 2rem;">Adicionar Nova Regra</h3>
                 <div class="form-group">
@@ -304,9 +317,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let settings = {};
     let currentWorkbook = null;
 
+    // ALTERAÇÃO: Removida a regra padrão. O usuário começa com um estado limpo.
     const DEFAULT_SETTINGS = {
         targetColumn: 'F',
-        colorMap: { '#008000': 'Tudo OK' },
+        colorMap: {},
     };
 
     // =================================================================
@@ -329,8 +343,11 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const categoryOrder = Object.keys(results); 
             const listaDePendencias = [];
+            
+            // ALTERAÇÃO: A lógica agora checa por "OK" (case-insensitive)
+            // para ignorar itens na lista final de pendências.
             categoryOrder.forEach(category => {
-                if (results[category]?.length && category !== 'Tudo OK') {
+                if (results[category]?.length && category.toUpperCase() !== 'OK') {
                     results[category].forEach(num => listaDePendencias.push(`${num} - ${category.toLowerCase()}`));
                 }
             });
