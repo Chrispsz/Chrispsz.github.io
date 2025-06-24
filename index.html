@@ -22,12 +22,16 @@
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes bounce { 0%, 100% { transform: translateY(-5px) scale(1.1); } 50% { transform: translateY(-15px) scale(1.1); } }
         
-        /* NOVAS ANIMAÇÕES DO TUTORIAL */
         @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes copy-paste {
             0%, 100% { transform: translate(0, 0); }
             25% { transform: translate(4px, -4px); }
             75% { transform: translate(-4px, 4px); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-5deg); }
+            75% { transform: rotate(5deg); }
         }
 
         :root {
@@ -140,10 +144,10 @@
         .tutorial-step svg { width: 60px; height: 60px; stroke: var(--accent-color); margin: 1rem 0; }
         .step-indicator { font-size: 0.9rem; color: var(--text-muted); }
         
-        /* ATIVAÇÃO DAS ANIMAÇÕES DO TUTORIAL */
         .tutorial-step[data-step="1"].active .tutorial-upload-icon { animation: bounce 1.2s ease-in-out infinite; }
-        .tutorial-step[data-step="2"].active .tutorial-settings-icon { animation: spin-slow 4s linear infinite; }
-        .tutorial-step[data-step="3"].active .tutorial-export-icon { animation: copy-paste 1.5s ease-in-out infinite; }
+        .tutorial-step[data-step="2"].active .tutorial-clear-icon { animation: shake 1.5s ease-in-out infinite; }
+        .tutorial-step[data-step="3"].active .tutorial-settings-icon { animation: spin-slow 4s linear infinite; }
+        .tutorial-step[data-step="4"].active .tutorial-export-icon { animation: copy-paste 1.5s ease-in-out infinite; }
     
         @media (max-width: 768px) {
             body { padding: 1rem; } .header-actions { flex-direction: column; gap: 1.5rem; }
@@ -267,24 +271,33 @@
                 <span class="close-btn" data-close-modal="tutorial-modal" role="button" aria-label="Fechar modal">&times;</span>
             </div>
             <div class="modal-body">
+                <!-- ETAPA 1 -->
                 <div class="tutorial-step active" data-step="1">
                     <h2>1. Envie sua Planilha</h2>
                     <svg class="tutorial-upload-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                    <p>Arraste e solte um arquivo (`.xlsx`) na área indicada, ou clique para selecioná-lo do seu computador.</p>
+                    <p>Arraste e solte um arquivo (`.xlsx`) na área indicada, ou clique para selecioná-lo.</p>
                 </div>
+                <!-- ETAPA 2 (CORRIGIDA) -->
                 <div class="tutorial-step" data-step="2">
-                    <h2>2. Configure as Cores</h2>
-                    <svg class="tutorial-settings-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                    <p>Use o ícone de engrenagem para abrir as configurações. Lá, você pode criar regras para associar cada cor a uma descrição (ex: vermelho = "pendente").</p>
+                    <h2>2. Limpe os Resultados</h2>
+                    <svg class="tutorial-clear-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    <p>Use o ícone da lixeira no topo para limpar a tela e começar um novo processamento.</p>
                 </div>
-                 <div class="tutorial-step" data-step="3">
-                    <h2>3. Gere e Exporte</h2>
+                <!-- ETAPA 3 -->
+                <div class="tutorial-step" data-step="3">
+                    <h2>3. Configure a Ferramenta</h2>
+                    <svg class="tutorial-settings-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    <p>Use a engrenagem para definir a <strong>Coluna Alvo</strong> e para criar/apagar <strong>Regras de Cores</strong>.</p>
+                </div>
+                <!-- ETAPA 4 -->
+                 <div class="tutorial-step" data-step="4">
+                    <h2>4. Gere e Exporte</h2>
                     <svg class="tutorial-export-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                    <p>A ferramenta irá gerar uma lista formatada automaticamente. Use os botões para copiar a lista ou baixar um arquivo de texto.</p>
+                    <p>A ferramenta irá gerar uma lista formatada. Use os botões para copiar ou baixar.</p>
                 </div>
             </div>
             <div class="modal-footer">
-                <span id="tutorial-step-indicator" class="step-indicator">1 / 3</span>
+                <span id="tutorial-step-indicator" class="step-indicator">1 / 4</span>
                 <div style="display: flex; gap: 1rem;">
                     <button class="btn" id="tutorial-prev-btn" disabled>Anterior</button>
                     <button class="btn" id="tutorial-next-btn">Próximo</button>
@@ -359,7 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     const tutorialController = {
         currentStep: 1,
-        totalSteps: 3,
+        totalSteps: 4,
         init() {
             elements.startTutorialBtn.addEventListener('click', () => this.start());
             elements.skipTutorialBtn.addEventListener('click', () => this.skip());
@@ -433,7 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.addEventListener('touchend', () => {
             tapCount++;
             if (tapTimer) clearTimeout(tapTimer);
-            tapTimer = setTimeout(() => { tapCount = 0; }, 1500);
+            tapTimer = setTimeout(() => { tapCount = 0; }, 500);
             if (tapCount === 4) {
                 tapCount = 0;
                 clearTimeout(tapTimer);
