@@ -7,14 +7,19 @@
 
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     
-    <!-- Link para o ficheiro de estilos externo -->
-    <link rel="stylesheet" href="style.css">
+    <!-- Cache Busting: Adicionada query de versão (?v=1.0.0) -->
+    <link rel="stylesheet" href="style.css?v=1.0.0">
     
-    <!-- FAVICONS -->
-    <link rel="icon" type="image/png" href="./assets/favicon-96x96.png">
+    <!-- FAVICONS (com Cache Busting) -->
+    <link rel="icon" href="./assets/favicon.svg?v=1.0.0" type="image/svg+xml">
+    <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png?v=1.0.0">
+    <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32x32.png?v=1.0.0">
+    <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon-16x16.png?v=1.0.0">
+    <link rel="manifest" href="./assets/site.webmanifest?v=1.0.0">
+    
     <meta name="description" content="Transforme planilhas do Excel em listas de pendências formatadas com base na cor das células. Uma ferramenta web rápida, criada com HTML, CSS e JavaScript puros.">
-    <meta name="theme-color" content="#f1f5f9" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#1e293b" media="(prefers-color-scheme: dark)">
 
     <!-- Biblioteca XLSX -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.core.min.js"></script>
@@ -115,7 +120,7 @@
         </div>
     </template>
 
-    <!-- O 'type="module"' é crucial para o script funcionar quando hospedado -->
-    <script src="script.js" type="module"></script>
+    <!-- Adicionada query de versão (?v=...) para forçar o reset de cache -->
+    <script src="script.js?v=1.0.0" type="module"></script>
 </body>
 </html>
