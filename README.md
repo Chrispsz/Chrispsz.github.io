@@ -49,4 +49,4 @@ Este projeto foi construído com o objetivo de ser leve, rápido e sem dependên
 Distribuído sob a Licença MIT.
 
 ---
-**Feito com ❤️ por [chrispsz](https://github.com/chrispsz)**
+**Feito por [chrispsz](https://github.com/chrispsz)**
