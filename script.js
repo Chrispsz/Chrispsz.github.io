@@ -1,4 +1,4 @@
-/* Planilista - script.js (Versão Final com Download) */
+/* Planilista - script.js (Versão Módulo ES6 para Hosting) */
 'use strict';
 
 const state = { workbook: null, fileName: null, settings: { targetColumn: 'F', colorMap: {} }, rawResultsText: '', activeModalTrigger: null, lastSettingsBeforeReset: null, colorToAdd: null };
@@ -299,10 +299,7 @@ const events = {
         });
     },
     async handleCopyClick(e) {
-        if (!navigator.clipboard) {
-            this.fallbackCopyText(e.currentTarget);
-            return;
-        }
+        if (!navigator.clipboard) { this.fallbackCopyText(e.currentTarget); return; }
         try {
             await navigator.clipboard.writeText(state.rawResultsText);
             ui.showToast('Resultados copiados!', 'success');
@@ -378,6 +375,3 @@ const events = {
 
 function debounce(func, delay) { let timeout; return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), delay); }; }
 events.init();
-    </script>
-</body>
-</html>
