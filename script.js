@@ -1,583 +1,940 @@
-'use strict';
+(() => {
+  'use strict';
 
-// Garante que o código principal só execute após o DOM e os scripts externos estarem prontos.
-document.addEventListener('DOMContentLoaded', () => {
-    // Verificação de segurança: se a biblioteca externa não carregou, para a execução.
-    if (typeof XLSX === 'undefined') {
-        document.body.innerHTML = '<div style="text-align: center; padding: 2rem; font-family: sans-serif; color: #dc2626;"><h1>Erro Crítico</h1><p>Não foi possível carregar a biblioteca de planilhas (XLSX). Por favor, verifique sua conexão com a internet, desative bloqueadores de anúncio e tente recarregar a página.</p></div>';
-        return;
+  // UTILS
+  const U = {
+    qs: (s) => document.querySelector(s),
+    qsa: (s) => [...document.querySelectorAll(s)],
+    esc: (s = '') => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'),
+    renderIcons: () => window.lucide?.createIcons(),
+    digits: (s) => String(s || '').replace(/\D/g, ''),
+    norm: (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim(),
+    escapeCSV: (str) => {
+      if (str == null) return '';
+      str = String(str);
+      if (/[",;\n\r]/.test(str)) return '"' + str.replace(/"/g, '""') + '"';
+      return str;
+    },
+    formatBR: (ddd, tel) => {
+      const d = U.digits(ddd), n = U.digits(tel);
+      if (!n) return '';
+      if (!d) return n;
+      if (n.length === 9) return `(${d}) ${n.slice(0, 5)}-${n.slice(5)}`;
+      if (n.length === 8) return `(${d}) ${n.slice(0, 4)}-${n.slice(4)}`;
+      return `(${d}) ${n}`;
+    },
+    colToIndex: (col) => {
+      col = col.toUpperCase();
+      if (!/^[A-Z]{1,3}$/.test(col)) throw new Error('Coluna inválida');
+      return col.split('').reduce((a, c) => a * 26 + (c.charCodeAt(0) - 64), 0) - 1;
+    },
+    toColName: (n) => {
+      if (n <= 0) return 'A';
+      let s = '';
+      while (n > 0) {
+        const t = (n - 1) % 26;
+        s = String.fromCharCode(65 + t) + s;
+        n = Math.floor((n - t - 1) / 26);
+      }
+      return s;
     }
-    
-    // Se a biblioteca carregou, a aplicação começa.
-    const state = { workbook: null, fileName: null, settings: { targetColumn: 'F', colorMap: {}, unirPares: [], aplicarMascara: true, dedupeResults: true, sortResults: false }, rawResultsText: '', activeModalTrigger: null, lastSettingsBeforeReset: null, colorToAdd: null, currentSheetData: [], undoStack: [] };
-    const DOM = {
-        doc: document.documentElement,
-        uploadArea: document.getElementById('upload-area'),
-        fileInput: document.getElementById('file-input'),
-        sheetSelectorArea: document.getElementById('sheet-selector-area'),
-        sheetSelector: document.getElementById('sheet-selector'),
-        resultsArea: document.getElementById('results-area'),
-        resultsTitle: document.getElementById('results-title'),
-        generatorOutput: document.getElementById('generator-output'),
-        diagnosticoContainer: document.getElementById('diagnostico-container'),
-        clearBtn: document.getElementById('clear-btn'),
-        copyBtn: document.getElementById('copy-btn'),
-        copyCsvBtn: document.getElementById('copy-csv-btn'),
-        downloadBtn: document.getElementById('download-btn'),
-        downloadSheetBtn: document.getElementById('download-sheet-btn'),
-        settingsModal: document.getElementById('settings-modal'),
-        settingsBtn: document.getElementById('settings-btn'),
-        targetColumnInput: document.getElementById('target-column-input'),
-        targetColumnSelect: document.getElementById('target-column-select'),
-        dedupeResultsCheck: document.getElementById('dedupe-results-check'),
-        sortResultsCheck: document.getElementById('sort-results-check'),
-        colorRulesList: document.getElementById('color-rules-list'),
-        ruleSearchInput: document.getElementById('rule-search-input'),
-        resetSettingsBtn: document.getElementById('reset-settings-btn'),
-        exportSettingsBtn: document.getElementById('export-settings-btn'),
-        importSettingsBtn: document.getElementById('import-settings-btn'),
-        importSettingsInput: document.getElementById('import-settings-input'),
-        themeToggleBtn: document.getElementById('theme-toggle-btn'),
-        liveFeedback: document.getElementById('live-feedback'),
-        toastContainer: document.getElementById('toast-container'),
-        addRuleFormContainer: document.getElementById('add-rule-form-container'),
-        templates: { rule: document.getElementById('rule-template'), addRuleForm: document.getElementById('add-rule-form-template') },
-        unirTelefonesModal: document.getElementById('unir-telefones-modal'),
-        paresContainer: document.getElementById('pares-container'),
-        addParBtn: document.getElementById('add-par-btn'),
-        confirmarUnirBtn: document.getElementById('confirmar-unir-btn'),
-        aplicarMascaraCheck: document.getElementById('aplicar-mascara-br-check'),
-        resetParesBtn: document.getElementById('reset-pares-btn'),
-        undoBtn: document.getElementById('undo-btn'),
+  };
+
+  // LOCAL STORAGE
+  const L = {
+    get: (k, d = null) => {
+      try { return JSON.parse(localStorage.getItem('planilista_' + k)) || d; }
+      catch { return d; }
+    },
+    set: (k, v) => localStorage.setItem('planilista_' + k, JSON.stringify(v))
+  };
+
+  // STATE
+  const S = {
+    file: null,
+    wb: null,
+    sheet: null,
+    data: [],
+    detected: new Map(),
+    colorMap: L.get('colorMap', {}),
+    excluded: L.get('excluded', {}),
+    phonePairs: L.get('phonePairs', []),
+    applyMask: L.get('applyMask', true),
+    theme: L.get('theme', 'dark'),
+    autoExclude: L.get('autoExclude', true),
+    stats: {},
+    processing: false
+  };
+
+  // DOM
+  const D = {
+    status: U.qs('#status'),
+    statusText: U.qs('#statusText'),
+    drop: U.qs('#drop'),
+    fileInput: U.qs('#fileInput'),
+    fileName: U.qs('#fileName'),
+    panel: U.qs('#panel'),
+    tabs: U.qs('#tabs'),
+    colInput: U.qs('#colInput'),
+    dedup: U.qs('#dedup'),
+    autoExcludeChk: U.qs('#autoExcludeChk'),
+    processBtn: U.qs('#processBtn'),
+    mapBtn: U.qs('#mapBtn'),
+    mapCount: U.qs('#mapCount'),
+    output: U.qs('#output'),
+    copyBtn: U.qs('#copyBtn'),
+    clearBtn: U.qs('#clearBtn'),
+    csvBtn: U.qs('#csvBtn'),
+    txtBtn: U.qs('#txtBtn'),
+    colorList: U.qs('#colorList'),
+    excludeInfo: U.qs('#excludeInfo'),
+    excludedList: U.qs('#excludedList'),
+    unmappedBadge: U.qs('#unmappedBadge'),
+    themeBtn: U.qs('#themeBtn'),
+    phoneBtn: U.qs('#phoneBtn'),
+    mapModal: U.qs('#mapModal'),
+    closeMap: U.qs('#closeMap'),
+    mapBody: U.qs('#mapBody'),
+    clearMap: U.qs('#clearMap'),
+    saveMap: U.qs('#saveMap'),
+    expCfgBtn: U.qs('#expCfgBtn'),
+    impCfgBtn: U.qs('#impCfgBtn'),
+    impCfgFile: U.qs('#impCfgFile'),
+    statsPanel: U.qs('#statsPanel'),
+    phoneModal: U.qs('#phoneModal'),
+    closePhone: U.qs('#closePhone'),
+    pairs: U.qs('#pairs'),
+    addPair: U.qs('#addPair'),
+    maskChk: U.qs('#maskChk'),
+    applyPhone: U.qs('#applyPhone')
+  };
+
+  // INIT
+  setTheme(S.theme);
+  U.renderIcons();
+  D.dedup.checked = L.get('dedup', false);
+  D.colInput.value = L.get('column', 'A');
+  D.autoExcludeChk.checked = S.autoExclude;
+
+  function setTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    S.theme = t;
+    L.set('theme', t);
+    D.themeBtn.querySelector('i').setAttribute('data-lucide', t === 'dark' ? 'moon' : 'sun');
+    U.renderIcons();
+  }
+
+  function status(m, t = '') {
+    D.statusText.textContent = m;
+    D.status.className = 'status' + (t ? ' ' + t : '');
+    const icon = D.status.querySelector('i');
+    if (icon) {
+      icon.setAttribute('data-lucide', t === 'error' ? 'x-circle' : t === 'warn' ? 'alert-triangle' : t === 'ok' ? 'check-circle' : 'info');
+      U.renderIcons();
+    }
+  }
+
+  // FILE HANDLING
+  D.drop.addEventListener('click', () => D.fileInput.click());
+  D.fileInput.addEventListener('change', e => e.target.files[0] && loadFile(e.target.files[0]));
+
+  ['dragover', 'dragenter'].forEach(ev => D.drop.addEventListener(ev, e => {
+    e.preventDefault();
+    D.drop.classList.add('active');
+  }));
+
+  ['dragleave', 'drop'].forEach(ev => D.drop.addEventListener(ev, e => {
+    e.preventDefault();
+    D.drop.classList.remove('active');
+    if (e.type === 'drop' && e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+  }));
+
+  async function loadFile(file) {
+    if (file.size > 50 * 1024 * 1024) {
+      status('Arquivo muito grande. Máx: 50MB', 'error');
+      return;
+    }
+
+    try {
+      status('Processando arquivo...', 'warn');
+
+      const ab = await file.arrayBuffer();
+
+      S.wb = XLSX.read(ab, {
+        type: 'array',
+        cellStyles: true,
+        raw: false
+      });
+
+      S.file = file;
+      D.fileName.textContent = file.name;
+      D.panel.style.display = 'grid';
+
+      buildTabs();
+
+      const lastSheet = L.get('activeSheet');
+      const sheetIndex = S.wb.SheetNames.indexOf(lastSheet);
+      const activeIndex = sheetIndex > -1 ? sheetIndex : 0;
+      S.sheet = S.wb.SheetNames[activeIndex];
+
+      U.qsa('.tab').forEach((t, i) => t.classList.toggle('active', i === activeIndex));
+
+      loadAOA();
+
+      status(`"${U.esc(file.name)}" carregado.`, 'ok');
+      calculateStats();
+      process();
+    } catch (e) {
+      console.error(e);
+      status('Erro: ' + e.message, 'error');
+    }
+  }
+
+  function buildTabs() {
+    D.tabs.innerHTML = '';
+    S.wb.SheetNames.forEach((n, i) => {
+      const b = document.createElement('button');
+      b.className = 'tab';
+      if (i === 0) b.classList.add('active');
+      b.textContent = n;
+      b.addEventListener('click', () => selectTab(i));
+      D.tabs.appendChild(b);
+    });
+  }
+
+  function selectTab(index) {
+    U.qsa('.tab').forEach((t, i) => t.classList.toggle('active', i === index));
+    S.sheet = S.wb.SheetNames[index];
+    L.set('activeSheet', S.sheet);
+    loadAOA();
+    calculateStats();
+    process();
+  }
+
+  function loadAOA() {
+    const ws = S.wb.Sheets[S.sheet];
+    S.data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+  }
+
+  // DETECÇÃO DE COR OTIMIZADA
+  function getCellColor(cell) {
+    if (!cell?.s) return null;
+
+    // Caminho direto baseado no que descobrimos
+    if (cell.s.fgColor?.rgb) {
+      const rgb = cell.s.fgColor.rgb;
+      return '#' + rgb.toUpperCase();
+    }
+
+    // Fallback para outros possíveis caminhos
+    if (cell.s.bgColor?.rgb) {
+      const rgb = cell.s.bgColor.rgb;
+      return '#' + rgb.toUpperCase();
+    }
+
+    // Paleta indexada (caso seja XLS antigo)
+    const XLS_PALETTE = {
+      0: '#000000', 1: '#FFFFFF', 2: '#FF0000', 3: '#00FF00',
+      4: '#0000FF', 5: '#FFFF00', 6: '#FF00FF', 7: '#00FFFF',
+      16: '#800000', 17: '#008000', 18: '#000080', 19: '#808000',
+      20: '#800080', 21: '#008080', 22: '#C0C0C0', 23: '#808080'
     };
 
-    function esc(str = '') { return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-    
-    function manageFocus(modal, open) {
-        const focusableElements = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-        const focusableContent = modal.querySelectorAll(focusableElements);
-        if (focusableContent.length === 0) return;
-        const firstFocusable = focusableContent[0];
-        const lastFocusable = focusableContent[focusableContent.length - 1];
+    if (cell.s.fgColor?.indexed !== undefined) {
+      return XLS_PALETTE[cell.s.fgColor.indexed];
+    }
 
-        const trapFocus = (e) => {
-            let isTabPressed = e.key === 'Tab' || e.keyCode === 9;
-            if (!isTabPressed) return;
+    return null;
+  }
 
-            if (e.shiftKey) { 
-                if (document.activeElement === firstFocusable) {
-                    lastFocusable.focus();
-                    e.preventDefault();
-                }
-            } else {
-                if (document.activeElement === lastFocusable) {
-                    firstFocusable.focus();
-                    e.preventDefault();
-                }
+  function shouldExclude(name) {
+    if (!name) return false;
+    if (S.excluded[name]) return true;
+
+    if (S.autoExclude) {
+      const words = ['ok', 'sim', 'yes', 'confirmado', 'pronto', 'feito', 'concluído', 'concluido'];
+      const lowerName = name.toLowerCase();
+      return words.some(w => new RegExp(`\\b${w}\\b`).test(lowerName));
+    }
+    return false;
+  }
+
+  function calculateStats() {
+    if (!S.data.length) return;
+
+    const stats = {
+      totalRows: S.data.length - 1,
+      totalCols: S.data[0]?.length || 0,
+      coloredCells: 0,
+      uniqueNumbers: new Set(),
+      categories: {}
+    };
+
+    const ws = S.wb.Sheets[S.sheet];
+    if (!ws || !ws['!ref']) return;
+
+    const range = XLSX.utils.decode_range(ws['!ref']);
+
+    for (let r = range.s.r; r <= Math.min(range.e.r, 10000); r++) {
+      for (let c = range.s.c; c <= range.e.c; c++) {
+        const addr = XLSX.utils.encode_cell({ r, c });
+        const cell = ws[addr];
+        if (cell) {
+          const color = getCellColor(cell);
+          if (color) {
+            stats.coloredCells++;
+            const cat = S.colorMap[color];
+            if (cat) {
+              if (!stats.categories[cat]) stats.categories[cat] = 0;
+              stats.categories[cat]++;
             }
-        };
+          }
+          const val = String(cell.w ?? cell.v ?? '');
+          const num = U.digits(val);
+          if (num) stats.uniqueNumbers.add(num);
+        }
+      }
+    }
 
-        if (open) {
-            modal.addEventListener('keydown', trapFocus);
+    S.stats = stats;
+    renderStatsPanel();
+  }
+
+  function renderStatsPanel() {
+    if (!S.stats || !Object.keys(S.stats).length) return;
+
+    D.statsPanel.innerHTML = `
+      <div class="stat-card">
+        <div class="stat-value">${S.stats.totalRows.toLocaleString('pt-BR')}</div>
+        <div class="stat-label">Linhas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${S.stats.coloredCells.toLocaleString('pt-BR')}</div>
+        <div class="stat-label">Células coloridas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${S.stats.uniqueNumbers.size.toLocaleString('pt-BR')}</div>
+        <div class="stat-label">Números únicos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${Object.keys(S.stats.categories).length}</div>
+        <div class="stat-label">Categorias</div>
+      </div>
+    `;
+    D.statsPanel.style.display = 'grid';
+  }
+
+  async function process() {
+    if (!S.wb || !S.sheet || S.processing) return;
+
+    S.processing = true;
+
+    const col = (D.colInput.value || 'A').toUpperCase();
+    let colIndex;
+    try {
+      colIndex = U.colToIndex(col);
+    } catch (e) {
+      status(e.message, 'error');
+      S.processing = false;
+      return;
+    }
+
+    S.detected.clear();
+    const grouped = new Map(), excludedG = new Map(), unmapped = new Set();
+    const dedup = !!D.dedup.checked;
+
+    const ws = S.wb.Sheets[S.sheet];
+    if (!ws || !ws['!ref']) {
+      status('Planilha sem dados', 'warn');
+      S.processing = false;
+      return;
+    }
+
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    const maxRows = Math.min(range.e.r, 10000);
+
+    for (let r = range.s.r; r <= maxRows; r++) {
+      if (r % 1000 === 0) await new Promise(r => setTimeout(r, 1));
+
+      const addr = XLSX.utils.encode_cell({ r, c: colIndex });
+      const cell = ws[addr];
+      if (!cell) continue;
+
+      const color = getCellColor(cell);
+      if (color) S.detected.set(color, (S.detected.get(color) || 0) + 1);
+
+      const val = String(cell.w ?? cell.v ?? '');
+      const num = U.digits(val);
+      if (!num || !color) continue;
+
+      const cat = S.colorMap[color];
+      if (!cat) { unmapped.add(color); continue; }
+
+      const tgt = shouldExclude(cat) ? excludedG : grouped;
+      if (!tgt.has(cat)) tgt.set(cat, dedup ? new Set() : []);
+      if (dedup) tgt.get(cat).add(num);
+      else tgt.get(cat).push(num);
+    }
+
+    // Gerar output
+    let out = '';
+    const sortedCategories = [...grouped.keys()].sort((a, b) => a.localeCompare(b));
+    for (const cat of sortedCategories) {
+      const list = grouped.get(cat);
+      const items = (Array.isArray(list) ? list : Array.from(list))
+        .sort((a, b) => {
+          const na = BigInt(a), nb = BigInt(b);
+          return na < nb ? -1 : na > nb ? 1 : 0;
+        });
+      out += `${cat} (${items.length}):\n${items.join('\n')}\n\n`;
+    }
+
+    D.output.value = out.trim();
+    D.copyBtn.disabled = !D.output.value;
+
+    // Mostrar exclusões
+    const excl = [...excludedG.keys()];
+    if (excl.length) {
+      D.excludeInfo.style.display = 'flex';
+      D.excludedList.textContent = excl.join(', ');
+    } else {
+      D.excludeInfo.style.display = 'none';
+    }
+
+    renderColorList();
+
+    const unmappedCount = [...S.detected.keys()].filter(hex => !S.colorMap[hex]).length;
+    if (unmappedCount > 0) {
+      D.mapCount.style.display = 'inline-flex';
+      D.mapCount.textContent = unmappedCount;
+    } else {
+      D.mapCount.style.display = 'none';
+    }
+
+    D.unmappedBadge.textContent = unmapped.size ? `${unmapped.size} não mapeada(s)` : '';
+
+    const msg = unmapped.size ? `${unmapped.size} cor(es) sem mapeamento.` : 'Processamento concluído.';
+    status(msg, 'ok');
+
+    S.processing = false;
+  }
+
+  function renderColorList() {
+    D.colorList.innerHTML = '';
+    if (S.detected.size === 0) {
+      D.colorList.innerHTML = '<div class="chip">Nenhuma cor detectada</div>';
+      return;
+    }
+    S.detected.forEach((count, hex) => {
+      const name = S.colorMap[hex] || 'Não mapeado';
+      const el = document.createElement('div');
+      el.className = 'badge-color';
+      el.innerHTML = `
+        <span class="sw" style="background:${hex}"></span>
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${U.esc(name)}</span>
+        <span class="chip">${count}</span>
+      `;
+      D.colorList.appendChild(el);
+    });
+  }
+
+  // CONTROLS
+  D.processBtn.addEventListener('click', process);
+  D.colInput.addEventListener('input', () => { setTimeout(() => { L.set('column', D.colInput.value); process(); }, 500); });
+  D.dedup.addEventListener('change', () => { L.set('dedup', D.dedup.checked); process(); });
+  D.autoExcludeChk.addEventListener('change', () => { S.autoExclude = D.autoExcludeChk.checked; L.set('autoExclude', S.autoExclude); process(); });
+  D.themeBtn.addEventListener('click', () => setTheme(S.theme === 'dark' ? 'light' : 'dark'));
+
+  // RESULT ACTIONS
+  D.copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(D.output.value || '');
+      status('Copiado!', 'ok');
+    } catch {
+      D.output.select();
+      document.execCommand('copy');
+      status('Copiado.', 'ok');
+    }
+  });
+
+  D.clearBtn.addEventListener('click', () => {
+    D.output.value = '';
+    D.copyBtn.disabled = true;
+    status('Resultado limpo.');
+  });
+
+  D.csvBtn.addEventListener('click', exportCSV);
+  D.txtBtn.addEventListener('click', downloadTXT);
+
+  // MAP MODAL
+  D.mapBtn.addEventListener('click', () => { renderMapBody(); toggleModal(D.mapModal, true); });
+  D.closeMap.addEventListener('click', () => toggleModal(D.mapModal, false));
+  D.mapModal.addEventListener('click', e => { if (e.target === D.mapModal) toggleModal(D.mapModal, false); });
+  D.clearMap.addEventListener('click', () => {
+    if (confirm('Limpar todos os mapeamentos?')) {
+      S.colorMap = {};
+      S.excluded = {};
+      L.set('colorMap', S.colorMap);
+      L.set('excluded', S.excluded);
+      renderMapBody();
+      process();
+    }
+  });
+  D.saveMap.addEventListener('click', saveMappings);
+
+  // PHONE MODAL
+  D.phoneBtn.addEventListener('click', openPhoneModal);
+  D.closePhone.addEventListener('click', () => toggleModal(D.phoneModal, false));
+  D.phoneModal.addEventListener('click', e => { if (e.target === D.phoneModal) toggleModal(D.phoneModal, false); });
+  D.addPair.addEventListener('click', () => D.pairs.appendChild(makePair()));
+  D.applyPhone.addEventListener('click', applyPhoneMerge);
+  D.maskChk.addEventListener('change', () => { S.applyMask = !!D.maskChk.checked; L.set('applyMask', S.applyMask); });
+
+  // CONFIG
+  D.expCfgBtn.addEventListener('click', exportConfig);
+  D.impCfgBtn.addEventListener('click', () => D.impCfgFile.click());
+  D.impCfgFile.addEventListener('change', e => {
+    const f = e.target.files?.[0];
+    if (f) importConfig(f);
+    e.target.value = '';
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      U.qsa('.modal.show').forEach(m => toggleModal(m, false));
+    }
+  });
+
+  function toggleModal(m, show) {
+    m.classList.toggle('show', !!show);
+    if (show) U.renderIcons();
+  }
+
+  function renderMapBody() {
+    const frag = document.createDocumentFragment();
+    const list = Array.from(S.detected.entries()).sort((a, b) => (b[1] - a[1]));
+    if (!list.length) {
+      D.mapBody.innerHTML = '<div class="chip">Nenhuma cor a configurar</div>';
+      return;
+    }
+    list.forEach(([hex]) => {
+      const row = document.createElement('div');
+      row.className = 'map-row';
+      const name = S.colorMap[hex] || '';
+      const excl = S.excluded[name] ? 'checked' : '';
+      row.innerHTML = `
+        <span class="sw" style="background:${hex}"></span>
+        <span style="font-family:monospace;font-size:12px;">${hex}</span>
+        <input class="input" data-color="${hex}" value="${U.esc(name)}" placeholder="Nome da categoria" />
+        <label class="hint" style="display:flex;align-items:center;gap:6px;">
+          <input type="checkbox" data-exclude="${hex}" ${excl} /> Excluir
+        </label>
+      `;
+      frag.appendChild(row);
+    });
+    D.mapBody.innerHTML = '';
+    D.mapBody.appendChild(frag);
+  }
+
+  function saveMappings() {
+    const inputs = D.mapBody.querySelectorAll('input[data-color]');
+    const excls = D.mapBody.querySelectorAll('input[data-exclude]');
+
+    const newExcl = { ...S.excluded };
+
+    inputs.forEach((inp, i) => {
+      const hex = inp.dataset.color, name = inp.value.trim();
+      if (name) S.colorMap[hex] = name;
+      else delete S.colorMap[hex];
+
+      const chk = excls[i];
+      if (chk && name) {
+        if (chk.checked) newExcl[name] = true;
+        else delete newExcl[name];
+      }
+    });
+
+    S.excluded = newExcl;
+
+    L.set('colorMap', S.colorMap);
+    L.set('excluded', S.excluded);
+    toggleModal(D.mapModal, false);
+    process();
+  }
+
+  // PHONE FUNCTIONS
+  function guessIndex(headers, re, fb) {
+    const idx = headers.findIndex(h => re.test(U.norm(h)));
+    return idx >= 0 ? idx : fb;
+  }
+
+  function makePair(dddIndex, phoneIndex) {
+    const p = document.createElement('div');
+    p.style = 'display:flex;gap:8px;align-items:center';
+    const headers = S.data[0] || [];
+    const mk = (sel) => headers.map((h, i) => `<option value="${i}" ${i === sel ? 'selected' : ''}>${U.esc(h || ('Coluna ' + U.toColName(i + 1)))}</option>`).join('');
+    const dSel = document.createElement('select');
+    dSel.className = 'input';
+    dSel.innerHTML = mk(dddIndex ?? guessIndex(headers, /(ddd|area)/i, 0));
+    const tSel = document.createElement('select');
+    tSel.className = 'input';
+    tSel.innerHTML = mk(phoneIndex ?? guessIndex(headers, /(tel|fone|cel)/i, 1));
+    const del = document.createElement('button');
+    del.className = 'btn danger';
+    del.innerHTML = '<i data-lucide="trash-2"></i>';
+    del.onclick = () => p.remove();
+    p.appendChild(dSel);
+    p.appendChild(tSel);
+    p.appendChild(del);
+    U.renderIcons();
+    return p;
+  }
+
+  function openPhoneModal() {
+    if (!S.data.length) {
+      status('Carregue uma planilha.', 'warn');
+      return;
+    }
+    D.pairs.innerHTML = '';
+    if (S.phonePairs.length) {
+      S.phonePairs.forEach(pr => D.pairs.appendChild(makePair(pr.dddIndex, pr.phoneIndex)));
+    } else {
+      D.pairs.appendChild(makePair());
+    }
+    D.maskChk.checked = !!S.applyMask;
+    toggleModal(D.phoneModal, true);
+  }
+
+  function applyPhoneMerge() {
+    if (!S.data.length) {
+      toggleModal(D.phoneModal, false);
+      return;
+    }
+
+    const pairs = [];
+    D.pairs.querySelectorAll('div').forEach(p => {
+      const d = parseInt(p.children[0].value, 10);
+      const t = parseInt(p.children[1].value, 10);
+      if (!isNaN(d) && !isNaN(t) && d !== t) {
+        pairs.push({ dddIndex: d, phoneIndex: t });
+      }
+    });
+
+    if (!pairs.length) {
+      status('Nenhum par válido.', 'warn');
+      return;
+    }
+
+    S.phonePairs = pairs;
+    L.set('phonePairs', S.phonePairs);
+    S.applyMask = !!D.maskChk.checked;
+    L.set('applyMask', S.applyMask);
+
+    toggleModal(D.phoneModal, false);
+    status('Configuração de telefones salva.', 'ok');
+  }
+
+  function downloadTXT() {
+    const text = (D.output.value || '').trim();
+    if (!text) {
+      status('Nada para baixar.', 'warn');
+      return;
+    }
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const a = document.createElement('a');
+    const base = (S.file?.name || 'planilha').replace(/\.[^.]+$/, '');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${base}_lista.txt`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    status('TXT exportado.', 'ok');
+  }
+
+  // FUNÇÃO EXPORTCSV ATUALIZADA - FORMATO EXATO
+  function exportCSV() {
+    if (!S.data.length) {
+      status('Carregue uma planilha.', 'warn');
+      return;
+    }
+
+    const headers = S.data[0] || [];
+
+    // Função auxiliar para encontrar colunas
+    const findExact = (searchTerms) => {
+      for (let i = 0; i < headers.length; i++) {
+        const normalized = U.norm(headers[i]);
+        for (const term of searchTerms) {
+          if (normalized === U.norm(term)) return i;
+        }
+      }
+      // Segunda tentativa - busca parcial
+      for (let i = 0; i < headers.length; i++) {
+        const normalized = U.norm(headers[i]);
+        for (const term of searchTerms) {
+          if (normalized.includes(U.norm(term))) return i;
+        }
+      }
+      return -1;
+    };
+
+    // Mapeamento dos índices principais
+    const idx = {
+      cpf: findExact(['cpf', 'cpf/cnpj', 'cnpj', 'documento']),
+      codigo: findExact(['codigo', 'código', 'codigo do cliente', 'código do cliente', 'cod cliente', 'id']),
+      nome: findExact(['nome', 'nome do cliente', 'cliente', 'razao social', 'razão social']),
+      endereco: findExact(['endereco', 'endereço', 'logradouro', 'rua', 'avenida']),
+      bairro: findExact(['bairro']),
+      cidade: findExact(['cidade', 'municipio', 'município']),
+      debitoTotal: findExact(['debito total', 'débito total', 'valor total', 'total']),
+      debitoPendente: findExact(['debito pendente', 'débito pendente', 'valor pendente', 'pendente', 'saldo']),
+      vencimento: findExact(['vencimento', 'data vencimento', 'data de vencimento', 'dt vencimento'])
+    };
+
+    // Identificar pares de DDD + Telefone
+    const phonePairs = [];
+    const dddColumns = [];
+    const phoneColumns = [];
+
+    headers.forEach((header, i) => {
+      const h = U.norm(header);
+
+      // É uma coluna de DDD?
+      if (h.includes('ddd')) {
+        dddColumns.push(i);
+      }
+      // É uma coluna de telefone/celular?
+      else if (h.match(/(telefone|celular|tel|cel|fone|whats|contato)/) && !h.includes('ddd')) {
+        phoneColumns.push(i);
+      }
+    });
+
+    // Criar pares DDD -> Telefone baseado na proximidade
+    dddColumns.forEach(dddIdx => {
+      let closestPhone = -1;
+      let minDistance = Infinity;
+
+      phoneColumns.forEach(phoneIdx => {
+        if (phoneIdx > dddIdx) {
+          const distance = phoneIdx - dddIdx;
+          if (distance < minDistance) {
+            minDistance = distance;
+            closestPhone = phoneIdx;
+          }
+        }
+      });
+
+      if (closestPhone !== -1) {
+        phonePairs.push({ ddd: dddIdx, phone: closestPhone });
+        const phoneIndex = phoneColumns.indexOf(closestPhone);
+        if (phoneIndex > -1) phoneColumns.splice(phoneIndex, 1);
+      }
+    });
+
+    // Headers de saída
+    const OUT = [
+      'CPF',
+      'Codigo do Cliente',
+      'Nome do Cliente',
+      'Endereco',
+      'Bairro',
+      'Cidade',
+      'Debito total',
+      'Debito pendente',
+      'Vencimento',
+      'Telefone1',
+      'Telefone2',
+      'Telefone3',
+      'Telefone4',
+      'Telefone5'
+    ];
+
+    const rows = [];
+
+    for (let r = 1; r < S.data.length; r++) {
+      const row = S.data[r];
+      if (!row || row.length === 0) continue;
+
+      const v = (i) => i > -1 && i < row.length ? String(row[i] || '') : '';
+
+      // Processar telefones
+      const phones = [];
+      const seen = new Set();
+
+      // Processar pares DDD + Telefone
+      phonePairs.forEach(pair => {
+        const dddVal = v(pair.ddd);
+        const phoneVal = v(pair.phone);
+
+        if (!phoneVal || phoneVal === '0') return;
+
+        const dddDigits = U.digits(dddVal) || '83';
+        const phoneDigits = U.digits(phoneVal);
+
+        if (phoneDigits && phoneDigits.length >= 8) {
+          const fullNumber = dddDigits + phoneDigits;
+
+          if (!seen.has(fullNumber)) {
+            seen.add(fullNumber);
+            phones.push(fullNumber);
+          }
+        }
+      });
+
+      // Processar colunas de telefone isoladas
+      phoneColumns.forEach(colIdx => {
+        const val = v(colIdx);
+        if (!val) return;
+
+        let digits = U.digits(val);
+        if (!digits) return;
+
+        let fullNumber = '';
+
+        if (digits.length === 11 || digits.length === 10) {
+          fullNumber = digits;
+        } else if (digits.length === 9 || digits.length === 8) {
+          fullNumber = '83' + digits;
         } else {
-            modal.removeEventListener('keydown', trapFocus);
+          return;
         }
+
+        if (!seen.has(fullNumber) && fullNumber.length >= 10) {
+          seen.add(fullNumber);
+          phones.push(fullNumber);
+        }
+      });
+
+      // Garantir que temos 5 campos de telefone
+      while (phones.length < 5) phones.push('');
+
+      // Pegar valores corretos
+      const codigo = v(idx.codigo);
+      let nome = v(idx.nome);
+
+      // Se nome está vazio ou igual ao código, tentar encontrar o nome correto
+      if (!nome || nome === codigo) {
+        for (let i = idx.codigo + 1; i < row.length && i < idx.codigo + 3; i++) {
+          const possibleName = v(i);
+          if (possibleName && possibleName !== codigo && !(/^\d+$/.test(possibleName))) {
+            nome = possibleName;
+            break;
+          }
+        }
+      }
+
+      // Processar CPF - remover formatação
+      let cpf = U.digits(v(idx.cpf));
+
+      // Processar valores decimais
+      let debitoTotal = v(idx.debitoTotal);
+      let debitoPendente = v(idx.debitoPendente);
+
+      // Montar linha
+      rows.push([
+        cpf,
+        codigo,
+        nome,
+        v(idx.endereco),
+        v(idx.bairro),
+        v(idx.cidade),
+        debitoTotal,
+        debitoPendente,
+        v(idx.vencimento),
+        phones[0],
+        phones[1],
+        phones[2],
+        phones[3],
+        phones[4]
+      ]);
     }
 
-    const ui = {
-        setLoading(isLoading) {
-            const content = DOM.uploadArea.querySelector('#upload-content');
-            if (content) content.classList.toggle('hidden', isLoading);
-            const existingSpinner = DOM.uploadArea.querySelector('.loading-spinner');
-            if (isLoading && !existingSpinner) {
-                const spinner = document.createElement('div');
-                spinner.className = 'loading-spinner';
-                DOM.uploadArea.appendChild(spinner);
-            } else if (!isLoading && existingSpinner) {
-                existingSpinner.remove();
-            }
-        },
-        renderResults({ fileName, html, raw, hasContent, skippedRows, unmappedColors }) {
-            document.title = `${fileName.substring(0, fileName.lastIndexOf('.')) || fileName} - Planilista`;
-            state.rawResultsText = raw;
-            DOM.generatorOutput.innerHTML = html || this.getEmptyStateHTML('no_results');
-            let diagnosticoHTML = '';
-            if (unmappedColors.size > 0) {
-                let unmappedItemsHTML = '';
-                unmappedColors.forEach(color => {
-                    unmappedItemsHTML += `<div class="unmapped-color-item"><div class="unmapped-color-info"><div class="color-swatch-small" style="background-color:${color}"></div><span>${color}</span></div><button class="btn btn-small" data-configure-color="${color}">Configurar</button></div>`;
-                });
-                diagnosticoHTML += `<div class="diagnostico-aviso"><strong>Ação necessária:</strong> Encontramos ${unmappedColors.size} cor(es) não configurada(s).<br>${unmappedItemsHTML}</div>`;
-            }
-            if (skippedRows.length > 0) diagnosticoHTML += `<div class="diagnostico-aviso"><strong>Aviso:</strong> ${skippedRows.length} linha(s) ignorada(s) por não conterem números na coluna alvo.</div>`;
-            DOM.diagnosticoContainer.innerHTML = diagnosticoHTML;
-            DOM.resultsArea.classList.add('visible');
-            const hasResults = hasContent || raw.length > 0;
-            DOM.copyBtn.disabled = !hasResults;
-            DOM.copyCsvBtn.disabled = !hasResults;
-            DOM.downloadBtn.disabled = !hasResults;
-            DOM.downloadSheetBtn.disabled = false;
-            DOM.undoBtn.disabled = state.undoStack.length === 0;
-            this.toggleSettingsAlert(unmappedColors.size > 0);
-        },
-        renderColorRules(colorMap) {
-            const fragment = document.createDocumentFragment();
-            if (Object.keys(colorMap).length === 0) {
-                DOM.colorRulesList.innerHTML = this.getEmptyStateHTML('no_rules');
-                return;
-            }
-            for (const color in colorMap) {
-                const ruleDiv = DOM.templates.rule.content.cloneNode(true).firstElementChild;
-                ruleDiv.dataset.color = color;
-                ruleDiv.querySelector('.color-swatch-large').style.backgroundColor = color;
-                ruleDiv.querySelector('input[type="text"]').value = colorMap[color];
-                fragment.appendChild(ruleDiv);
-            }
-            DOM.colorRulesList.innerHTML = '';
-            DOM.colorRulesList.appendChild(fragment);
-        },
-        getEmptyStateHTML(stateKey) {
-            const states = {
-                initial: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg><div><strong>Aguardando um arquivo.</strong><p>Arraste uma planilha para começar.</p></div>`,
-                no_results: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg><div><strong>Tudo certo!</strong><p>Nenhuma pendência foi encontrada na sua planilha.</p></div>`,
-                no_rules: `<div style="padding:1rem; text-align:center;"><strong>Nenhuma regra configurada.</strong><p>Cores não mapeadas aparecerão na tela principal para configuração.</p></div>`
-            };
-            return `<div class="placeholder">${states[stateKey] || states.initial}</div>`;
-        },
-        resetUI() {
-            Object.assign(state, { workbook: null, fileName: null, rawResultsText: '', currentSheetData: [], undoStack: [] });
-            document.title = 'Planilista - Crie listas a partir de planilhas';
-            DOM.fileInput.value = '';
-            ['results-area', 'sheet-selector-area'].forEach(id => document.getElementById(id).classList.remove('visible'));
-            DOM.generatorOutput.innerHTML = this.getEmptyStateHTML('initial');
-            DOM.copyBtn.disabled = true;
-            DOM.copyCsvBtn.disabled = true;
-            DOM.downloadBtn.disabled = true;
-            DOM.downloadSheetBtn.disabled = true;
-            DOM.undoBtn.disabled = true;
-            DOM.diagnosticoContainer.innerHTML = '';
-            this.toggleSettingsAlert(false);
-        },
-        toggleModal(modal, open) {
-            if (!modal) return;
-            manageFocus(modal, open);
-            if (open) {
-                state.activeModalTrigger = document.activeElement;
-                modal.classList.add('open');
-                const firstFocusable = modal.querySelector('input, button, select');
-                if (firstFocusable) firstFocusable.focus();
-            } else {
-                modal.classList.remove('open');
-                if (state.activeModalTrigger) state.activeModalTrigger.focus();
-                if (modal.id === 'settings-modal') { DOM.addRuleFormContainer.innerHTML = ''; state.colorToAdd = null; }
-            }
-            document.body.classList.toggle('modal-open', open);
-        },
-        showToast(message, type = 'info', options = {}) {
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.textContent = message;
-            toast.addEventListener('click', () => toast.remove());
-            if (options.actionText) {
-                const btn = document.createElement('button');
-                btn.className = 'toast-action';
-                btn.textContent = options.actionText;
-                btn.onclick = (e) => { e.stopPropagation(); options.actionCallback(); toast.remove(); };
-                toast.appendChild(btn);
-            }
-            DOM.toastContainer.appendChild(toast);
-            setTimeout(() => toast.remove(), 4000);
-        },
-        toggleTheme(theme) {
-            const newTheme = theme || (DOM.doc.classList.contains('light-theme') ? 'dark' : 'light');
-            DOM.doc.classList.remove('light-theme', 'dark-theme');
-            DOM.doc.classList.add(`${newTheme}-theme`);
-            localStorage.setItem('planilistaTheme', newTheme);
-        },
-        filterRules: debounce((query) => {
-            const normalizedQuery = query.toLowerCase().trim();
-            DOM.colorRulesList.querySelectorAll('.rule-item').forEach(item => {
-                const desc = item.querySelector('input[type="text"]').value.toLowerCase();
-                const color = item.dataset.color.toLowerCase();
-                item.classList.toggle('hidden', !(desc.includes(normalizedQuery) || color.includes(normalizedQuery)));
-            });
-        }, 200),
-        showSuccessOnButton(button) {
-            button.classList.add('is-success');
-            button.disabled = true;
-            setTimeout(() => { button.classList.remove('is-success'); button.disabled = false; }, 2000);
-        },
-        prepareAddRuleForm(color) {
-            state.colorToAdd = color;
-            const formTemplate = DOM.templates.addRuleForm.content.cloneNode(true);
-            DOM.addRuleFormContainer.innerHTML = '';
-            DOM.addRuleFormContainer.appendChild(formTemplate);
-            document.getElementById('rule-color-display-swatch').style.backgroundColor = color;
-            document.getElementById('rule-color-display-hex').textContent = color;
-            const descInput = document.getElementById('new-desc-input');
-            if (descInput) descInput.focus();
-        },
-        toggleSettingsAlert(show) {
-            DOM.settingsBtn.classList.toggle('has-alert', show);
-        },
-        criarTemplatePar(headers = []) {
-            const div = document.createElement('div');
-            div.className = 'par-item';
-            const optionsHTML = headers.map((h, i) => `<option value="${i}">${esc(h) || `Coluna ${data.toColumnName(i + 1)}`}</option>`).join('');
-            div.innerHTML = `<select class="ddd-col-select">${optionsHTML}</select><select class="tel-col-select">${optionsHTML}</select><button class="btn btn-icon btn-delete" data-delete-par aria-label="Excluir par" title="Excluir par"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>`;
-            return div;
+    // Gerar CSV com PONTO E VÍRGULA
+    let csv = OUT.join(';') + '\r\n';
+    rows.forEach(r => {
+      csv += r.map(cell => {
+        if (!cell) return '';
+        const str = String(cell);
+        if (str.includes(';') || str.includes('"') || str.includes('\n')) {
+          return '"' + str.replace(/"/g, '""') + '"';
         }
+        return str;
+      }).join(';') + '\r\n';
+    });
+
+    // Download com BOM para UTF-8
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const base = (S.file?.name || 'planilha').replace(/\.[^.]+$/, '');
+    a.download = `${base}_cobranca.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    status('CSV exportado com sucesso!', 'ok');
+  }
+
+  function exportConfig() {
+    const cfg = {
+      version: '2.5',
+      theme: S.theme,
+      column: (D.colInput.value || 'A').toUpperCase(),
+      dedup: !!D.dedup.checked,
+      autoExclude: S.autoExclude,
+      colorMap: S.colorMap,
+      excluded: S.excluded,
+      phonePairs: S.phonePairs,
+      applyMask: S.applyMask
     };
 
-    const data = {
-        loadSettings() {
-            try {
-                const saved = localStorage.getItem('planilistaSettings');
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    Object.assign(state.settings, { dedupeResults: true, sortResults: false }, parsed);
-                }
-            } catch { state.settings = { targetColumn: 'F', colorMap: {}, unirPares: [], aplicarMascara: true, dedupeResults: true, sortResults: false }; }
-            DOM.targetColumnInput.value = state.settings.targetColumn;
-            DOM.aplicarMascaraCheck.checked = state.settings.aplicarMascara;
-            DOM.dedupeResultsCheck.checked = state.settings.dedupeResults;
-            DOM.sortResultsCheck.checked = state.settings.sortResults;
-            ui.renderColorRules(state.settings.colorMap);
-        },
-        saveSettings(newSettings) {
-            Object.assign(state.settings, newSettings);
-            localStorage.setItem('planilistaSettings', JSON.stringify(state.settings));
-        },
-        processSheet(sheet, {colorMap, targetColumn}) {
-            const colIndex = this.columnLetterToIndex(targetColumn);
-            if (colIndex === -1) { ui.showToast(`Coluna "${targetColumn}" inválida.`, 'error'); return null; }
-            const json = state.currentSheetData;
-            const results = {}, skippedRows = [], unmappedColors = new Set();
-            for (let i = 1; i < json.length; i++) {
-                const lancamento = json[i][colIndex];
-                if (lancamento === undefined || lancamento === null || `${lancamento}`.trim() === '') continue;
-                if (isNaN(Number(String(lancamento).replace(/\D/g,'')))) { skippedRows.push(`Linha ${i + 1}`); continue; }
-                const cellAddress = XLSX.utils.encode_cell({ c: colIndex, r: i });
-                const cell = sheet[cellAddress];
-                let corHex = null;
-                const fill = cell?.s?.fill;
-                const colorObj = fill?.fgColor || fill?.bgColor;
-                if (colorObj?.rgb) corHex = '#' + colorObj.rgb.slice(-6).toUpperCase();
+    const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `planilista_config.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    status('Configuração exportada.', 'ok');
+  }
 
-                const desc = corHex ? colorMap[corHex] : undefined;
-                if (desc !== undefined) {
-                    if (!results[desc]) results[desc] = [];
-                    results[desc].push(lancamento);
-                } else if (corHex) {
-                    unmappedColors.add(corHex);
-                }
-            }
-            return { ...this.formatResults(state.fileName, results), skippedRows, unmappedColors };
-        },
-        formatResults(fileName, resultsData) {
-            const baseName = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
-            let raw = `*${esc(baseName.toUpperCase())}*\n\n`;
-            let html = '';
-            let hasContent = false;
-            const categories = Object.keys(resultsData).filter(cat => cat.toUpperCase() !== 'OK');
-            if (categories.length > 0) {
-                hasContent = true;
-                categories.forEach(category => {
-                    let nums = resultsData[category].map(String);
-                    if (state.settings.dedupeResults) nums = [...new Set(nums)];
-                    if (state.settings.sortResults) nums.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  function importConfig(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const cfg = JSON.parse(reader.result || '{}');
 
-                    raw += `${esc(category)}:\n${nums.map(esc).join('\n')}\n\n`;
-                    html += `<div class="result-category"><h4>${esc(category)} (${nums.length})</h4><ul class="result-list">${nums.map(n => `<li>${esc(n)}</li>`).join('')}</ul></div>`;
-                });
-            }
-            return { html, raw: raw.trim(), hasContent };
-        },
-        formatarTelefoneBR(ddd, tel) {
-            const d = String(ddd).replace(/\D/g, ''); let n = String(tel).replace(/\D/g, '');
-            if (n.length === 9) return `(${d}) ${n.slice(0, 5)}-${n.slice(5)}`;
-            if (n.length === 8) return `(${d}) ${n.slice(0, 4)}-${n.slice(4)}`;
-            return `(${d}) ${n}`;
-        },
-        toColumnName(num) { let s = '', t; while (num > 0) { t = (num - 1) % 26; s = String.fromCharCode(65 + t) + s; num = (num - t - 1) / 26 | 0; } return s || undefined; },
-        columnLetterToIndex: (letter) => letter.toUpperCase().split('').reduce((acc, char) => acc * 26 + char.charCodeAt(0) - 64, 0) - 1,
-    };
-
-    const events = {
-        async handleFileSelect(file) {
-            if (!file) return;
-            ui.resetUI();
-            ui.setLoading(true);
-            try {
-                const buffer = await file.arrayBuffer();
-                state.workbook = XLSX.read(buffer, { type: 'array', cellStyles: true });
-                state.fileName = file.name;
-                const sheetNames = state.workbook.SheetNames;
-                const fragment = document.createDocumentFragment();
-                sheetNames.forEach(name => {
-                    const option = document.createElement('option');
-                    option.value = name; option.textContent = name;
-                    fragment.appendChild(option);
-                });
-                DOM.sheetSelector.innerHTML = ''; DOM.sheetSelector.appendChild(fragment);
-                DOM.sheetSelectorArea.classList.toggle('visible', sheetNames.length > 1);
-                this.reprocessCurrentSheet();
-            } catch (error) { console.error("Erro ao processar arquivo:", error); ui.showToast(`Ocorreu um erro: ${error.message}`, 'error');
-            } finally { ui.setLoading(false); }
-        },
-        reprocessCurrentSheet: debounce(() => {
-            if (!state.workbook) return;
-            const sheetName = DOM.sheetSelector.value;
-            const sheet = state.workbook.Sheets[sheetName];
-            state.currentSheetData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
-            events.populateTargetColumnSelect();
-            events.refreshDisplay();
-        }, 300),
-        refreshDisplay() {
-            if (!state.workbook) return;
-            const sheetName = DOM.sheetSelector.value;
-            const sheet = state.workbook.Sheets[sheetName];
-            const processedData = data.processSheet(sheet, state.settings);
-            if (processedData) ui.renderResults({ fileName: state.fileName, ...processedData });
-        },
-        populateTargetColumnSelect() {
-            const headers = (state.currentSheetData && state.currentSheetData[0]) ? state.currentSheetData[0] : [];
-            const frag = document.createDocumentFragment();
-            DOM.targetColumnSelect.innerHTML = '';
-            headers.forEach((h, i) => {
-                const opt = document.createElement('option');
-                const letter = data.toColumnName(i + 1);
-                opt.value = i;
-                opt.textContent = `${letter} — ${esc(h) || `Coluna ${letter}`}`;
-                frag.appendChild(opt);
-            });
-            DOM.targetColumnSelect.appendChild(frag);
-            const colIdx = data.columnLetterToIndex(state.settings.targetColumn);
-            if (colIdx >= 0) DOM.targetColumnSelect.value = String(colIdx);
-        },
-        handleSettingsChange() {
-            const newSettings = { ...state.settings, targetColumn: DOM.targetColumnInput.value.trim().toUpperCase() || 'F' };
-            data.saveSettings(newSettings);
-            this.refreshDisplay();
-        },
-        handleAddRule(desc) {
-            if (!state.colorToAdd || !desc) return;
-            if (state.settings.colorMap[state.colorToAdd]) { ui.showToast('Esta cor já está configurada.', 'error'); return; }
-            const newColorMap = { ...state.settings.colorMap, [state.colorToAdd]: desc };
-            data.saveSettings({ ...state.settings, colorMap: newColorMap });
-            ui.renderColorRules(newColorMap); this.refreshDisplay();
-            DOM.addRuleFormContainer.innerHTML = ''; state.colorToAdd = null;
-            ui.showToast('Nova regra adicionada.', 'success');
-        },
-        handleRuleListEvents(e) {
-            const ruleItem = e.target.closest('.rule-item');
-            if (!ruleItem) return;
-            const color = ruleItem.dataset.color;
-            const newColorMap = { ...state.settings.colorMap };
-            if (e.target.closest('.btn-delete')) { delete newColorMap[color];
-            } else if (e.target.matches('input[type="text"]')) {
-                e.target.onchange = () => {
-                    const newDesc = e.target.value.trim();
-                    if (newDesc) {
-                        newColorMap[color] = newDesc;
-                        data.saveSettings({ ...state.settings, colorMap: newColorMap });
-                        this.refreshDisplay();
-                        ui.showToast(`Regra para ${color} atualizada.`, 'info');
-                    } else { e.target.value = state.settings.colorMap[color]; }
-                }; return;
-            }
-            data.saveSettings({ ...state.settings, colorMap: newColorMap });
-            ui.renderColorRules(newColorMap); this.refreshDisplay();
-        },
-        handleResetSettings() {
-            state.lastSettingsBeforeReset = { ...state.settings };
-            const newSettings = { targetColumn: 'F', colorMap: {}, unirPares: [], aplicarMascara: true, dedupeResults: true, sortResults: false };
-            data.saveSettings(newSettings);
-            data.loadSettings();
-            this.refreshDisplay();
-            ui.showToast('Configurações resetadas.', 'info', { actionText: 'Desfazer', actionCallback: () => {
-                data.saveSettings(state.lastSettingsBeforeReset); data.loadSettings(); this.refreshDisplay(); ui.showToast('Ação desfeita.', 'success'); }
-            });
-        },
-        async handleCopyClick(e) {
-            if (!navigator.clipboard) { this.fallbackCopyText(e.currentTarget); return; }
-            try {
-                await navigator.clipboard.writeText(state.rawResultsText);
-                ui.showToast('Resultados copiados!', 'success'); ui.showSuccessOnButton(e.currentTarget);
-            } catch (err) { console.error('Falha ao usar a API Clipboard:', err); this.fallbackCopyText(e.currentTarget); }
-        },
-        fallbackCopyText(button) {
-            const textArea = document.createElement('textarea');
-            textArea.value = state.rawResultsText; textArea.style.position = 'fixed'; textArea.style.opacity = '0';
-            document.body.appendChild(textArea); textArea.focus(); textArea.select();
-            try {
-                if (document.execCommand('copy')) { ui.showToast('Resultados copiados!', 'success'); ui.showSuccessOnButton(button);
-                } else { ui.showToast('Falha ao copiar.', 'error'); }
-            } catch (err) { console.error('Falha no método alternativo:', err); ui.showToast('Falha ao copiar.', 'error'); }
-            document.body.removeChild(textArea);
-        },
-        handleDownloadClick() {
-            if (!state.rawResultsText) return;
-            const blob = new Blob([state.rawResultsText], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob); const a = document.createElement('a');
-            a.href = url; a.download = `${(state.fileName || 'resultados').replace(/\.[^/.]+$/, "")}.txt`;
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
-            URL.revokeObjectURL(url); ui.showToast('Download iniciado.', 'info');
-        },
-        handleDownloadSheet() {
-            if (state.currentSheetData.length === 0) { ui.showToast('Nenhuma planilha carregada para baixar.', 'error'); return; }
-            try {
-                const newSheet = XLSX.utils.aoa_to_sheet(state.currentSheetData);
-                const headerStyle = { font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: 'center', vertical: 'center' }, fill: { fgColor: { rgb: "FF4F4F4F" } } };
-                const bodyStyle = { font: { name: 'Calibri', sz: 10 }, alignment: { horizontal: 'center', vertical: 'center' } };
-                const colWidths = []; const range = XLSX.utils.decode_range(newSheet['!ref']);
-                for (let R = range.s.r; R <= range.e.r; ++R) {
-                    for (let C = range.s.c; C <= range.e.c; ++C) {
-                        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-                        const cell = newSheet[cellAddress]; if (!cell) continue;
-                        cell.s = (R === 0) ? headerStyle : bodyStyle; cell.t = 's'; 
-                        const cellValue = String(cell.v || ''); colWidths[C] = Math.max(colWidths[C] || 10, cellValue.length + 2);
-                    }
-                }
-                newSheet['!cols'] = colWidths.map(w => ({ wch: w }));
-                newSheet['!autofilter'] = { ref: newSheet['!ref'] }; newSheet['!freeze'] = { ySplit: 1, state: 'frozen' };
-                const newWorkbook = XLSX.utils.book_new();
-                const sheetName = DOM.sheetSelector.value || 'Dados Modificados';
-                XLSX.utils.book_append_sheet(newWorkbook, newSheet, sheetName);
-                const baseName = (state.fileName || 'planilha').replace(/\.[^/.]+$/, "");
-                XLSX.writeFile(newWorkbook, `${baseName}_modificado.xlsx`);
-                ui.showToast('Download da planilha formatada iniciado.', 'success');
-            } catch (error) { console.error("Erro ao gerar a planilha:", error); ui.showToast(`Ocorreu um erro ao gerar a planilha: ${error.message}`, 'error'); }
-        },
-        handleUnirTelefones() {
-            if (state.currentSheetData.length === 0) { ui.showToast('Nenhuma planilha carregada.', 'error'); return; }
-            const pares = []; const parItems = DOM.paresContainer.querySelectorAll('.par-item');
-            for (const item of parItems) {
-                const dddIndex = parseInt(item.querySelector('.ddd-col-select').value, 10);
-                const telIndex = parseInt(item.querySelector('.tel-col-select').value, 10);
-                if (!isNaN(dddIndex) && !isNaN(telIndex)) { pares.push({ dddIndex, telIndex }); }
-            }
-            if (pares.length === 0) { ui.showToast('Nenhum par de colunas válido.', 'info'); return; }
-            state.undoStack.push(JSON.parse(JSON.stringify(state.currentSheetData)));
-            if(state.undoStack.length > 5) state.undoStack.shift();
-            const aplicarMascara = DOM.aplicarMascaraCheck.checked; let modificacoes = 0;
-            for (let i = 1; i < state.currentSheetData.length; i++) {
-                const row = state.currentSheetData[i];
-                pares.forEach(({ dddIndex, telIndex }) => {
-                    if (row[dddIndex] !== undefined && row[telIndex] !== undefined) {
-                        const ddd = String(row[dddIndex] || '').trim(); const tel = String(row[telIndex] || '').trim();
-                        const telNumeros = tel.replace(/\D/g, '');
-                        if (ddd && tel && !telNumeros.startsWith(ddd)) {
-                            row[telIndex] = aplicarMascara ? data.formatarTelefoneBR(ddd, tel) : ddd + tel; modificacoes++;
-                        }
-                    }
-                });
-            }
-            this.refreshDisplay(); data.saveSettings({ unirPares: pares, aplicarMascara });
-            ui.showToast(`${modificacoes} células de telefone foram atualizadas.`, 'success');
-            ui.toggleModal(DOM.unirTelefonesModal, false);
-        },
-        handleUndo() { if (state.undoStack.length === 0) return; state.currentSheetData = state.undoStack.pop(); this.refreshDisplay(); ui.showToast('Última união desfeita.', 'info'); },
-        exportSettings() {
-            const json = JSON.stringify(state.settings, null, 2);
-            const blob = new Blob([json], { type: 'application/json' });
-            const url = URL.createObjectURL(blob); const a = document.createElement('a');
-            a.href = url; a.download = 'planilista_settings.json';
-            document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-        },
-        importSettings(file) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                try {
-                    const parsed = JSON.parse(reader.result);
-                    data.saveSettings(parsed); data.loadSettings();
-                    this.refreshDisplay(); ui.showToast('Configurações importadas.', 'success');
-                } catch (e) { ui.showToast('Arquivo inválido de configurações.', 'error'); }
-            };
-            reader.readAsText(file);
-        },
-        copyAsCSV() {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(DOM.generatorOutput.innerHTML, 'text/html');
-            const rows = [];
-            doc.querySelectorAll('.result-category').forEach(cat => {
-                const title = cat.querySelector('h4')?.textContent?.replace(/\sKATEX_INLINE_OPEN\d+KATEX_INLINE_CLOSE$/, '').trim() || '';
-                cat.querySelectorAll('li').forEach(li => rows.push([title, li.textContent]));
-            });
-            const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
-            navigator.clipboard.writeText(csv).then(() => ui.showToast('CSV copiado!', 'success'));
-        },
-        handleKeyboardShortcuts(e) {
-            if (e.key === 'Escape') { const openModal = document.querySelector('.modal.open'); if (openModal) ui.toggleModal(openModal, false); }
-            if ((e.ctrlKey || e.metaKey) && e.key === ',') { e.preventDefault(); ui.toggleModal(DOM.settingsModal, true); }
-            if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); this.handleUndo(); }
-            if (e.key.toLowerCase() === 't' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') { e.preventDefault(); ui.toggleTheme(); }
-        },
-        init() {
-            data.loadSettings(); ui.resetUI();
-            DOM.uploadArea.addEventListener('click', () => DOM.fileInput.click());
-            DOM.fileInput.addEventListener('change', (e) => this.handleFileSelect(e.target.files[0]));
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eName => DOM.uploadArea.addEventListener(eName, (e) => { e.preventDefault(); e.stopPropagation(); DOM.uploadArea.classList.toggle('drag-over', e.type === 'dragenter' || e.type === 'dragover'); if (e.type === 'drop') this.handleFileSelect(e.dataTransfer.files[0]); }));
-            DOM.sheetSelector.addEventListener('change', this.reprocessCurrentSheet.bind(this));
-            DOM.clearBtn.addEventListener('click', ui.resetUI.bind(ui));
-            DOM.copyBtn.addEventListener('click', (e) => this.handleCopyClick(e));
-            DOM.copyCsvBtn.addEventListener('click', this.copyAsCSV.bind(this));
-            DOM.downloadBtn.addEventListener('click', this.handleDownloadClick);
-            DOM.downloadSheetBtn.addEventListener('click', this.handleDownloadSheet.bind(this));
-            DOM.themeToggleBtn.addEventListener('click', () => ui.toggleTheme());
-            DOM.undoBtn.addEventListener('click', this.handleUndo.bind(this));
-            DOM.targetColumnInput.addEventListener('input', debounce(this.handleSettingsChange.bind(this), 500));
-            DOM.targetColumnSelect.addEventListener('change', () => {
-                const idx = parseInt(DOM.targetColumnSelect.value, 10);
-                DOM.targetColumnInput.value = data.toColumnName(idx + 1);
-                this.handleSettingsChange();
-            });
-            DOM.dedupeResultsCheck.addEventListener('change', () => { data.saveSettings({ dedupeResults: DOM.dedupeResultsCheck.checked }); this.refreshDisplay(); });
-            DOM.sortResultsCheck.addEventListener('change', () => { data.saveSettings({ sortResults: DOM.sortResultsCheck.checked }); this.refreshDisplay(); });
-            DOM.colorRulesList.addEventListener('click', this.handleRuleListEvents.bind(this));
-            DOM.ruleSearchInput.addEventListener('input', (e) => ui.filterRules(e.target.value));
-            DOM.resetSettingsBtn.addEventListener('click', this.handleResetSettings.bind(this));
-            DOM.exportSettingsBtn.addEventListener('click', this.exportSettings.bind(this));
-            DOM.importSettingsBtn.addEventListener('click', () => DOM.importSettingsInput.click());
-            DOM.importSettingsInput.addEventListener('change', (e) => this.importSettings(e.target.files[0]));
-            DOM.diagnosticoContainer.addEventListener('click', (e) => { if (e.target.dataset.configureColor) { const color = e.target.dataset.configureColor; ui.toggleModal(DOM.settingsModal, true); ui.prepareAddRuleForm(color); } });
-            DOM.settingsModal.addEventListener('keydown', (e) => { if (e.target.id === 'new-desc-input' && e.key === 'Enter') { e.preventDefault(); this.handleAddRule(e.target.value.trim()); } });
-            DOM.settingsModal.addEventListener('change', (e) => { if (e.target.id === 'new-desc-input') { this.handleAddRule(e.target.value.trim()); } });
-            document.addEventListener('click', (e) => { 
-                const trigger = e.target.closest('[data-modal-trigger]'); const close = e.target.closest('[data-modal-close]');
-                if (trigger) { const modalId = trigger.dataset.modalTrigger; if (modalId === 'unir-telefones-modal') this.setupUnirTelefonesModal(); ui.toggleModal(document.getElementById(modalId), true); }
-                if (close) ui.toggleModal(document.getElementById(close.dataset.modalClose), false);
-                if (e.target.matches('.modal')) ui.toggleModal(e.target, false);
-            });
-            document.addEventListener('keydown', this.handleKeyboardShortcuts.bind(this));
-            DOM.addParBtn.addEventListener('click', () => { const headers = (state.currentSheetData && state.currentSheetData[0]) ? state.currentSheetData[0] : []; DOM.paresContainer.appendChild(ui.criarTemplatePar(headers)); });
-            DOM.paresContainer.addEventListener('click', (e) => { const deleteBtn = e.target.closest('[data-delete-par]'); if (deleteBtn) { deleteBtn.closest('.par-item').remove(); } });
-            DOM.confirmarUnirBtn.addEventListener('click', this.handleUnirTelefones.bind(this));
-            DOM.resetParesBtn.addEventListener('click', () => {
-                const newSettings = { ...state.settings, unirPares: [], aplicarMascara: true };
-                data.saveSettings(newSettings); state.settings = newSettings;
-                this.setupUnirTelefonesModal(); ui.showToast('Configurações de pares resetadas.', 'info');
-            });
-            const savedTheme = localStorage.getItem('planilistaTheme');
-            if (savedTheme) ui.toggleTheme(savedTheme); else if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) ui.toggleTheme('dark');
-        },
-        setupUnirTelefonesModal() {
-            DOM.paresContainer.innerHTML = '';
-            const headers = (state.currentSheetData && state.currentSheetData.length > 0) ? state.currentSheetData[0] : [];
-            const pares = state.settings.unirPares || [];
-            if (pares.length > 0) {
-                pares.forEach(par => {
-                    const parElement = ui.criarTemplatePar(headers);
-                    parElement.querySelector('.ddd-col-select').value = par.dddIndex;
-                    parElement.querySelector('.tel-col-select').value = par.telIndex;
-                    DOM.paresContainer.appendChild(parElement);
-                });
-            } else if (headers.length > 0) {
-                DOM.paresContainer.appendChild(ui.criarTemplatePar(headers));
-            }
+        if (cfg.theme) setTheme(cfg.theme);
+        if (cfg.column) D.colInput.value = cfg.column;
+        if (typeof cfg.dedup === 'boolean') D.dedup.checked = cfg.dedup;
+        if (typeof cfg.autoExclude === 'boolean') {
+          D.autoExcludeChk.checked = cfg.autoExclude;
+          S.autoExclude = cfg.autoExclude;
         }
+        if (cfg.colorMap) S.colorMap = cfg.colorMap;
+        if (cfg.excluded) S.excluded = cfg.excluded;
+        if (Array.isArray(cfg.phonePairs)) S.phonePairs = cfg.phonePairs;
+        if (typeof cfg.applyMask === 'boolean') S.applyMask = cfg.applyMask;
+
+        L.set('column', D.colInput.value);
+        L.set('dedup', D.dedup.checked);
+        L.set('autoExclude', S.autoExclude);
+        L.set('colorMap', S.colorMap);
+        L.set('excluded', S.excluded);
+        L.set('phonePairs', S.phonePairs);
+        L.set('applyMask', S.applyMask);
+
+        renderMapBody();
+        process();
+        status('Configuração importada.', 'ok');
+        toggleModal(D.mapModal, false);
+      } catch (e) {
+        console.error(e);
+        status('Configuração inválida.', 'error');
+      }
     };
-    function debounce(func, delay) { let timeout; return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), delay); }; }
-    
-    events.init();
-});
+    reader.readAsText(file);
+  }
+
+  status('Planilista v2.5 - Pronto!', 'ok');
+})();
