@@ -116,13 +116,33 @@
   D.colInput.value = L.get('column', 'A');
   D.autoExcludeChk.checked = S.autoExclude;
 
-  function setTheme(t) {
-    document.documentElement.setAttribute('data-theme', t);
-    S.theme = t;
-    L.set('theme', t);
-    D.themeBtn.querySelector('i').setAttribute('data-lucide', t === 'dark' ? 'moon' : 'sun');
-    U.renderIcons();
+  // VERSÃO CORRIGIDA (substitua a função em script.js)
+function setTheme(theme) {
+  // Define o tema no HTML
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+
+  // 1. Encontra o botão do tema
+  const themeBtn = document.getElementById('themeBtn');
+  if (!themeBtn) return; // Segurança
+
+  // 2. Remove o ícone SVG antigo de dentro do botão
+  const oldIcon = themeBtn.querySelector('svg');
+  if (oldIcon) {
+    oldIcon.remove();
   }
+
+  // 3. Cria um NOVO elemento <i> para o novo ícone
+  const newIcon = document.createElement('i');
+  const iconName = theme === 'dark' ? 'sun' : 'moon';
+  newIcon.setAttribute('data-lucide', iconName);
+  
+  // 4. Adiciona o novo <i> ao botão
+  themeBtn.appendChild(newIcon);
+
+  // 5. Pede para a biblioteca Lucide converter o novo <i> em um <svg>
+  lucide.createIcons();
+}
 
   function status(m, t = '') {
     D.statusText.textContent = m;
