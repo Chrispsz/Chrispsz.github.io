@@ -109,71 +109,47 @@
     applyPhone: U.qs('#applyPhone')
   };
 
-  // INIT
-  setTheme(S.theme);
-  U.renderIcons();
-  D.dedup.checked = L.get('dedup', false);
-  D.colInput.value = L.get('column', 'A');
-  D.autoExcludeChk.checked = S.autoExclude;
+  // Função setTheme corrigida
+  function setTheme(theme) {
+    S.theme = theme;
+    document.documentElement.setAttribute('data-theme', theme);
+    L.set('theme', theme);
 
-  // Função setTheme corrigida - substitua a que está causando erro
-function setTheme(theme) {
-  // Define o tema no documento
-  document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem('theme', theme);
+    // Encontra o botão do tema
+    const themeBtn = D.themeBtn;
+    if (!themeBtn) return;
 
-  // Encontra o botão do tema
-  const themeBtn = document.getElementById('themeBtn');
-  if (!themeBtn) return;
+    // Remove todos os ícones antigos (tanto <i> quanto <svg>)
+    const oldIcons = themeBtn.querySelectorAll('i, svg');
+    oldIcons.forEach(icon => icon.remove());
 
-  // Remove qualquer ícone SVG antigo
-  const oldIcon = themeBtn.querySelector('svg');
-  if (oldIcon) {
-    oldIcon.remove();
+    // Cria um novo elemento <i> para o ícone
+    const newIcon = document.createElement('i');
+    const iconName = theme === 'dark' ? 'sun' : 'moon';
+    newIcon.setAttribute('data-lucide', iconName);
+    newIcon.id = 'themeIcon';
+    
+    // Adiciona o novo ícone ao botão
+    themeBtn.appendChild(newIcon);
+
+    // Reconstrói apenas este ícone específico
+    if (typeof lucide !== 'undefined' && lucide.createIcons) {
+      lucide.createIcons();
+    }
   }
 
-  // Remove qualquer elemento <i> antigo também
-  const oldI = themeBtn.querySelector('i');
-  if (oldI) {
-    oldI.remove();
-  }
+  // INIT - só uma vez
+  document.addEventListener('DOMContentLoaded', function() {
+    // Configurações iniciais
+    setTheme(S.theme);
+    D.dedup.checked = L.get('dedup', false);
+    D.colInput.value = L.get('column', 'A');
+    D.autoExcludeChk.checked = S.autoExclude;
+    
+    // Renderiza todos os ícones uma vez
+    U.renderIcons();
+  });
 
-  // Cria um novo elemento <i> para o ícone
-  const newIcon = document.createElement('i');
-  const iconName = theme === 'dark' ? 'sun' : 'moon';
-  newIcon.setAttribute('data-lucide', iconName);
-  newIcon.id = 'themeIcon'; // Mantém o ID se você precisar dele
-  
-  // Adiciona o novo ícone ao botão
-  themeBtn.appendChild(newIcon);
-
-  // Reconstrói os ícones do Lucide
-  if (typeof lucide !== 'undefined' && lucide.createIcons) {
-    lucide.createIcons();
-  }
-}
-
-// Se você tiver uma função de inicialização, certifique-se de que ela rode depois do DOM carregar
-document.addEventListener('DOMContentLoaded', function() {
-  // Carrega o tema salvo ou usa o padrão
-  const savedTheme = localStorage.getItem('theme') || 'dark';
-  setTheme(savedTheme);
-  
-  // Adiciona o evento de clique no botão de tema
-  const themeBtn = document.getElementById('themeBtn');
-  if (themeBtn) {
-    themeBtn.addEventListener('click', function() {
-      const currentTheme = document.documentElement.getAttribute('data-theme');
-      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-      setTheme(newTheme);
-    });
-  }
-  
-  // Inicializa os ícones do Lucide pela primeira vez
-  if (typeof lucide !== 'undefined' && lucide.createIcons) {
-    lucide.createIcons();
-  }
-});
   // FILE HANDLING
   D.drop.addEventListener('click', () => D.fileInput.click());
   D.fileInput.addEventListener('change', e => e.target.files[0] && loadFile(e.target.files[0]));
@@ -483,7 +459,12 @@ document.addEventListener('DOMContentLoaded', function() {
   D.colInput.addEventListener('input', () => { setTimeout(() => { L.set('column', D.colInput.value); process(); }, 500); });
   D.dedup.addEventListener('change', () => { L.set('dedup', D.dedup.checked); process(); });
   D.autoExcludeChk.addEventListener('change', () => { S.autoExclude = D.autoExcludeChk.checked; L.set('autoExclude', S.autoExclude); process(); });
-  D.themeBtn.addEventListener('click', () => setTheme(S.theme === 'dark' ? 'light' : 'dark'));
+  
+  // THEME BUTTON - evento simples
+  D.themeBtn.addEventListener('click', () => {
+    const newTheme = S.theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+  });
 
   // RESULT ACTIONS
   D.copyBtn.addEventListener('click', async () => {
@@ -974,6 +955,11 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     };
     reader.readAsText(file);
+  }
+
+  function status(msg, type = 'info') {
+    D.statusText.textContent = msg;
+    D.status.className = `status ${type}`;
   }
 
   status('Planilista v2.5 - Pronto!', 'ok');
