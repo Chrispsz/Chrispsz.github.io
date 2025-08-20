@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Planilista v2.5 - Otimizado XLS</title>
+  
+  <!-- Favicons e Ícones do Site -->
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <meta name="theme-color" content="#3b82f6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  
+  <!-- Fontes e Bibliotecas -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600&display=swap" rel="stylesheet" />
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- Scripts externos -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <header>
+    <div class="wrap header">
+      <div class="brand">
+        <span>Planilista</span>
+        <span class="badge">v2.5</span>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button id="phoneBtn" class="btn" title="Configurar telefones">
+          <i data-lucide="phone"></i> Telefone
+        </button>
+        <button id="themeBtn" class="btn" title="Alternar tema">
+          <i id="themeIcon" data-lucide="moon"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="wrap">
+    <div id="status" class="status">
+      <i data-lucide="info"></i>
+      <span id="statusText">Carregue um arquivo .xls para começar</span>
+    </div>
+
+    <div id="statsPanel" class="stats-grid" style="display:none;"></div>
+
+    <section class="card">
+      <div class="hd">
+        <div>Arquivo</div>
+        <span id="fileName" class="chip"></span>
+      </div>
+      <div id="drop" class="drop">
+        <input id="fileInput" type="file" accept=".xlsx,.xls" hidden />
+        <div><strong>Clique para selecionar</strong> ou arraste seu Excel aqui</div>
+        <div class="hint">Otimizado para arquivos .xls</div>
+      </div>
+    </section>
+
+    <section id="panel" class="row" style="display:none;">
+      <div class="card">
+        <div class="hd"><div>Configuração</div></div>
+        <div style="display:grid;gap:10px;grid-template-columns:repeat(3,minmax(0,1fr));">
+          <div>
+            <div class="hint">Abas</div>
+            <div id="tabs" class="tabs"></div>
+          </div>
+          <div>
+            <div class="hint">Coluna alvo</div>
+            <input id="colInput" class="input" value="A" maxlength="3" />
+          </div>
+          <div>
+            <div class="hint">Opções</div>
+            <label style="display:flex;gap:8px;align-items:center;">
+              <input id="dedup" type="checkbox" />
+              <span class="hint">Remover duplicados</span>
+            </label>
+            <label style="display:flex;gap:8px;align-items:center;">
+              <input id="autoExcludeChk" type="checkbox" />
+              <span class="hint">Excluir confirmações</span>
+            </label>
+          </div>
+        </div>
+        <div class="actions" style="margin-top:10px;">
+          <button id="processBtn" class="btn primary">
+            <i data-lucide="refresh-cw"></i> Reprocessar
+          </button>
+          <button id="mapBtn" class="btn">
+            <i data-lucide="settings"></i> Configurar cores 
+            <span id="mapCount" class="count-badge" style="display:none;"></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="hd">
+          <div>Resultado</div>
+          <div class="actions">
+            <button id="csvBtn" class="btn">
+              <i data-lucide="file-spreadsheet"></i> CSV
+            </button>
+            <button id="txtBtn" class="btn">
+              <i data-lucide="file-text"></i> TXT
+            </button>
+            <button id="copyBtn" class="btn ok" disabled>
+              <i data-lucide="copy"></i> Copiar
+            </button>
+            <button id="clearBtn" class="btn">
+              <i data-lucide="trash-2"></i> Limpar
+            </button>
+          </div>
+        </div>
+        
+        <div id="excludeInfo" class="status warn" style="display:none;">
+          <i data-lucide="alert-triangle"></i>
+          <div><strong>Excluídas:</strong> <span id="excludedList"></span></div>
+        </div>
+        
+        <textarea id="output" class="input" readonly placeholder="Os dados processados aparecerão aqui..."></textarea>
+      </div>
+
+      <div class="card">
+        <div class="hd">
+          <div>Cores detectadas</div>
+          <div class="hint" id="unmappedBadge"></div>
+        </div>
+        <div id="colorList" class="colors"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal: mapear cores -->
+  <div id="mapModal" class="modal">
+    <div class="box">
+      <div class="hd" style="display:flex;justify-content:space-between;align-items:center;">
+        <div>Mapear Cores</div>
+        <button id="closeMap" class="btn"><i data-lucide="x"></i> Fechar</button>
+      </div>
+      <div id="mapBody"></div>
+      <div style="display:flex;justify-content:space-between;gap:10px;margin-top:12px;">
+        <div class="actions">
+          <button id="clearMap" class="btn danger"><i data-lucide="trash-2"></i> Limpar</button>
+          <button id="saveMap" class="btn primary"><i data-lucide="save"></i> Salvar</button>
+        </div>
+        <div class="actions">
+          <button id="expCfgBtn" class="btn"><i data-lucide="download"></i> Exportar</button>
+          <button id="impCfgBtn" class="btn"><i data-lucide="upload"></i> Importar</button>
+          <input id="impCfgFile" type="file" accept="application/json" hidden />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: telefones -->
+  <div id="phoneModal" class="modal">
+    <div class="box">
+      <div class="hd" style="display:flex;justify-content:space-between;align-items:center;">
+        <div>Configurar Telefones para CSV</div>
+        <button id="closePhone" class="btn"><i data-lucide="x"></i> Fechar</button>
+      </div>
+      <div>
+        <fieldset style="border:1px solid var(--border);border-radius:8px;padding:10px;">
+          <legend class="hint">Pares (DDD → Telefone)</legend>
+          <div id="pairs" style="display:flex;flex-direction:column;gap:8px;"></div>
+          <button id="addPair" class="btn" style="margin-top:8px;">
+            <i data-lucide="plus"></i> Adicionar par
+          </button>
+        </fieldset>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+          <input id="maskChk" type="checkbox" checked />
+          <span class="hint">Aplicar máscara (00) 00000-0000</span>
+        </label>
+      </div>
+      <div style="margin-top:12px;">
+        <button id="applyPhone" class="btn primary"><i data-lucide="check-circle-2"></i> Aplicar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="script.js"></script>
+</body>
+</html>
