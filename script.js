@@ -116,44 +116,64 @@
   D.colInput.value = L.get('column', 'A');
   D.autoExcludeChk.checked = S.autoExclude;
 
-  // VERSÃO CORRIGIDA (substitua a função em script.js)
+  // Função setTheme corrigida - substitua a que está causando erro
 function setTheme(theme) {
-  // Define o tema no HTML
+  // Define o tema no documento
   document.documentElement.setAttribute('data-theme', theme);
   localStorage.setItem('theme', theme);
 
-  // 1. Encontra o botão do tema
+  // Encontra o botão do tema
   const themeBtn = document.getElementById('themeBtn');
-  if (!themeBtn) return; // Segurança
+  if (!themeBtn) return;
 
-  // 2. Remove o ícone SVG antigo de dentro do botão
+  // Remove qualquer ícone SVG antigo
   const oldIcon = themeBtn.querySelector('svg');
   if (oldIcon) {
     oldIcon.remove();
   }
 
-  // 3. Cria um NOVO elemento <i> para o novo ícone
+  // Remove qualquer elemento <i> antigo também
+  const oldI = themeBtn.querySelector('i');
+  if (oldI) {
+    oldI.remove();
+  }
+
+  // Cria um novo elemento <i> para o ícone
   const newIcon = document.createElement('i');
   const iconName = theme === 'dark' ? 'sun' : 'moon';
   newIcon.setAttribute('data-lucide', iconName);
+  newIcon.id = 'themeIcon'; // Mantém o ID se você precisar dele
   
-  // 4. Adiciona o novo <i> ao botão
+  // Adiciona o novo ícone ao botão
   themeBtn.appendChild(newIcon);
 
-  // 5. Pede para a biblioteca Lucide converter o novo <i> em um <svg>
-  lucide.createIcons();
+  // Reconstrói os ícones do Lucide
+  if (typeof lucide !== 'undefined' && lucide.createIcons) {
+    lucide.createIcons();
+  }
 }
 
-  function status(m, t = '') {
-    D.statusText.textContent = m;
-    D.status.className = 'status' + (t ? ' ' + t : '');
-    const icon = D.status.querySelector('i');
-    if (icon) {
-      icon.setAttribute('data-lucide', t === 'error' ? 'x-circle' : t === 'warn' ? 'alert-triangle' : t === 'ok' ? 'check-circle' : 'info');
-      U.renderIcons();
-    }
+// Se você tiver uma função de inicialização, certifique-se de que ela rode depois do DOM carregar
+document.addEventListener('DOMContentLoaded', function() {
+  // Carrega o tema salvo ou usa o padrão
+  const savedTheme = localStorage.getItem('theme') || 'dark';
+  setTheme(savedTheme);
+  
+  // Adiciona o evento de clique no botão de tema
+  const themeBtn = document.getElementById('themeBtn');
+  if (themeBtn) {
+    themeBtn.addEventListener('click', function() {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      setTheme(newTheme);
+    });
   }
-
+  
+  // Inicializa os ícones do Lucide pela primeira vez
+  if (typeof lucide !== 'undefined' && lucide.createIcons) {
+    lucide.createIcons();
+  }
+});
   // FILE HANDLING
   D.drop.addEventListener('click', () => D.fileInput.click());
   D.fileInput.addEventListener('change', e => e.target.files[0] && loadFile(e.target.files[0]));
