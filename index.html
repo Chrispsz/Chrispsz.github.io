@@ -3,909 +3,417 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IPTV Vasco 2025/2026 - Recovery Tool</title>
+  <title>IPLINKS V2</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
-    /* --- RESET & VARIAVEIS --- */
-    :root {
-      --bg-body: #09090b;
-      --bg-card: #18181b;
-      --bg-input: #000000;
-      --border: #27272a;
-      --primary: #8b5cf6; /* Roxo */
-      --primary-hover: #7c3aed;
-      --success: #22c55e;
-      --danger: #ef4444;
-      --text-main: #f4f4f5;
-      --text-muted: #a1a1aa;
-      --radius: 8px;
-      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-    }
-
+    :root { --bg: #050505; --panel: #111; --border: #333; --text: #eee; --accent: #00e676; }
     * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
+    body { background: var(--bg); color: var(--text); font-family: 'Consolas', 'Monaco', monospace; font-size: 13px; }
     
-    body {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      background-color: var(--bg-body);
-      color: var(--text-main);
-      line-height: 1.5;
-      min-height: 100vh;
-    }
-
-    /* --- LAYOUT --- */
-    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    /* LAYOUT */
+    .app { max-width: 1000px; margin: 0 auto; padding: 20px; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+    h1 { font-weight: normal; letter-spacing: -1px; color: var(--accent); }
     
-    header {
-      background: rgba(24, 24, 27, 0.8);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--border);
-      padding: 20px 0;
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      margin-bottom: 30px;
-    }
+    /* NAV */
+    nav button { background: none; border: none; color: #666; cursor: pointer; padding: 5px 10px; font-family: inherit; text-transform: uppercase; font-weight: bold; }
+    nav button.active { color: var(--text); border-bottom: 2px solid var(--accent); }
 
-    .header-content {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 15px;
-    }
-
-    h1 { 
-      font-size: 1.5rem; 
-      background: linear-gradient(to right, #c084fc, #ec4899); 
-      -webkit-background-clip: text; 
-      -webkit-text-fill-color: transparent;
-      font-weight: 800;
-    }
-
-    /* --- TABS --- */
-    .nav-tabs { display: flex; gap: 5px; background: var(--bg-card); padding: 5px; border-radius: var(--radius); border: 1px solid var(--border); }
-    .nav-btn {
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 0.9rem;
-      transition: all 0.2s;
-    }
-    .nav-btn:hover { color: var(--text-main); background: rgba(255,255,255,0.05); }
-    .nav-btn.active { background: var(--primary); color: #fff; }
-
-    /* --- SECTIONS --- */
-    .view-section { display: none; animation: fadeIn 0.3s ease-out; }
-    .view-section.active { display: block; }
-
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-    /* --- CARDS & FORMS --- */
-    .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: var(--shadow);
-    }
-
-    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-    .card-title { font-size: 1.1rem; font-weight: 600; color: var(--text-main); }
-
-    .form-group { margin-bottom: 15px; }
-    label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px; }
-    
-    input[type="text"], input[type="password"], textarea {
-      width: 100%;
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      color: var(--text-main);
-      padding: 12px;
-      border-radius: var(--radius);
-      font-family: monospace;
-      font-size: 0.9rem;
-      transition: border 0.2s;
-    }
-    textarea { resize: vertical; min-height: 100px; }
-    input:focus, textarea:focus { border-color: var(--primary); }
-
-    /* --- BUTTONS --- */
-    .btn {
-      padding: 10px 20px;
-      border: none;
-      border-radius: var(--radius);
-      font-weight: 600;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: all 0.2s;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-primary:hover { background: var(--primary-hover); }
-    
-    .btn-success { background: var(--success); color: #fff; }
-    .btn-success:hover { filter: brightness(0.9); }
-    
-    .btn-danger { background: var(--danger); color: #fff; }
-    .btn-danger:hover { filter: brightness(0.9); }
-    
-    .btn-secondary { background: #3f3f46; color: #fff; }
-    .btn-secondary:hover { background: #52525b; }
-
-    .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
-
-    /* --- LISTS --- */
-    .account-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px;
-      border-bottom: 1px solid var(--border);
-      background: rgba(255,255,255,0.02);
-    }
-    .account-item:last-child { border-bottom: none; }
-    
-    .status-badge {
-      width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px;
-      box-shadow: 0 0 5px currentColor;
-    }
-    .status-online { background-color: var(--success); color: var(--success); }
-    .status-offline { background-color: var(--danger); color: var(--danger); }
-    .status-checking { background-color: #eab308; color: #eab308; }
-
-    /* --- CHANNELS GRID --- */
-    .filters-bar {
-      display: flex;
-      gap: 15px;
-      margin-bottom: 20px;
-      padding: 15px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    .search-input { flex: 1; min-width: 200px; margin: 0; }
-    
-    .checkbox-group { display: flex; gap: 15px; align-items: center; }
-    .checkbox-label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.9rem; user-select: none; }
-    .checkbox-label input { width: auto; margin: 0; }
-
-    .channels-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 15px;
-    }
-
-    .channel-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-      transition: transform 0.2s, border-color 0.2s;
-      display: flex;
-      flex-direction: column;
-    }
-    .channel-card:hover { transform: translateY(-3px); border-color: var(--primary); }
-    
-    .channel-header { padding: 12px; border-bottom: 1px solid var(--border); }
-    .channel-cat { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--primary); margin-bottom: 4px; }
-    .channel-name { font-weight: 600; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    
-    .channel-body { padding: 12px; flex: 1; }
-    .channel-meta { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 10px; }
-    
-    .channel-footer { padding: 12px; background: rgba(0,0,0,0.2); display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .channel-footer .btn { font-size: 0.8rem; padding: 6px; }
-
-    /* --- MODAL PLAYER --- */
-    .modal {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100;
-      display: none; align-items: center; justify-content: center;
-      backdrop-filter: blur(5px);
-    }
-    .modal.open { display: flex; }
-    
-    .player-wrapper {
-      width: 100%; max-width: 1000px; background: var(--bg-card);
-      border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-      display: flex; flex-direction: column;
-      max-height: 90vh;
-    }
-    
-    .player-header {
-      padding: 15px; border-bottom: 1px solid var(--border);
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    
-    .video-container {
-      position: relative; width: 100%; background: #000;
-      aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center;
-    }
-    video { width: 100%; height: 100%; display: block; }
-    
-    .player-overlay {
-      position: absolute; inset: 0; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; background: rgba(0,0,0,0.7);
-      z-index: 2;
-    }
+    /* UTILS */
     .hidden { display: none !important; }
-
-    /* --- TOAST NOTIFICATIONS --- */
-    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
-    .toast {
-      background: var(--bg-card); border-left: 4px solid var(--primary);
-      padding: 12px 20px; border-radius: 4px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-      color: #fff; font-size: 0.9rem; pointer-events: auto;
-      animation: slideIn 0.3s ease-out;
-      display: flex; align-items: center; justify-content: space-between; min-width: 250px;
-    }
-    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-
-    /* --- UTILS --- */
-    .text-center { text-align: center; }
-    .mt-2 { margin-top: 10px; }
     .w-full { width: 100%; }
-
-    /* Loading Spinner */
-    .spinner { border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 0.8s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    @media (max-width: 600px) {
-      .header-content { flex-direction: column; align-items: flex-start; }
-      .nav-tabs { width: 100%; }
-      .nav-btn { flex: 1; text-align: center; }
-      .player-wrapper { height: 100%; border-radius: 0; max-height: 100vh; }
-      .video-container { aspect-ratio: auto; flex: 1; }
+    .mt-2 { margin-top: 10px; }
+    .flex { display: flex; gap: 10px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+    
+    /* FORMS & INPUTS */
+    input, textarea, select { 
+      background: #000; border: 1px solid var(--border); color: var(--text); 
+      padding: 8px; font-family: inherit; width: 100%; border-radius: 0; 
     }
+    input:focus, textarea:focus { border-color: var(--accent); }
+    textarea { min-height: 100px; resize: vertical; font-size: 11px; }
+
+    /* BUTTONS */
+    button.btn { 
+      background: var(--panel); border: 1px solid var(--border); color: var(--text); 
+      cursor: pointer; padding: 8px 15px; font-family: inherit; transition: 0.2s; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;
+    }
+    button.btn:hover { border-color: var(--accent); color: var(--accent); }
+    button.btn-primary { border-color: var(--accent); color: var(--accent); background: rgba(0, 230, 118, 0.1); }
+
+    /* LISTS */
+    .item { border-bottom: 1px solid var(--border); padding: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .item:hover { background: #0a0a0a; }
+    .status { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+    .on { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+    .off { background: #333; }
+
+    /* CHANNEL CARD */
+    .ch-card { background: var(--panel); border: 1px solid var(--border); padding: 10px; display: flex; flex-direction: column; justify-content: space-between; height: 90px; }
+    .ch-name { font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; font-size: 12px; }
+    .ch-meta { font-size: 10px; color: #666; margin-bottom: 8px; }
+    .ch-actions { display: flex; gap: 5px; margin-top: auto; }
+    .ch-actions button { flex: 1; font-size: 10px; padding: 4px; }
+
+    /* MODAL */
+    #modal { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 100; display: none; align-items: center; justify-content: center; }
+    #modal.open { display: flex; }
+    .video-box { width: 100%; max-width: 900px; aspect-ratio: 16/9; background: #000; position: relative; border: 1px solid var(--border); }
+    video { width: 100%; height: 100%; }
+    .modal-controls { position: absolute; top: 10px; right: 10px; z-index: 10; background: rgba(0,0,0,0.5); padding: 5px; }
+    
+    /* TOAST */
+    #toast { position: fixed; bottom: 20px; right: 20px; background: var(--panel); border: 1px solid var(--accent); padding: 10px 20px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 200; }
+    #toast.show { opacity: 1; }
   </style>
 </head>
 <body>
 
-  <!-- NOTIFICATION AREA -->
-  <div class="toast-container" id="toastContainer"></div>
-
-  <!-- PLAYER MODAL -->
-  <div id="playerModal" class="modal">
-    <div class="player-wrapper">
-      <div class="player-header">
-        <h3 id="playerTitle" style="font-size: 1rem; font-weight: 600;">Reprodutor</h3>
-        <div class="btn-group">
-          <button class="btn btn-secondary" onclick="App.copyCurrentUrl()">📋 Link</button>
-          <button class="btn btn-danger" onclick="App.closePlayer()">✕ Fechar</button>
-        </div>
-      </div>
-      <div class="video-container">
-        <video id="videoPlayer" controls autoplay></video>
-        
-        <!-- Loading State -->
-        <div id="playerLoading" class="player-overlay">
-          <div class="spinner"></div>
-          <p style="margin-top: 15px; font-size: 0.9rem; color: #ccc;">Carregando stream...</p>
-        </div>
-
-        <!-- Error State -->
-        <div id="playerError" class="player-overlay hidden">
-          <div style="font-size: 2rem; margin-bottom: 10px;">⚠️</div>
-          <p style="font-weight: 600;">Erro ao reproduzir</p>
-          <p id="playerErrorMsg" style="font-size: 0.8rem; color: #aaa; margin-bottom: 15px;">O stream pode estar offline.</p>
-          <div class="btn-group">
-            <button class="btn btn-primary" onclick="App.retryStream()">Tentar Novamente</button>
-            <button class="btn btn-secondary" onclick="App.copyCurrentUrl()">Copiar URL</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MAIN HEADER -->
+<div class="app">
   <header>
-    <div class="container header-content">
-      <div>
-        <h1>⚡ IPTV Vasco 2025/2026</h1>
-        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">PREMIERE • AMAZON • ESPN • SPORTV</div>
-      </div>
-      <div class="nav-tabs">
-        <button class="nav-btn active" onclick="App.switchTab('config')">⚙️ Configuração</button>
-        <button class="nav-btn" onclick="App.switchTab('channels')">📺 Canais <span id="channelCountBadge">(0)</span></button>
-      </div>
-    </div>
+    <h1>IPLINKS <span style="font-size:0.5em; color:#666; vertical-align:middle;">V2</span></h1>
+    <nav>
+      <button id="nav-config" class="active" onclick="App.go('config')">CONFIG</button>
+      <button id="nav-list" onclick="App.go('list')">LIST</button>
+    </nav>
   </header>
 
-  <div class="container">
+  <!-- CONFIG -->
+  <div id="view-config">
+    <div style="border: 1px dashed var(--border); padding: 10px; margin-bottom: 10px;">
+        <label style="color:#666; font-size:11px; display:block; margin-bottom:5px;">INPUT RAW LOGS (SUZANOR FORMAT OK)</label>
+        <textarea id="log" class="w-full" placeholder="Cole as mensagens aqui..."></textarea>
+    </div>
     
-    <!-- === ABA CONFIGURAÇÃO === -->
-    <main id="tab-config" class="view-section active">
-      
-      <!-- Importação -->
-      <section class="card">
-        <div class="card-header">
-          <span class="card-title">1. Importar Logs</span>
-        </div>
-        <textarea id="logInput" placeholder="Cole os logs (links http://user:pass@host:port...) aqui..."></textarea>
-        <div class="btn-group mt-2">
-          <button class="btn btn-primary" onclick="App.extractAccounts()">🔍 Extrair Contas</button>
-          <button class="btn btn-secondary" onclick="document.getElementById('logInput').value=''">Limpar</button>
-        </div>
-      </section>
-
-      <!-- Lista de Contas -->
-      <section class="card">
-        <div class="card-header">
-          <span class="card-title">2. Gerenciar Contas (<span id="accountCount">0</span>)</span>
-          <button class="btn btn-secondary" onclick="App.checkAllAccounts()" style="padding: 6px 12px; font-size: 0.8rem;">🔄 Verificar Status</button>
-        </div>
-        <div id="accountsList" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: 4px;">
-          <div class="text-center" style="padding: 20px; color: var(--text-muted);">Nenhuma conta adicionada.</div>
-        </div>
-      </section>
-
-      <!-- Filtros e Ação -->
-      <section class="card">
-        <div class="card-header">
-          <span class="card-title">3. Carregar Canais</span>
-        </div>
-        <div class="form-group" style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: var(--radius);">
-          <label>Filtrar por Qualidade:</label>
-          <div class="checkbox-group">
-            <label class="checkbox-label"><input type="checkbox" id="filterHD" checked> HD / FHD</label>
-            <label class="checkbox-label"><input type="checkbox" id="filter4K"> 4K</label>
-            <label class="checkbox-label"><input type="checkbox" id="filterSD"> SD (Lançamento)</label>
-          </div>
-        </div>
-        <button class="btn btn-success w-full" onclick="App.loadChannels()">📥 Carregar Canais das Contas Online</button>
-      </section>
-
-      <!-- Exportação -->
-      <section class="card">
-        <div class="card-header">
-          <span class="card-title">4. Exportação & Cloudflare</span>
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
-          <input type="password" id="kvToken" placeholder="Cloudflare API Token (Opcional)">
-          <div class="btn-group" style="grid-template-columns: 1fr 1fr 1fr;">
-            <input type="text" id="kvAccountId" placeholder="Account ID">
-            <input type="text" id="kvNamespace" placeholder="Namespace ID">
-          </div>
-        </div>
-        <div class="btn-group">
-          <button class="btn btn-secondary" onclick="App.exportM3U()">📄 Baixar M3U</button>
-          <button class="btn btn-secondary" onclick="App.exportJSON()">💾 Baixar JSON</button>
-          <button class="btn btn-primary" onclick="App.syncCloudflare()">☁️ Enviar para KV</button>
-          <button class="btn btn-danger" onclick="App.clearCache()">🗑️ Limpar Cache</button>
-        </div>
-      </section>
-    </main>
-
-    <!-- === ABA CANAIS === -->
-    <main id="tab-channels" class="view-section">
-      <div class="filters-bar">
-        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar canal (ex: Premiere, ESPN)..." oninput="App.filterChannels()">
+    <div class="flex" style="align-items: flex-end;">
+      <button class="btn btn-primary w-full" onclick="App.import()">EXTRACT & IMPORT</button>
+    </div>
+    
+    <div class="mt-2">
+      <div class="flex" style="margin-bottom: 10px;">
+        <button class="btn" onclick="App.check()">CHECK STATUS</button>
+        <button class="btn btn-primary" onclick="App.load()">LOAD CHANNELS</button>
       </div>
-      
-      <div id="channelsContainer" class="channels-grid">
-        <!-- Canais serão renderizados aqui -->
-      </div>
-    </main>
+      <div id="accounts" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border);"></div>
+    </div>
 
+    <div class="mt-2" style="border-top: 1px dashed #333; padding-top: 10px;">
+      <div style="font-size: 11px; color: #666; margin-bottom: 5px;">CLOUDFLARE KV (OPTIONAL)</div>
+      <div class="grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 5px;">
+        <input type="password" id="kv-t" placeholder="Token">
+        <input type="text" id="kv-a" placeholder="Acc ID">
+        <input type="text" id="kv-n" placeholder="NS ID">
+      </div>
+      <div class="flex">
+        <button class="btn" onclick="App.sync()">SYNC KV</button>
+        <button class="btn" onclick="App.download('m3u')">M3U</button>
+        <button class="btn" onclick="App.download('json')">JSON</button>
+        <button class="btn" onclick="App.clear()" style="color: red; border-color: red;">RESET</button>
+      </div>
+    </div>
   </div>
 
-  <script>
-    /**
-     * APLICAÇÃO PRINCIPAL
-     * Arquitetura simplificada em um único objeto 'App'
-     */
-    const App = {
-      state: {
-        accounts: [],
-        channels: [],
-        settings: {
-          kvToken: '',
-          kvAccountId: '',
-          kvNamespace: ''
-        },
-        currentStreamUrl: null,
-        hls: null
-      },
+  <!-- LIST -->
+  <div id="view-list" class="hidden">
+    <div class="flex mb-2">
+      <input type="text" id="search" placeholder="Filter..." onkeyup="App.render()" style="flex:1;">
+      <select id="filter-q" onchange="App.render()" style="width: 100px;">
+        <option value="all">ALL</option>
+        <option value="hd">HD</option>
+        <option value="sd">SD</option>
+        <option value="4k">4K</option>
+      </select>
+    </div>
+    <div id="grid" class="grid"></div>
+  </div>
+</div>
 
-      // --- INICIALIZAÇÃO ---
-      init() {
-        this.loadState();
-        this.renderAccounts();
-        this.renderChannels();
-        this.setupKeyboard();
-      },
+<!-- PLAYER -->
+<div id="modal">
+  <div class="video-box">
+    <div class="modal-controls">
+      <button class="btn" onclick="App.copy()">COPY URL</button>
+      <button class="btn" onclick="App.close()">[X]</button>
+    </div>
+    <video id="v" controls autoplay></video>
+  </div>
+</div>
 
-      loadState() {
-        const saved = localStorage.getItem('iptv_vasco_state');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          this.state.accounts = parsed.accounts || [];
-          this.state.channels = parsed.channels || [];
-          this.state.settings = { ...this.state.settings, ...(parsed.settings || {}) };
-        }
-        
-        // Preencher inputs de configuração
-        document.getElementById('kvToken').value = this.state.settings.kvToken || '';
-        document.getElementById('kvAccountId').value = this.state.settings.kvAccountId || '';
-        document.getElementById('kvNamespace').value = this.state.settings.kvNamespace || '';
-      },
+<div id="toast"></div>
 
-      saveState() {
-        // Salvar configs dos inputs
-        this.state.settings.kvToken = document.getElementById('kvToken').value;
-        this.state.settings.kvAccountId = document.getElementById('kvAccountId').value;
-        this.state.settings.kvNamespace = document.getElementById('kvNamespace').value;
+<script>
+const App = {
+  d: { acc: [], ch: [] },
+  hls: null,
+  currUrl: '',
 
-        localStorage.setItem('iptv_vasco_state', JSON.stringify({
-          accounts: this.state.accounts,
-          channels: this.state.channels,
-          settings: this.state.settings
-        }));
-      },
+  init() {
+    const s = localStorage.getItem('iplinks_v2');
+    if (s) this.d = JSON.parse(s);
+    const kv = JSON.parse(localStorage.getItem('iplinks_kv') || '{}');
+    if(kv.t) document.getElementById('kv-t').value = kv.t;
+    if(kv.a) document.getElementById('kv-a').value = kv.a;
+    if(kv.n) document.getElementById('kv-n').value = kv.n;
+    this.renderAcc();
+  },
 
-      // --- NAVEGAÇÃO E UI ---
-      switchTab(tabName) {
-        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-        
-        document.getElementById(`tab-${tabName}`).classList.add('active');
-        // Encontra o botão pelo texto ou indice (simplificado aqui pelo onclick)
-        const buttons = document.querySelectorAll('.nav-btn');
-        if (tabName === 'config') buttons[0].classList.add('active');
-        else buttons[1].classList.add('active');
-      },
+  save() {
+    localStorage.setItem('iplinks_v2', JSON.stringify(this.d));
+    localStorage.setItem('iplinks_kv', JSON.stringify({
+      t: document.getElementById('kv-t').value,
+      a: document.getElementById('kv-a').value,
+      n: document.getElementById('kv-n').value
+    }));
+  },
 
-      toast(msg, type = 'info') {
-        const container = document.getElementById('toastContainer');
-        const el = document.createElement('div');
-        el.className = 'toast';
-        el.style.borderLeftColor = type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : 'var(--primary)';
-        el.innerHTML = `<span>${msg}</span>`;
-        
-        container.appendChild(el);
-        setTimeout(() => {
-          el.style.opacity = '0';
-          el.style.transform = 'translateX(100%)';
-          setTimeout(() => el.remove(), 300);
-        }, 3000);
-      },
+  go(view) {
+    document.getElementById('view-config').classList.toggle('hidden', view !== 'config');
+    document.getElementById('view-list').classList.toggle('hidden', view !== 'list');
+    document.getElementById('nav-config').classList.toggle('active', view === 'config');
+    document.getElementById('nav-list').classList.toggle('active', view === 'list');
+    if(view === 'list') this.render();
+  },
 
-      // --- LÓGICA DE CONTAS ---
-      extractAccounts() {
-        const text = document.getElementById('logInput').value;
-        if (!text.trim()) return this.toast('Cole o log primeiro!', 'error');
+  msg(t) {
+    const el = document.getElementById('toast');
+    el.innerText = t;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2500);
+  },
 
-        // Regex robusto para Xtream Codes: http://user:pass@host:port
-        const regex = /(https?:\/\/)([^:\s\/]+):([^@\s\/]+)@([^:\s\/]+)(?::(\d+))?/gi;
-        let found = 0;
-        let newAccounts = [...this.state.accounts];
+  // --- SMART IMPORTER ---
+  import() {
+    const txt = document.getElementById('log').value;
+    if(!txt.trim()) return this.msg('Empty input');
 
-        let match;
-        while ((match = regex.exec(text)) !== null) {
-          const protocol = match[1];
-          const user = match[2];
-          const pass = match[3];
-          const host = match[4];
-          const port = match[5] || '80'; // Padrão 80 ou 25461 se não especificado, aqui assumimos o da URL
-          
-          const url = `${protocol}${user}:${pass}@${host}:${port}`;
-          const name = `${host.replace('http://', '').substring(0, 15)}...`;
+    let c = 0;
 
-          // Evitar duplicatas
-          if (!newAccounts.find(a => a.url === url)) {
-            newAccounts.push({
-              id: Date.now() + Math.random().toString(36).substr(2, 9),
-              name: name,
-              url: url,
-              host: host,
-              port: port,
-              user: user,
-              pass: pass,
-              status: 'pending' // pending, online, offline
-            });
-            found++;
-          }
-        }
-
-        if (found > 0) {
-          this.state.accounts = newAccounts;
-          this.saveState();
-          this.renderAccounts();
-          document.getElementById('logInput').value = '';
-          this.toast(`${found} contas importadas!`, 'success');
-          this.checkAllAccounts(); // Auto check
-        } else {
-          this.toast('Nenhuma conta válida encontrada no formato http://user:pass@host', 'error');
-        }
-      },
-
-      removeAccount(id) {
-        if(!confirm('Remover conta?')) return;
-        this.state.accounts = this.state.accounts.filter(a => a.id !== id);
-        this.saveState();
-        this.renderAccounts();
-      },
-
-      renderAccounts() {
-        const list = document.getElementById('accountsList');
-        document.getElementById('accountCount').textContent = this.state.accounts.length;
-        
-        if (this.state.accounts.length === 0) {
-          list.innerHTML = '<div class="text-center" style="padding:20px; color:#666;">Nenhuma conta.</div>';
-          return;
-        }
-
-        list.innerHTML = this.state.accounts.map(acc => `
-          <div class="account-item">
-            <div>
-              <span class="status-badge status-${acc.status}"></span>
-              <span style="font-weight:600; font-size:0.9rem;">${acc.name}</span>
-              <div style="font-size:0.75rem; color:var(--text-muted);">${acc.host}:${acc.port}</div>
-            </div>
-            <button class="btn btn-danger" style="padding:4px 8px; font-size:0.75rem;" onclick="App.removeAccount('${acc.id}')">Remover</button>
-          </div>
-        `).join('');
-      },
-
-      async checkAllAccounts() {
-        if (this.state.accounts.length === 0) return;
-        
-        this.toast('Verificando status das contas...', 'info');
-        // Marca todos como checking (visualmente handled by class pending)
-        
-        const promises = this.state.accounts.map(async (acc) => {
-          // Atualiza status visualmente imediatamente para 'checking' (reutilizei 'pending' no render, mas lógica interna separada)
-          acc.status = 'checking';
-          this.renderAccounts();
-
-          const apiUrl = `http://${acc.host}:${acc.port}/player_api.php?username=${acc.user}&password=${acc.pass}`;
-          
-          try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 8000);
-            
-            const res = await fetch(apiUrl, { signal: controller.signal });
-            clearTimeout(timeoutId);
-            
-            if (res.ok) {
-              const data = await res.json();
-              acc.status = (data.user_info && data.user_info.status === 'Active') ? 'online' : 'offline';
-            } else {
-              acc.status = 'offline';
-            }
-          } catch (e) {
-            acc.status = 'offline';
-          }
+    // 1. TRY TO PARSE "SUZANOR" STYLE (M3U URL)
+    // Procura por: http://host:port/get.php?username=X&password=Y
+    // Isso ignora toda a ASCII art e vai direto na fonte da verdade.
+    const smartRegex = /https?:\/\/([^\/:]+)(?::(\d+))?\/get\.php\?username=([^&]+)&password=([^&\s]+)/gi;
+    
+    let match;
+    while ((match = smartRegex.exec(txt)) !== null) {
+      const host = match[1];
+      const port = match[2] || '80'; // Se não tiver porta, assume 80
+      const user = match[3];
+      const pass = match[4];
+      
+      // Formata URL padrão Xtream: http://user:pass@host:port
+      const url = `http://${user}:${pass}@${host}:${port}`;
+      
+      // Evita duplicatas
+      if (!this.d.acc.find(x => x.url === url)) {
+        this.d.acc.push({ 
+          id: Date.now() + Math.random().toString(36).substr(2, 5), 
+          url: url, 
+          h: host, 
+          p: port, 
+          u: user, 
+          pw: pass, 
+          s: '?' 
         });
-
-        await Promise.all(promises);
-        this.saveState();
-        this.renderAccounts();
-        this.toast('Verificação concluída.', 'success');
-      },
-
-      // --- LÓGICA DE CANAIS ---
-      async loadChannels() {
-        const onlineAccounts = this.state.accounts.filter(a => a.status === 'online');
-        if (onlineAccounts.length === 0) return this.toast('Nenhuma conta online para carregar.', 'error');
-
-        // Limpa canal atual
-        this.state.channels = [];
-        this.renderChannels();
-        this.toast('Iniciando busca de canais...', 'info');
-
-        // Filtros de qualidade
-        const allowHD = document.getElementById('filterHD').checked;
-        const allow4K = document.getElementById('filter4K').checked;
-        const allowSD = document.getElementById('filterSD').checked;
-
-        // Keywords obrigatórias (The God List)
-        const targetKeywords = [
-          'PREMIERE', 'PREMIERE FC', 'PREMIERE CLUBES', 'PREMIERE 2',
-          'AMAZON PRIME', 'PRIME VIDEO', 'SPOR TV', 'SPORTV', 'ESPN',
-          'DAZN', 'HBO MAX', 'TNT SPORTS', 'COMBATE'
-        ];
-
-        for (const acc of onlineAccounts) {
-          try {
-            const url = `http://${acc.host}:${acc.port}/player_api.php?username=${acc.user}&password=${acc.pass}&action=get_live_streams`;
-            const res = await fetch(url);
-            if (!res.ok) continue;
-            
-            const data = await res.json();
-            if (!Array.isArray(data)) continue;
-
-            data.forEach(ch => {
-              const nameUpper = ch.name.toUpperCase();
-              
-              // 1. Verifica se é um canal desejado
-              const isTarget = targetKeywords.some(kw => nameUpper.includes(kw));
-              if (!isTarget) return;
-
-              // 2. Verifica Qualidade
-              let isHD = nameUpper.includes('HD') || nameUpper.includes('FHD');
-              let is4K = nameUpper.includes('4K');
-              let isSD = !isHD && !is4K; // Assume SD se não tiver tag
-
-              // Lógica de inclusão baseada nos checkboxes
-              if (!allowHD && isHD) return;
-              if (!allow4K && is4K) return;
-              if (!allowSD && isSD) return;
-
-              // Categorização
-              let cat = 'OUTROS';
-              if (nameUpper.includes('PREMIERE')) cat = 'PREMIERE';
-              else if (nameUpper.includes('AMAZON') || nameUpper.includes('PRIME')) cat = 'AMAZON';
-              else if (nameUpper.includes('ESPN')) cat = 'ESPN';
-              else if (nameUpper.includes('SPORTV') || nameUpper.includes('SPOR TV')) cat = 'SPORTV';
-              else if (nameUpper.includes('DAZN')) cat = 'DAZN';
-              else if (nameUpper.includes('HBO')) cat = 'HBO MAX';
-              else if (nameUpper.includes('TNT') || nameUpper.includes('COMBATE')) cat = 'ESPORTE COMBATE';
-
-              this.state.channels.push({
-                id: ch.stream_id,
-                name: ch.name,
-                url: `http://${acc.host}:${acc.port}/live/${acc.user}/${acc.pass}/${ch.stream_id}.m3u8`,
-                category: cat,
-                accountName: acc.name
-              });
-            });
-
-          } catch (e) {
-            console.error("Erro ao carregar conta", acc.name, e);
-          }
-        }
-
-        this.saveState();
-        this.renderChannels();
-        this.switchTab('channels');
-        this.toast(`${this.state.channels.length} canais carregados!`, 'success');
-      },
-
-      renderChannels() {
-        const container = document.getElementById('channelsContainer');
-        const countBadge = document.getElementById('channelCountBadge');
-        const search = document.getElementById('searchInput').value.toLowerCase();
-
-        countBadge.textContent = `(${this.state.channels.length})`;
-        
-        // Filtro local
-        const filtered = this.state.channels.filter(ch => 
-          ch.name.toLowerCase().includes(search) || 
-          ch.category.toLowerCase().includes(search)
-        );
-
-        if (filtered.length === 0) {
-          container.innerHTML = `<div class="text-center" style="grid-column: 1/-1; padding: 40px; color: #666;">Nenhum canal encontrado.</div>`;
-          return;
-        }
-
-        // Renderização otimizada
-        container.innerHTML = filtered.map(ch => `
-          <div class="channel-card">
-            <div class="channel-header">
-              <div class="channel-cat">${ch.category}</div>
-              <div class="channel-name" title="${ch.name}">${ch.name}</div>
-            </div>
-            <div class="channel-body">
-              <div class="channel-meta">Fonte: ${ch.accountName}</div>
-            </div>
-            <div class="channel-footer">
-              <button class="btn btn-primary" onclick="App.play('${encodeURIComponent(ch.url)}', '${ch.name.replace(/'/g, "\\'")}')">▶ Play</button>
-              <button class="btn btn-secondary" onclick="App.copyUrl('${ch.url}')">📋 Link</button>
-            </div>
-          </div>
-        `).join('');
-      },
-
-      filterChannels() {
-        // Debounce simples poderia ser adicionado aqui, mas para renderização direta funciona
-        this.renderChannels();
-      },
-
-      clearCache() {
-        if(confirm('Limpar todos os canais e cache?')) {
-          this.state.channels = [];
-          this.saveState();
-          this.renderChannels();
-          this.toast('Cache limpo.', 'success');
-        }
-      },
-
-      // --- PLAYER ---
-      play(encodedUrl, title) {
-        const url = decodeURIComponent(encodedUrl);
-        this.state.currentStreamUrl = url;
-        
-        const modal = document.getElementById('playerModal');
-        const video = document.getElementById('videoPlayer');
-        const loading = document.getElementById('playerLoading');
-        const error = document.getElementById('playerError');
-        const titleEl = document.getElementById('playerTitle');
-
-        modal.classList.add('open');
-        titleEl.textContent = title;
-        
-        // Reset States
-        loading.classList.remove('hidden');
-        error.classList.add('hidden');
-        video.style.display = 'block';
-
-        if (this.state.hls) {
-          this.state.hls.destroy();
-        }
-
-        if (Hls.isSupported()) {
-          this.state.hls = new Hls({
-            enableWorker: true,
-            lowLatencyMode: true,
-            backBufferLength: 90
-          });
-          
-          this.state.hls.loadSource(url);
-          this.state.hls.attachMedia(video);
-          
-          this.state.hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            loading.classList.add('hidden');
-            video.play().catch(() => this.showPlayerError('Erro ao iniciar autoplay.'));
-          });
-
-          this.state.hls.on(Hls.Events.ERROR, (event, data) => {
-            if (data.fatal) {
-              switch (data.type) {
-                case Hls.ErrorTypes.NETWORK_ERROR:
-                  this.showPlayerError('Erro de rede ao carregar.');
-                  this.state.hls.startLoad();
-                  break;
-                case Hls.ErrorTypes.MEDIA_ERROR:
-                  this.showPlayerError('Erro de mídia. Tentando recuperar...');
-                  this.state.hls.recoverMediaError();
-                  break;
-                default:
-                  this.showPlayerError('Erro fatal. Stream offline.');
-                  break;
-              }
-            }
-          });
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-          video.src = url;
-          video.addEventListener('loadedmetadata', () => {
-            loading.classList.add('hidden');
-            video.play();
-          });
-          video.addEventListener('error', () => this.showPlayerError('Erro nativo do player.'));
-        } else {
-          this.showPlayerError('Seu navegador não suporta HLS.');
-        }
-      },
-
-      showPlayerError(msg) {
-        document.getElementById('playerLoading').classList.add('hidden');
-        document.getElementById('videoPlayer').style.display = 'none';
-        document.getElementById('playerErrorMsg').textContent = msg;
-        document.getElementById('playerError').classList.remove('hidden');
-      },
-
-      retryStream() {
-        if (this.state.currentStreamUrl) {
-          const title = document.getElementById('playerTitle').textContent;
-          this.play(encodeURIComponent(this.state.currentStreamUrl), title);
-        }
-      },
-
-      closePlayer() {
-        const modal = document.getElementById('playerModal');
-        const video = document.getElementById('videoPlayer');
-        modal.classList.remove('open');
-        video.pause();
-        video.src = '';
-        if (this.state.hls) {
-          this.state.hls.destroy();
-          this.state.hls = null;
-        }
-      },
-
-      // --- UTILITÁRIOS ---
-      copyUrl(url) {
-        navigator.clipboard.writeText(url).then(() => this.toast('URL copiada!', 'success'));
-      },
-
-      copyCurrentUrl() {
-        if (this.state.currentStreamUrl) this.copyUrl(this.state.currentStreamUrl);
-      },
-
-      setupKeyboard() {
-        document.addEventListener('keydown', (e) => {
-          if (e.key === 'Escape') this.closePlayer();
-        });
-      },
-
-      // --- EXPORTAÇÃO ---
-      exportM3U() {
-        if (this.state.channels.length === 0) return this.toast('Nada para exportar.', 'error');
-        
-        let content = '#EXTM3U\n';
-        this.state.channels.forEach(ch => {
-          content += `#EXTINF:-1 tvg-logo="" group-title="${ch.category}", ${ch.name}\n${ch.url}\n`;
-        });
-        
-        this.downloadFile(content, 'iptv_playlist.m3u', 'audio/x-mpegurl');
-      },
-
-      exportJSON() {
-        if (this.state.channels.length === 0) return this.toast('Nada para exportar.', 'error');
-        const data = JSON.stringify(this.state.channels, null, 2);
-        this.downloadFile(data, 'iptv_data.json', 'application/json');
-      },
-
-      downloadFile(content, filename, mimeType) {
-        const blob = new Blob([content], { type: mimeType });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        this.toast('Download iniciado!', 'success');
-      },
-
-      async syncCloudflare() {
-        const token = document.getElementById('kvToken').value;
-        const accountId = document.getElementById('kvAccountId').value;
-        const namespaceId = document.getElementById('kvNamespace').value;
-
-        if (!token || !accountId || !namespaceId) return this.toast('Preencha as credenciais Cloudflare.', 'error');
-        
-        // Prepara payload compacto
-        const payload = {
-          updated: new Date().toISOString(),
-          streams: this.state.channels.map(ch => ({
-            name: ch.name,
-            url: ch.url,
-            group: ch.category
-          }))
-        };
-
-        this.toast('Enviando para Cloudflare KV...', 'info');
-
-        try {
-          const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/storage/kv/namespaces/${namespaceId}/values/iptv_vasco_streams`, {
-            method: 'PUT',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-          });
-
-          if (response.ok) {
-            this.toast('Cloudflare KV atualizado com sucesso!', 'success');
-          } else {
-            const err = await response.text();
-            this.toast(`Erro Cloudflare: ${response.status}`, 'error');
-            console.error(err);
-          }
-        } catch (e) {
-          this.toast('Erro de conexão com Cloudflare.', 'error');
-        }
+        c++;
       }
-    };
+    }
 
-    // Inicializar aplicação
-    window.addEventListener('DOMContentLoaded', () => App.init());
-  </script>
+    // 2. FALLBACK (Formato padrão http://user:pass@host:port)
+    // Caso o usuário cole logs limpos sem o link get.php
+    if (c === 0) {
+       const legacyRegex = /(https?:\/\/)([^:\s\/]+):([^@\s\/]+)@([^:\s\/]+):?(\d+)?/gi;
+       while ((match = legacyRegex.exec(txt)) !== null) {
+          const url = `${match[1]}${match[2]}:${match[3]}@${match[4]}:${match[5]||80}`;
+          if (!this.d.acc.find(x => x.url === url)) {
+             this.d.acc.push({ 
+               id: Date.now() + Math.random(), 
+               url: url, 
+               h: match[4], 
+               p: match[5]||80, 
+               u: match[2], 
+               pw: match[3], 
+               s: '?' 
+             });
+             c++;
+          }
+       }
+    }
+
+    if (c > 0) {
+      document.getElementById('log').value = ''; // Limpa o input
+      this.save();
+      this.renderAcc();
+      this.check(); // Auto check
+      this.msg(`+${c} ACCOUNTS PARSED`);
+    } else {
+      this.msg('NO VALID ACCESS FOUND');
+    }
+  },
+
+  async check() {
+    if(this.d.acc.length === 0) return;
+    this.msg('Checking status...');
+    for (let a of this.d.acc) {
+      a.s = '...';
+      this.renderAcc();
+      try {
+        // Timeout curto para não travar se o servidor estiver morto
+        const res = await fetch(`http://${a.h}:${a.p}/player_api.php?username=${a.u}&password=${a.pw}`, { signal: AbortSignal.timeout(6000) });
+        const j = await res.json();
+        // Verifica se o user_info existe e o status é Active
+        a.s = (j.user_info && j.user_info.status === 'Active') ? 'ON' : 'OFF';
+      } catch(e) { a.s = 'OFF'; }
+    }
+    this.save();
+    this.renderAcc();
+  },
+
+  del(i) { this.d.acc.splice(i,1); this.save(); this.renderAcc(); },
+  clear() { if(confirm('Reset all data?')) { this.d = { acc:[], ch:[] }; this.save(); this.renderAcc(); this.render(); } },
+
+  renderAcc() {
+    document.getElementById('accounts').innerHTML = this.d.acc.map((a, i) => `
+      <div class="item">
+        <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+          <span class="status ${a.s==='ON'?'on':'off'}"></span> 
+          <span style="color:#888; font-size:10px;">[${a.h}]</span> ${a.u}
+        </div>
+        <button class="btn" style="padding:2px 6px; color:red;" onclick="App.del(${i})">×</button>
+      </div>
+    `).join('') || '<div style="padding:10px; color:#444; text-align:center">No accounts</div>';
+  },
+
+  // --- CHANNELS ---
+  async load() {
+    const valid = this.d.acc.filter(a => a.s === 'ON');
+    if (!valid.length) return this.msg('No active accounts');
+    this.msg('Fetching channels...');
+    this.d.ch = [];
+    
+    // Lista de prioridade (The God List)
+    const keys = ['PREMIERE', 'ESPN', 'SPORTV', 'AMAZON', 'PRIME', 'HBO', 'DAZN', 'TNT', 'COMBATE', 'COMBAT'];
+    
+    for (const a of valid) {
+      try {
+        const r = await fetch(`http://${a.h}:${a.p}/player_api.php?username=${a.u}&password=${a.pw}&action=get_live_streams`);
+        const data = await r.json();
+        if (Array.isArray(data)) {
+          data.forEach(x => {
+            const n = x.name.toUpperCase();
+            if (keys.some(k => n.includes(k))) {
+              this.d.ch.push({
+                n: x.name,
+                u: `http://${a.h}:${a.p}/live/${a.u}/${a.pw}/${x.stream_id}.m3u8`,
+                q: n.includes('4K')?'4K':(n.includes('HD')?'HD':'SD')
+              });
+            }
+          });
+        }
+      } catch(e) { console.error(e); }
+    }
+    this.save();
+    this.go('list');
+    this.msg(`${this.d.ch.length} channels loaded`);
+  },
+
+  render() {
+    const q = document.getElementById('search').value.toUpperCase();
+    const fq = document.getElementById('filter-q').value;
+    const el = document.getElementById('grid');
+    
+    const filtered = this.d.ch.filter(c => {
+      const matchName = c.n.toUpperCase().includes(q);
+      const matchQ = fq === 'all' || c.q === fq.toUpperCase();
+      return matchName && matchQ;
+    });
+
+    el.innerHTML = filtered.map(c => `
+      <div class="ch-card">
+        <div>
+          <div class="ch-name">${c.n}</div>
+          <div class="ch-meta" style="color:${c.q==='HD'?'#00e676':'#666'}">${c.q}</div>
+        </div>
+        <div class="ch-actions">
+          <button class="btn btn-primary" onclick="App.play('${encodeURIComponent(c.u)}','${c.n.replace(/'/g,"\\'")}')">PLAY</button>
+          <button class="btn" onclick="App.copyUrl('${c.u}')">LINK</button>
+        </div>
+      </div>
+    `).join('') || '<div style="grid-column:1/-1; text-align:center; padding:20px; color:#444">No channels found</div>';
+  },
+
+  // --- PLAYER ---
+  play(url, name) {
+    this.currUrl = decodeURIComponent(url);
+    const v = document.getElementById('v');
+    const m = document.getElementById('modal');
+    m.classList.add('open');
+    
+    if (this.hls) this.hls.destroy();
+    
+    if (Hls.isSupported()) {
+      this.hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+      this.hls.loadSource(this.currUrl);
+      this.hls.attachMedia(v);
+      this.hls.on(Hls.Events.MANIFEST_PARSED, () => v.play().catch(()=>{}));
+      this.hls.on(Hls.Events.ERROR, (event, data) => {
+         if(data.fatal) this.msg('Stream Error');
+      });
+    } else if (v.canPlayType('application/vnd.apple.mpegurl')) {
+      v.src = this.currUrl;
+      v.play().catch(()=>{});
+    }
+  },
+
+  close() {
+    document.getElementById('modal').classList.remove('open');
+    document.getElementById('v').pause();
+    if (this.hls) this.hls.destroy();
+  },
+
+  copyUrl(url) {
+    navigator.clipboard.writeText(url).then(() => this.msg('URL Copied!'));
+  },
+  copy() { if(this.currUrl) this.copyUrl(this.currUrl); },
+
+  // --- EXPORT / SYNC ---
+  download(type) {
+    if (!this.d.ch.length) return this.msg('List is empty');
+    let content, mime, name;
+    if (type === 'm3u') {
+      content = '#EXTM3U\n' + this.d.ch.map(c => `#EXTINF:-1 tvg-logo="" group-title="${c.q}",${c.n}\n${c.u}`).join('\n');
+      mime = 'audio/x-mpegurl';
+      name = 'iplinks.m3u';
+    } else {
+      content = JSON.stringify(this.d.ch);
+      mime = 'application/json';
+      name = 'iplinks.json';
+    }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([content], {type: mime}));
+    a.download = name;
+    a.click();
+  },
+
+  async sync() {
+    const t = document.getElementById('kv-t').value;
+    const a = document.getElementById('kv-a').value;
+    const n = document.getElementById('kv-n').value;
+    if(!t || !a || !n) return this.msg('Missing KV credentials');
+    
+    this.msg('Syncing to Cloudflare...');
+    try {
+      await fetch(`https://api.cloudflare.com/client/v4/accounts/${a}/storage/kv/namespaces/${n}/values/iplinks_data`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${t}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ updated: Date.now(), data: this.d.ch })
+      });
+      this.msg('Synced OK');
+    } catch(e) { this.msg('Sync Failed'); }
+  }
+};
+
+window.onload = () => App.init();
+</script>
 </body>
 </html>
