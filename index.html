@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>IPLINKS V10 ROBUST</title>
+  <title>IPLINKS V11 MANUAL</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
     body { background: #000; color: #ddd; font-family: sans-serif; margin: 0; padding: 10px; font-size: 14px; }
@@ -50,12 +50,16 @@
     .hidden { display: none !important; }
     .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
     .on { background: #0f0; } .off { background: #f00; } .warn { background: #ffaa00; }
+    
+    /* PROXY TOGGLE */
+    .proxy-box { background: #1a1a1a; border: 1px solid #333; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
+    .proxy-label { display: flex; align-items: center; gap: 10px; font-weight: bold; color: #ffaa00; cursor: pointer; }
   </style>
 </head>
 <body>
 
 <div class="box">
-  <h1 style="text-align: center; margin-bottom: 10px;">IPLINKS <span style="color:#0f0">V10</span></h1>
+  <h1 style="text-align: center; margin-bottom: 10px;">IPLINKS <span style="color:#0f0">V11</span></h1>
   
   <div class="tabs">
     <div class="tab active" onclick="App.show('config')">CONFIG</div>
@@ -65,6 +69,17 @@
 
   <!-- CONFIG -->
   <div id="config">
+    <!-- PROXY CONTROL (NEW) -->
+    <div class="proxy-box">
+      <label class="proxy-label">
+        <input type="checkbox" id="use-proxy" onchange="App.toggleProxy()">
+        <span>USAR PROXY (Para GitHub/HTTPS)</span>
+      </label>
+      <div style="font-size:10px; color:#666; margin-top:5px; margin-left:24px;">
+        Se estiver rodando localmente, DESMARQUE isso para evitar bloqueio 403.
+      </div>
+    </div>
+
     <textarea id="input-logs" rows="4" placeholder="Cole aqui (Suzanor / M3U)..."></textarea>
     <button class="btn btn-green" onclick="App.import()">1. IMPORTAR LOGS</button>
     
@@ -120,21 +135,42 @@ const App = {
   data: { acc: [], ch: [] },
   hls: null,
   curUrl: '',
-  // Proxy Chain (Order matters)
+  // Proxy Chain
   proxies: [
     'https://api.allorigins.win/raw?url=', 
     'https://corsproxy.io/?'
   ],
-  useProxy: location.protocol === 'https:',
+  // State
+  useProxyMode: false,
 
   init() {
-    this.log('SISTEMA V10 ROBUST INIT');
-    const s = localStorage.getItem('iplinks_v10');
+    // Detecta protocolo para sugerir uso de proxy
+    const isHttps = location.protocol === 'https:';
+    this.useProxyMode = isHttps; 
+    
+    // Carrega preferência salva se existir
+    const savedProxy = localStorage.getItem('iplinks_use_proxy');
+    if(savedProxy !== null) {
+      this.useProxyMode = (savedProxy === 'true');
+    }
+
+    // Atualiza UI
+    document.getElementById('use-proxy').checked = this.useProxyMode;
+    
+    this.log(`SISTEMA V11 INIT - Proxy: ${this.useProxyMode ? 'ON' : 'OFF'}`);
+    
+    const s = localStorage.getItem('iplinks_v11');
     if(s) this.data = JSON.parse(s);
     this.renderAcc();
   },
 
-  save() { localStorage.setItem('iplinks_v10', JSON.stringify(this.data)); },
+  toggleProxy() {
+    this.useProxyMode = document.getElementById('use-proxy').checked;
+    localStorage.setItem('iplinks_use_proxy', this.useProxyMode);
+    this.log(`Modo Proxy alterado para: ${this.useProxyMode ? 'ON' : 'OFF'}`, 'warn');
+  },
+
+  save() { localStorage.setItem('iplinks_v11', JSON.stringify(this.data)); },
   
   log(msg, type='info') {
     const div = document.getElementById('logs');
@@ -195,59 +231,72 @@ const App = {
       this.renderAcc();
       try {
         const url = `http://${a.h}:${a.p}/player_api.php?username=${a.u}&password=${a.pw}`;
-        // Usa proxy fixo para check (API é pequena)
-        const res = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(url));
-        if(!res.ok) throw new Error();
+        const finalUrl = this.useProxyMode ? (this.proxies[0] + encodeURIComponent(url)) : url;
+        
+        this.log(`Check ${a.h} via ${this.useProxyMode ? 'Proxy' : 'Direto'}`);
+        const res = await fetch(finalUrl);
+        if(!res.ok) throw new Error(`Status ${res.status}`);
+        
         const j = await res.json();
         a.s = (j.user_info && j.user_info.status === 'Active') ? 'ON' : 'OFF';
         this.log(`Check ${a.h}: ${a.s}`);
       } catch(e) {
         a.s = 'OFF';
-        this.log(`Erro check ${a.h}`, 'warn');
+        this.log(`Erro check ${a.h}: ${e.message}`, 'err');
       }
     }
     this.save();
     this.renderAcc();
   },
 
-  // --- ROBUST LOAD CHANNELS ---
+  // --- LOAD CHANNELS (WITH MANUAL PROXY SWITCH) ---
   async loadChannels() {
     const valid = this.data.acc.filter(a => a.s === 'ON');
     const target = valid.length ? valid : this.data.acc;
     if(!target.length) return alert('Sem contas online!');
     
     this.data.ch = [];
-    this.log('Iniciando carregamento de canais...', 'warn');
+    this.log(`Iniciando carregamento (Proxy: ${this.useProxyMode ? 'ON' : 'OFF'})...`, 'warn');
     
     const force = document.getElementById('force-load').checked;
     const keys = ['PREMIERE', 'ESPN', 'SPORTV', 'AMAZON', 'PRIME', 'HBO', 'DAZN', 'TNT'];
 
-    // Helper para tentar baixar com proxy rotativo
+    // Helper de fetch ajustado
     const fetchList = async (host, port, user, pass) => {
       const url = `http://${host}:${port}/player_api.php?username=${user}&password=${pass}&action=get_live_streams`;
       
-      for(let i=0; i < this.proxies.length; i++) {
+      // Se não usar proxy, tenta direto
+      if (!this.useProxyMode) {
         try {
-          this.log(`Tentando Proxy ${i+1} para ${host}...`);
-          const res = await fetch(this.proxies[i] + encodeURIComponent(url));
-          
-          if(!res.ok) throw new Error(`Status HTTP ${res.status}`);
-          
+          this.log(`Tentando direto (sem proxy)...`);
+          const res = await fetch(url);
+          if(!res.ok) throw new Error(`Status ${res.status}`);
           const text = await res.text();
-          const sizeKb = Math.round(text.length / 1024);
-          this.log(`Recebido ${sizeKb}KB. Verificando JSON...`);
-          
-          // Verifica se voltou HTML (erro do proxy)
-          if (text.trim().startsWith('<')) throw new Error('Proxy retornou HTML (Bloqueio/Limite)');
-          
-          const data = JSON.parse(text); // Tenta parsear
-          return data;
-          
+          this.log(`Baixado ${Math.round(text.length/1024)}KB direto.`);
+          if(text.trim().startsWith('<')) throw new Error('Resposta HTML (Erro)');
+          return JSON.parse(text);
         } catch(e) {
-          this.log(`Falha Proxy ${i+1}: ${e.message}`, 'err');
+          this.log(`Falha direto: ${e.message}`, 'err');
+          return null;
+        }
+      } 
+      // Se usar proxy, tenta a rotação
+      else {
+        for(let i=0; i < this.proxies.length; i++) {
+          try {
+            this.log(`Tentando Proxy ${i+1}...`);
+            const res = await fetch(this.proxies[i] + encodeURIComponent(url));
+            if(!res.ok) throw new Error(`Status ${res.status}`);
+            const text = await res.text();
+            this.log(`Baixado ${Math.round(text.length/1024)}KB via Proxy ${i+1}.`);
+            if(text.trim().startsWith('<')) throw new Error('Resposta HTML (Erro)');
+            return JSON.parse(text);
+          } catch(e) {
+            this.log(`Falha Proxy ${i+1}: ${e.message}`, 'err');
+          }
         }
       }
-      return null; // Todos falharam
+      return null;
     };
 
     for(const a of target) {
@@ -271,13 +320,13 @@ const App = {
         });
         this.log(`Filtrados: +${added} canais.`);
       } else {
-        this.log(`Impossível carregar lista de ${a.h}`, 'err');
+        this.log(`Falha total em ${a.h}`, 'err');
       }
     }
     
     this.save();
     this.show('list');
-    this.log(`Processo finalizado. Total: ${this.data.ch.length}`, 'warn');
+    this.log(`Finalizado. Total: ${this.data.ch.length}`, 'warn');
   },
 
   // --- RENDER ---
@@ -312,7 +361,7 @@ const App = {
     `).join('') || '<div style="padding:20px;text-align:center">Nenhum canal</div>';
   },
 
-  // --- PLAYER & CAST ---
+  // --- PLAYER ---
   play(url, name) {
     this.curUrl = decodeURIComponent(url);
     this.pIdx = 0;
@@ -337,7 +386,7 @@ const App = {
       this.hls = new Hls({ 
         enableWorker: true,
         xhrSetup: (xhr, reqUrl) => {
-          if(this.useProxy) {
+          if(this.useProxyMode) {
             xhr.open('GET', this.proxies[this.pIdx] + encodeURIComponent(reqUrl), true);
           } else {
             xhr.open('GET', reqUrl, true);
@@ -352,7 +401,7 @@ const App = {
       this.hls.on(Hls.Events.ERROR, (e, d) => {
         if(d.fatal) {
           this.log(`HLS Erro: ${d.type}`);
-          if(this.pIdx < this.proxies.length - 1 && this.useProxy) {
+          if(this.pIdx < this.proxies.length - 1 && this.useProxyMode) {
             this.pIdx++;
             this.hls.destroy();
             this.initHls(video, menu);
