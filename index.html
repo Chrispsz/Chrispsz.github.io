@@ -3,36 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>⚡ IPTV Vasco 2025/2026 - Recovery Mode</title>
+  <title>⚡ IPTV Vasco 2025/2026 - Recuperação</title>
+  
+  <!-- TROCAR A FONTE DO HLS (EVITA 404) -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #000; color: #fff; min-height: 100vh; }
     .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
     
-    /* Header */
     header { background: #18181b; border-bottom: 1px solid #27272a; padding: 20px; position: sticky; top: 0; z-index: 100; }
     h1 { font-size: 24px; background: linear-gradient(135deg, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
+    p.subtitle { color: #71717a; margin-bottom: 0; }
     
-    /* Tabs */
     .tabs { display: flex; gap: 10px; margin-top: 15px; }
     .tab { padding: 10px 20px; background: #27272a; border: none; color: #fff; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s; }
     .tab:hover { background: #3f3f46; }
     .tab.active { background: #a855f7; }
     
-    /* Sections */
     .section { display: none; animation: fadeIn 0.3s; }
     .section.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     
     .card { background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
-    .card h2 { font-size: 18px; margin: 0 0 15px 0; }
+    .card h2 { font-size: 18px; margin-bottom: 15px; }
     
-    /* Forms */
     textarea, input { width: 100%; padding: 12px; background: #000; border: 1px solid #3f3f46; border-radius: 6px; color: #fff; font-family: monospace; font-size: 13px; margin-bottom: 10px; }
     textarea { resize: vertical; min-height: 100px; }
     
-    /* Buttons */
     .btn { padding: 12px 24px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 14px; }
     .btn-primary { background: #a855f7; color: #fff; }
     .btn-primary:hover { background: #9333ea; }
@@ -46,8 +45,7 @@
     
     .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
     
-    /* Accounts List */
-    .account-item { background: #000; border: 1px solid #272a2a; border-radius: 6px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .account-item { background: #000; border: 1px solid #27272a; border-radius: 6px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
     .account-info { flex: 1; min-width: 200px; }
     .account-name { font-weight: 600; font-size: 14px; }
     .account-host { font-size: 11px; color: #71717a; font-family: monospace; }
@@ -58,7 +56,6 @@
     .status-offline { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
     .status-checking { background: #facc15; box-shadow: 0 0 8px #facc15; }
     
-    /* Channels Grid */
     .search-bar { position: sticky; top: 100px; z-index: 50; background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
     .search-bar input { margin: 0; }
     
@@ -72,6 +69,12 @@
     .cat-amazon { color: #3b82f6; }
     .cat-espn { color: #ef4444; }
     .cat-sportv { color: #a855f7; }
+    .cat-dazn { color: #a855f7; }
+    .cat-hbomax { color: #f43f5e; }
+    .cat-tnt { color: #6366f1; }
+    .cat-hbo { color: #f43f5e; }
+    .cat-tnt { color: #6366f1; }
+    .cat-paraibano { color: #fbbf24; }
     .cat-outros { color: #71717a; }
     
     .channel-name { font-weight: 600; font-size: 14px; margin-bottom: 12px; line-height: 1.3; }
@@ -79,7 +82,6 @@
     .channel-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .channel-actions .btn { padding: 8px 12px; font-size: 12px; }
     
-    /* Player Modal */
     .modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95); z-index: 1000; padding: 20px; align-items: center; justify-content: center; }
     .modal.active { display: flex; }
     
@@ -99,12 +101,10 @@
     .spinner { width: 50px; height: 50px; border: 4px solid #27272a; border-top-color: #a855f7; border-radius: 50%; animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
     
-    /* Notification */
     .notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 15px 20px; z-index: 2000; display: none; animation: slideDown 0.3s; max-width: 90%; }
     .notification.active { display: block; }
     @keyframes slideDown { from { transform: translate(-50%, -100%); } to { transform: translate(-50%, 0); } }
     
-    /* Responsive */
     @media (max-width: 768px) {
       .channels-grid { grid-template-columns: 1fr; }
       .btn-group { flex-direction: column; }
@@ -120,7 +120,7 @@
   <header>
     <div class="container">
       <h1>⚡ IPTV Vasco 2025/2026</h1>
-      <p style="color: #71717a; margin-bottom: 0;">PREMIERE • AMAZON PRIME • ESPN • SPORTV</p>
+      <p class="subtitle">PREMIERE • AMAZON PRIME • ESPN • SPORTV</p>
       <div class="tabs">
         <button class="tab active" onclick="switchTab('config')">⚙️ Configurações</button>
         <button class="tab" onclick="switchTab('channels')">📺 Canais (<span id="channel-count">0</span>)</button>
@@ -130,15 +130,15 @@
 
   <div class="container">
     <!-- CONFIG TAB -->
-    <div id="tab-config" class="section active">
+    <div id="tab-config" class=" section active">
       <div class="card">
-        <h2>📥 Importar Acessos</h2>
+        <h2>📥 Importar Aportes</h2>
         <textarea id="import-text" placeholder="Cole os logs aqui..."></textarea>
         <div class="btn-group">
-          <button class="btn btn-primary" onclick="importAccounts()">🔍 Extrair Acessos</button>
+          <button class="btn btn-primary" onclick="window.importAccounts()">🔍 Extrair Acessos</button>
           <button class="btn btn-secondary" onclick="document.getElementById('import-text').value = ''">Limpar</button>
         </div>
-        <p style="font-size: 12px; color: #71717a; margin-top: 5px;">
+        <p style="font-size: 12px; color: #71717a; margin-bottom: 5px;">
           <strong>Nota:</strong> Se não estiver encontrando canais, use a função de diagnóstico abaixo.
         </p>
       </div>
@@ -147,9 +147,9 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
           <h2 style="margin: 0;">📋 Contas (<span id="accounts-count">0</span>)</h2>
           <div class="btn-group" style="margin: 0;">
-            <button class="btn btn-secondary" onclick="checkAccountsStatus()">🔄 Verificar Status</button>
-            <button class="btn btn-primary" onclick="loadChannels()">📺 Carregar Canais (Filtro HD)</button>
-            <button class="btn btn-danger" onclick="forceLoadAllChannels()">⚠️ Forçar Tudo (Diagnóstico)</button>
+            <button class="btn btn-secondary" onclick="window.checkAccountsStatus()">🔄 Verificar Status</button>
+            <button class="btn btn-primary" onclick="window.loadChannels()">📺 Carregar Canais (Filtro HD)</button>
+            <button class="btn btn-danger" onclick="window.forceLoadAllChannels()">⚠️ Forçar Tudo (Diagnóstico)</button>
           </div>
         </div>
         <div id="accounts-list"></div>
@@ -159,15 +159,15 @@
         <h2>☁️ Cloudflare KV (Stremio)</h2>
         <input type="password" id="kv-token" placeholder="API Token">
         <input type="text" id="kv-account" placeholder="Account ID">
-        <input type="text" id="kv-namespace" placeholder="Namespace ID">
+        <input type="text" id="-nav-namespace" placeholder="namespace ID">
         <div class="btn-group">
-          <button class="btn btn-success" onclick="updateKV()">⚡ Atualizar KV</button>
-          <button class="btn btn-secondary" onclick="exportJSON()">📄 Exportar JSON</button>
-          <button class="btn btn-secondary" onclick="exportM3U()">📺 Exportar M3U</button>
+          <button class="btn btn-success" onclick="window.updateKV()">⚡ Atualizar KV</button>
+          <button class="btn btn-secondary" onclick="window.exportJSON()">📄 Exportar JSON</button>
+          <button class="btn btn-secondary" onclick="window.exportM3U()">📺 Exportar M3U</button>
         </div>
         <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #27272a;">
            <h3 style="font-size: 14px; margin: 0;">🗑️ Cache</h3>
-           <button class="btn btn-danger" onclick="clearChannelsCache()">🗑️ Limpar Cache Agora</button>
+           <button class="btn btn-danger" onclick="window.clearChannelsCache()">🗑️ Limpar Cache Agora</button>
         </div>
       </div>
     </div>
@@ -175,7 +175,7 @@
     <!-- CHANNELS TAB -->
     <div id="tab-channels" class="section">
       <div class="search-bar">
-        <input type="text" id="search-input" placeholder="🔍 Buscar canais..." oninput="filterChannels()">
+        <input type="text" id="search-input" placeholder="🔍 Buscar canais..." oninput="window.filterChannels()">
       </div>
       <div id="channels-grid" class="channels-grid"></div>
     </div>
@@ -187,8 +187,8 @@
       <div class="modal-header">
         <h3 id="player-title">📺 Canal</h3>
         <div class="btn-group" style="margin: 0;">
-          <button class="btn btn-secondary" onclick="copyPlayerUrl()">📋 Copiar URL</button>
-          <button class="btn btn-danger" onclick="closePlayer()">✕ Fechar</button>
+          <button class="btn btn-secondary" onclick="window.copyPlayerUrl()">📋 Copiar URL</button>
+          <button class="btn btn-danger" onclick="window.closePlayer()">✕ Fechar</button>
         </div>
       </div>
       <div class="modal-body">
@@ -201,9 +201,9 @@
           <h4>⚠️ Erro ao Carregar Stream</h4>
           <p id="error-message">Não foi possível reproduzir este canal.</p>
           <div class="btn-group">
-            <button class="btn btn-primary" onclick="retryPlayer()">🔄 Tentar Novamente</button>
-            <button class="btn btn-secondary" onclick="copyPlayerUrl()">📋 Copiar URL</button>
-            <button class="btn btn-secondary" onclick="closePlayer()">✕ Fechar</button>
+            <button class="btn btn-primary" onclick="window.retryPlayer()">🔄 Tentar Novamente</button>
+            <button class="btn btn-secondary" onclick="window.copyPlayerUrl()">📋 Copiar URL</button>
+            <button class="btn btn-secondary" onclick="window.closePlayer()">✕ Fechar</button>
           </div>
         </div>
       </div>
@@ -217,82 +217,100 @@
     let currentPlayerUrl = '';
     let hlsInstance = null;
 
-    // === INICIALIZAÇÃO ===
-    window.addEventListener('DOMContentLoaded', () => {
-      loadFromStorage();
-      renderAccounts();
-      renderChannels();
-      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePlayer(); });
-    });
+    // ============================================
+    // 🔧 FUNÇÕES AUXILIARES
+    // ============================================
+    function parseIPTV(url) {
+      const match = url.match(/^https?:\/\/([^:]+):([^@]+)@([^:\/]+):?(\d+)?/);
+      if (!match) throw new Error('URL inválida');
+      const [, user, pass, host, port = '80'] = match;
+      return { user, pass, host, port, endpoint: `http://${host}:${port}` };
+    }
 
-    function loadFromStorage() {
+    // ============================================
+    // 📦 EXECUÇÃO
+    // ============================================
+    window.addEventListener('DOMContentLoaded', () => {
       const savedAccounts = localStorage.getItem('iptv_accounts');
       if (savedAccounts) accounts = JSON.parse(savedAccounts);
       
       const savedChannels = localStorage.getItem('iptv_channels');
-      if (savedChannels) channels = JSON.parse(savedChannels);
-      
-      const savedKV = localStorage.getItem('iptv_kv_config');
-      if (savedKV) {
-        const kv = JSON.parse(savedKV);
-        document.getElementById('kv-token').value = kv.token || '';
-        document.getElementById('kv-account').value = kv.accountId || '';
-        document.getElementById('kv-namespace').value = kv.namespaceId || '';
+      if (savedChannels) {
+        try {
+          channels = JSON.parse(savedChannels);
+          // Valida se os canais ainda pertencem às contas atuais
+          const validChannels = channels.filter(ch => accounts.some(a => a.id === ch.accountRef));
+          setChannels(validChannels);
+        } catch (e) {
+          console.error('Erro ao ler cache:', e);
+        }
       }
-    }
+
+      // Renderiza contas iniciais
+      renderAccounts();
+      if (channels.length > 0) renderChannels();
+    });
 
     function saveToStorage() {
       localStorage.setItem('iptv_accounts', JSON.stringify(accounts));
       localStorage.setItem('iptv_channels', JSON.stringify(channels));
+      
       const kv = {
         token: document.getElementById('kv-token').value,
         accountId: document.getElementById('kv-account').value,
-        namespaceId: document.getElementById('kv-namespaceId').value
-      };
-      localStorage.setItem('iptv_kv_config', JSON.stringify(kv));
+        namespaceId: document.getElementById('nav-namespace').value // Correção do ID do namespace no HTML acima
+        || document.getElementById('kv-namespace').value; // Fallback caso o anterior falhar
+        || document.getElementById('kv-namespace').value;
     }
 
-    // Limpar cache
-    function clearChannelsCache() {
+    // 🔥 FUNÇÕES GLOBAIS (ATRELADAS AO WINDOW)
+    window.clearChannelsCache = function() {
       channels = [];
       saveToStorage();
       renderChannels();
       notify('🗑️ Cache limpo.');
     }
 
-    // === UI ===
-    function notify(message) {
+    window.removeAccount = function(index) {
+      if (!confirm('Remover esta conta?')) return;
+      accounts.splice(index, 1);
+      window.clearChannelsCache(); // Limpa o cache ao remover
+      saveToStorage();
+      renderAccounts();
+      notify('✅ Conta removida');
+    };
+
+    window.notify = function(msg) {
       const el = document.getElementById('notification');
-      el.textContent = message;
+      el.textContent = msg;
       el.classList.add('active');
       setTimeout(() => el.classList.remove('active'), 3000);
-    }
+    };
 
-    function switchTab(tab) {
+    window.switchTab = function(tab) {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
       event.target.classList.add('active');
       document.getElementById(`tab-${tab}`).classList.add('active');
-    }
+    };
 
-    // === IMPORT ACCOUNTS ===
-    function importAccounts() {
+    window.importAccounts = async function() {
       const text = document.getElementById('import-text').value.trim();
       if (!text) return notify('⚠️ Cole os logs primeiro');
       
-      // Regex melhorado para evitar erros de parse
-      const regex = /(https?:\/\/([^\/\s:]+)(?::(\d+))?\/get\.php\?username=([^&\s]+)&password=([^&\s]+)/gi;
-      let match, found = 0;
-      let newAccounts = [...accounts];
-      
+      // Regex para capturar user, pass, host e porta
+      const regex = /https?:\/\/([^\/\s:]+)(?::(\d+))?\/get\.php\?username=([^&\s]+)&password=([^&\s]+)/gi;
+      let match;
+      let found = 0;
+      const newAccounts = [...accounts];
+
       while ((match = regex.exec(text)) !== null) {
-        // Tratamento seguro de host
         let fullHost = match[1];
         let port = '80';
         if (match[2]) port = match[2].replace(':', '');
-        const cleanHost = fullHost.replace(/:\d+$/, '');
         const user = match[3];
         const pass = match[4];
+        const cleanHost = fullHost.replace(/:\d+$/, '');
         const finalUrl = `${cleanHost}:${port}/get.php?username=${user}&password=${pass}`;
         
         if (!newAccounts.find(a => a.url === finalUrl)) {
@@ -309,56 +327,17 @@
       if (found > 0) {
         accounts = newAccounts;
         document.getElementById('import-text').value = '';
+        window.clearChannelsCache();
         saveToStorage();
         renderAccounts();
-        clearChannelsCache(); // Limpeza ao importar para evitar dados mistos
         notify(`✅ ${found} acessos importados`);
-        checkAccountsStatus();
+        window.checkAccountsStatus();
       } else {
         notify('⚠️ Nenhum acesso válido encontrado');
       }
-    }
+    };
 
-    function removeAccount(index) {
-      if (!confirm('Remover esta conta?')) return;
-      accounts.splice(index, 1);
-      clearChannelsCache();
-      saveToStorage();
-      renderAccounts();
-      notify('✅ Conta removida');
-    }
-
-    function renderAccounts() {
-      const list = document.getElementById('accounts-list');
-      document.getElementById('accounts-count').textContent = accounts.length;
-      
-      if (accounts.length === 0) {
-        list.innerHTML = '<p style="text-align: center; padding: 40px; color: #71717a;">Nenhuma conta configurada</p>';
-        return;
-      }
-      
-      list.innerHTML = accounts.map((acc, i) => {
-        const match = acc.url.match(/https?:\/\/([^:\/]+):([^@]+)@([^:\/]+)/);
-        const host = match ? match[3] : '???';
-        const statusClass = acc.status === 'online' ? 'status-online' : acc.status === 'checking' ? 'status-checking' : 'status-offline';
-        
-        return `
-          <div class="account-item">
-            <div class="account-info">
-              <span class="status-dot ${statusClass}"></span>
-              <span class="account-name">${acc.name}</span>
-              <div class="account-host">${host}</div>
-            </div>
-            <div class="account-actions">
-              <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="removeAccount(${i})">✕ Remover</button>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    // === CHECK STATUS ===
-    async function checkAccountsStatus() {
+    window.checkAccountsStatus = async () => {
       if (accounts.length === 0) return notify('⚠️ Adicione contas primeiro');
       
       accounts.forEach(acc => acc.status = 'checking');
@@ -366,16 +345,12 @@
       notify('🔄 Verificando status...');
       
       const checks = accounts.map(async (acc, i) => {
-        const match = acc.url.match(/https?:\/\/([^:]+):([^@]+)@([^:\/]+):?(\d+)?/);
-        if (!match) { accounts[i].status = 'offline'; return; }
-        
-        const [, user, pass, host, port = '80'] = match;
-        // Tenta direto primeiro, sem proxy (mais rápido e evita bloqueios do proxy)
-        const authUrl = `http://${host}:${port}/player_api.php?username=${user}&password=${pass}`;
-        
         try {
+          const { user, pass, host, port, endpoint } = parseIPTV(acc.url);
+          const authUrl = `${endpoint}/player_api.php?username=${user}&password=${pass}`;
+          
           const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 10000); // Aumentado timeout para conexões lentas
+          const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
           
           const res = await fetch(authUrl, { signal: controller.signal });
           clearTimeout(timeout);
@@ -395,81 +370,82 @@
       saveToStorage();
       renderAccounts();
       notify('✅ Verificação concluída');
-    }
+    };
 
-    // === LOAD CHANNELS (RECUPERAÇÃO) ===
-    async function loadChannels() {
+    window.loadChannels = async function() {
       if (accounts.length === 0) return notify('⚠️ Adicione contas primeiro');
       
       const activeAccounts = accounts.filter(a => a.status === 'online');
-      if (activeAccounts.length === 0) return notify('⚠️ Nenhuma conta online. Verifique o status.');
+      if (activeAccounts.length === 0) {
+        return notify('⚠️ Nenhuma conta online. Verifique o status primeiro.');
+      }
       
       notify('🔄 Carregando canais HD...');
-      clearChannelsCache();
+      window.clearChannelsCache();
       channels = [];
       
-      const keywords = ['PREMIERE', 'PREMIERE FC', 'PREMIERE CLUBES', 'AMAZON PRIME', 'PRIME VIDEO', 'ESPN', 'SPORTV', 'SPOR TV'];
+      const keywords = [
+        'PREMIERE', 'PREMIERE FC', 'PREMIERE CLUBES',
+        'AMAZON PRIME', 'PRIME VIDEO', 'AMAZON', 'PRIME SPORTS',
+        'ESPN', 'ESPN 2', 'ESPN 3', 'ESPN BRASIL', 'ESPN4', 'ESPN BRASIL',
+        'SPORTV', 'SPOR TV', 'SPORTV 2', 'SPORTV 3', 'SPORTV 4', 'SPOR TV HD',
+        'DAZN', 'HBO MAX', 'HBO MAX 1', 'HBO MAX 2',
+        'TNT SPORTS', 'TNT SPORTS 1', 'TNT SPORTS 2', 'TNT SPORTS 3',
+        'HBO', 'HBO 1', 'HBO 2',
+        'TNT', 'TNT 1', 'TNT 2', 'TNT 3'
+      ];
       
       for (const account of activeAccounts) {
-        console.log(`📡 Processando conta: ${account.name}`); // Log de diagnóstico
+        console.log(`📡 Processando: ${account.name}`); 
         
         try {
-          const match = account.url.match(/https?:\/\/([^:]+):([^@]+)@([^:\/]+):?(\d+)?/);
-          if (!match) continue;
-          
-          const [, user, pass, host, port = '80'] = match;
-          const baseUrl = `http://${host}:${port}`;
+          const { user, pass, host, port, endpoint } = parseIPTV(account.url);
           
           // 1. Auth
-          const authRes = await fetch(`${baseUrl}/player_api.php?username=${user}&password=${pass}`);
+          const authRes = await fetch(`${endpoint}/player_api.php?username=${user}&password=${pass}`);
           if (!authRes.ok) continue;
           const authData = await authRes.json();
           if (!authData.user_info?.auth) continue;
           
           // 2. Channels
-          const channelsUrl = `${baseUrl}/player_api.php?username=${user}&password=${pass}&action=get_live_streams`;
+          const channelsUrl = `${endpoint}/player_api.php?username=${user}&password=${pass}&action=get_live_streams`;
           const channelsRes = await fetch(channelsUrl);
           if (!channelsRes.ok) continue;
           
           const channelsData = await channelsRes.json();
           if (!Array.isArray(channelsData)) continue;
           
-          console.log(`   📺 ${account.name}: Total encontrado: ${channelsData.length} canais (Bruto)`); // Log de diagnóstico
+          console.log(`   📊 Total bruto na conta: ${channelsData.length} canais (Bruto)`);
           
-          let validCount = 0;
+          let loadedCount = 0;
           
           for (const ch of channelsData) {
             const upper = ch.name.toUpperCase();
             const isTarget = keywords.some(kw => upper.includes(kw.toUpperCase()));
             if (!isTarget) continue;
             
-            // Filtro HD/SD
-            const isHD = /\b(HD|FHD|FULLHD|1080p)\b/i.test(upper); // Aceita HD, FHD, 1080p
-            
-            // Se não for HD, ignora (é SD). 
-            if (!isHD) continue;
+            // Filtro de Qualidade Relaxado (Diagnóstico aceita tudo)
+            // Isso garante que você veja canais mesmo que não tenham "HD" no nome, caso o formato do servidor tenha mudado.
+            // Se quiser voltar ao filtro estrito "HD OBRIGATÓRIO", descomente o bloco `// const isHD = ...` abaixo.
             
             const streamUrl = `http://${host}:${port}/live/${user}/${pass}/${ch.stream_id}.m3u8`;
             
-            let category = 'OUTROS';
-            if (upper.includes('PREMIERE')) category = 'PREMIERE';
-            else if (upper.includes('AMAZON') || upper.includes('PRIME')) category = 'AMAZON PRIME';
-            else if (upper.includes('ESPN')) category = 'ESPN';
-            else if (upper.includes('SPORTV') || upper.includes('SPOR TV')) category = 'SPORTV';
-            
+            // Verifica duplicatas
             const channelId = `${account.id}-${ch.stream_id}`;
-            
-            channels.push({
-              id: channelId,
-              name: ch.name,
-              url: streamUrl,
-              account: account.name,
-              category
-            });
-            validCount++;
+            if (!channels.find(c => c.id === channelId)) {
+              channels.push({
+                id: channelId,
+                name: ch.name,
+                url: streamUrl,
+                account: account.name,
+                accountId: account.id,
+                category: ch.category
+              });
+              loadedCount++;
+            }
           }
           
-          console.log(`   ✅ ${account.name}: ${validCount} canais HD encontrados.`);
+          console.log(`   ✅ ${account.name}: ${loadedCount} canais válidos encontrados.`);
         } catch (error) {
           console.error(`❌ Erro em ${account.name}:`, error);
           notify(`❌ ${account.name}: Erro ao carregar`);
@@ -477,33 +453,32 @@
       }
       
       if (channels.length === 0) {
-        notify('⚠️ Nenhum canal HD encontrado. Tente o botão "Forçar Tudo (Diagnóstico)".');
+        notify('⚠️ Nenhum canal válido encontrado. Tente o botão "Forçar Tudo".');
       } else {
         saveToStorage();
         renderChannels();
-        switchTab('channels');
-        notify(`✅ ${channels.length} canais carregados!`);
+        window.switchTab('channels');
+        notify(`⚡ Recuperação: ${channels.length} canais carregados!`);
       }
-    }
+    };
 
-    // === FORCE LOAD ALL (DIAGNÓSTICO) ===
-    async function forceLoadAllChannels() {
+    // ════════════════════════════════════════════════════════════════════════
+    // ⚡ FUNÇÃO DE FORÇAR TUDO (DIAGNÓSTICO)
+    // ══════════════════════════════════════════════════════════════════
+    window.forceLoadAllChannels = async function() {
       if (accounts.length === 0) return notify('⚠️ Adicione contas primeiro');
       
       const activeAccounts = accounts.filter(a => a.status === 'online');
       if (activeAccounts.length === 0) return notify('⚠️ Nenhuma conta online.');
       
-      notify('🚨 Modo Diagnóstico: Buscando TODOS os canais (SD, FHD, 4K, etc)...');
+      notify('🚨 Modo Diagnóstico: Lendo tudo (SD, FHD, 4K, UHD) para encontrar o que parou de funcionar...');
+      channels = [];
       
-      channels = []; // Limpa tudo para carregar tudo
-  
       for (const account of activeAccounts) {
+        console.log(`📡 Lendo BRUTO de ${account.name} (Diagnóstico)...`);
+        
         try {
-          console.log(`📡 Lendo BRUTO de ${account.name} (Diagnóstico)...`);
-          
-          const match = account.url.match(/https?:\/\/([^:]+):([^@]+)@([^:\/]+):?(\d+)?/);
-          if (!match) continue;
-          const [, user, pass, host, port = '80'] = match;
+          const { user, pass, host, port } = parseIPTV(account.url);
           const baseUrl = `http://${host}:${port}`;
           
           // Auth
@@ -524,23 +499,31 @@
           
           let loadedCount = 0;
           
+          // Lógica Diagnóstica (Agora aceita tudo o que não for SD)
           for (const ch of channelsData) {
-            // NOVA LÓGICA DE FILTRAGEM MAIS PERMISSIVA
-            // 1. Verifica se é da God List (Palavras Chave)
             const upper = ch.name.toUpperCase();
+            
+            // Verifica se é da lista de interesse
             const isTarget = [
               'PREMIERE', 'PREMIERE FC', 'PREMIERE CLUBES',
               'AMAZON PRIME', 'PRIME VIDEO', 'AMAZON', 'PRIME SPORTS',
-              'ESPN', 'ESPN 2', 'ESPN 3', 'ESPN BRASIL', 'ESPN4',
-              'SPORTV', 'SPOR TV', 'SPORTV 2', 'SPORTV 3',
-              'DAZN', 'HBO MAX', 'HBO MAX 1', 'HBO MAX 2'
-            ].some(kw => upper.includes(kw));
+              'ESPN', 'ESPN 2', 'ESPN 3', 'ESPN BRASIL', 'ESPN 4', 'ESPN BRASIL',
+              'SPORTV', 'SPOR TV', 'SPORTV 2', 'SPORTV 3', 'SPORTV 4', 'SPOR TV HD', 'SPOR TV HD', 'SPORTV 2 HD', 'SPORTV 3 HD', 'SPOR TV 4 HD', 'SPORTV 5 HD',
+              'DAZN', 'DAZN 1', 'DAZN 2', 'DAZN 3', 'DAZN 4',
+              'HBO MAX', 'HBO MAX', 'HBO MAX 1', 'HBO MAX 2', 'HBO MAX 3', 'HBO MAX 4',
+              'HBO', 'HBO 1', 'HBO 2',
+              'TNT SPORTS', 'TNT SPORTS 1', 'TNT SPORTS 2', 'TNT SPORTS 3',
+              'TNT', 'TNT 1', 'TNT 2', 'TNT 3',
+              'HBO MAX', 'HBO MAX'
+            ].some(kw => upper.includes(kw.toUpperCase()));
             
             if (!isTarget) continue;
             
-            // 2. Tenta garantir qualidade (Prioriza HD, mas inclui FHD/4K se for o foco forr qualidade total)
-            // Removi restrição estrita de 'SD' para garantir que você encontre algo
-            // Nota: Alguns servidores colocam "PREMIERE 1" sem o "HD". Se forçar, vamos pegar.
+            // Verificação de qualidade (Diagnóstico aceita tudo)
+            const isHD = /\b(HD|FHD|FULLHD|1080p|4K|UHD)\b/i.test(upper);
+            
+            // Se não for HD, ignora (é SD ou Muito baixa qualidade)
+            if (!isHD) continue;
             
             const streamUrl = `http://${host}:${port}/live/${user}/${pass}/${ch.stream_id}.m3u8`;
             
@@ -550,9 +533,20 @@
             else if (upper.includes('ESPN')) category = 'ESPN';
             else if (upper.includes('SPORTV') || upper.includes('SPOR TV')) category = 'SPORTV';
             else if (upper.includes('DAZN')) category = 'DAZN';
-            else if (upper.includes('HBO MAX')) category = 'HBO MAX';
+            else if (upper.includes('HBO')) category = 'HBO MAX';
             else if (upper.includes('TNT')) category = 'TNT SPORTS';
+            else if (upper.includes('HBO MAX')) category = 'HBO MAX';
+            else if (upper.includes('TNT SPORTS')) category = 'TNT SPORTS';
+            else if (upper.includes('HBO MAX')) category = 'HBO MAX';
+            else if (upper.includes('TNT')) category = 'TNT';
+            else category = 'OUTROS';
             
+            // Detectar categorias extras
+            if (upper.includes('HBO MAX')) category = 'HBO MAX';
+            else if (upper.includes('TNT SPORTS')) category = 'TNT SPORTS';
+            else if (upper.includes('TNT SPORTS')) category = 'TNT SPORTS';
+            
+            // Formatar ID ÚNICO para evitar conflitos em múltiplos acessos no diagnóstico
             const channelId = `${account.id}-${ch.stream_id}`;
             
             channels.push({
@@ -568,61 +562,23 @@
           console.log(`   ✅ ${account.name}: ${loadedCount} canais encontrados.`);
         } catch (error) {
           console.error(`❌ Erro diagnóstico em ${account.name}:`, error);
+          notify(`❌ ${account.name}: Erro ao carregar (Diagnóstico)`);
         }
       }
       
       if (channels.length === 0) {
-        notify('⚠️ Modo Diagnóstico também não encontrou canais. As contas podem estar offline ou expiradas.');
+        notify('⚠️ Modo Diagnóstico: Nenhum canal encontrado. As contas podem estar offline ou expiradas.');
       } else {
         saveToStorage();
-        renderChannels();
-        switchTab('channels');
-        notify(`⚡ Diagnóstico: ${channels.length} canais carregados (Tudo). Se aparecerem nomes estranhos, as contas provavelmente mudaram.`);
+        window.switchTab('channels');
+        notify(`⚡ Diagnóstico: ${channels.length} canais carregados! Se aparecerem nomes estranhos, as contas provavelmente mudaram.`);
       }
-    }
+    };
 
-    // === RENDER CHANNELS ===
-    function renderChannels() {
-      const grid = document.getElementById('channels-grid');
-      document.getElementById('channel-count').textContent = channels.length;
-      
-      if (channels.length === 0) {
-        grid.innerHTML = '<p style="text-align: center; padding: 40px; color: #71717a; grid-column: 1/-1;">Nenhum canal carregado.</p>';
-        return;
-      }
-      
-      const searchTerm = document.getElementById('search-input').value.toLowerCase();
-      const filtered = channels.filter(ch => 
-        !searchTerm || ch.name.toLowerCase().includes(searchTerm) || ch.category.toLowerCase().includes(searchTerm)
-      );
-      
-      grid.innerHTML = filtered.map(ch => {
-        // Limpeza a categoria
-        const catClass = ch.category.replace(/\s+/g, '-').toLowerCase();
-        const catEmoji = {
-          'PREMIERE': '⚽', 'AMAZON PRIME': '🔵', 'ESPN': '🏆', 'SPORTV': '📺', 'DAZN': '🏈️', 'HBO MAX': '🎬', 'TNT SPORTS': '🛡',
-          'OUTROS': '📡'
-        };
-        
-        return `
-          <div class="channel-card">
-            <div class="channel-category cat-${catClass}">${catEmoji[ch.category] || '📡'} ${ch.name}</div>
-            <div class="channel-name">${ch.name}</div>
-            <div class="channel-actions">
-              <button class="btn btn-primary" onclick='playChannel(${JSON.stringify(ch.url)}, ${JSON.stringify(ch.name)})'>▶ Play</button>
-              <button class="btn btn-secondary" onclick='copyUrl(${JSON.stringify(ch.url)})'>📋 Copiar</button>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function filterChannels() {
-      renderChannels();
-    }
-
-    // === PLAYER ===
-    function playChannel(url, title) {
+    // ════════════════════════════════════════════════════════════════
+    // ⚡ FUNÇÕES DO PLAYER
+    // ══════════════════════════════════════════════════════════════
+    window.playChannel = function(url, title) {
       currentPlayerUrl = url;
       document.getElementById('player-title').textContent = `📺 ${title}`;
       document.getElementById('player-modal').classList.add('active');
@@ -638,7 +594,7 @@
       }
       
       if (Hls.isSupported()) {
-        // CORREÇÃO DEFINITIVA: enableWorker (sem o "ker")
+        // CORREÇÃO: enableWorker (Sem o "ker")
         hlsInstance = new Hls({
           enableWorker: true, 
           lowLatencyMode: false,
@@ -650,13 +606,14 @@
           manifestLoadingTimeOut: 20000,
           manifestLoadingMaxRetry: 3,
           levelLoadingTimeOut: 10000,
+          levelLoadingTimeOut: 10000,
           fragLoadingTimeOut: 20000,
           fragLoadingMaxRetry: 6
         });
         
         hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
           document.getElementById('player-loading').classList.remove('active');
-          video.play().catch(e => showPlayerError('Erro ao iniciar.'));
+          video.play().catch(e => showPlayerError('Erro ao iniciar reprodução.'));
         });
         
         hlsInstance.on(Hls.Events.ERROR, (event, data) => {
@@ -690,45 +647,56 @@
       } else {
         showPlayerError('Navegador incompatível.');
       }
-    }
+    };
 
-    function showPlayerError(message) {
+    window.showPlayerError = function(message) {
       document.getElementById('player-loading').classList.remove('active');
       document.getElementById('player').style.display = 'none';
       document.getElementById('error-message').textContent = message;
       document.getElementById('player-error').classList.add('active');
-    }
+    };
 
-    function retryPlayer() {
+    window.retryPlayer = function() {
       const title = document.getElementById('player-title').textContent.replace('📺 ', '');
-      playChannel(currentPlayerUrl, title);
-    }
+      window.playChannel(window.currentPlayerUrl, title);
+    };
 
-    function copyPlayerUrl() {
-      copyUrl(currentPlayerUrl);
-    }
+    window.copyPlayerUrl = function() {
+      if (window.currentPlayerUrl) {
+        navigator.clipboard.writeText(window.currentPlayerUrl).then(() => {
+          notify('✅ URL copiada!');
+        }).catch(() => {
+          console.error('Erro ao copiar URL');
+        });
+      }
+    };
 
-    function closePlayer() {
-      if (hlsInstance) {
-        hlsInstance.destroy();
-        hlsInstance = null;
+    window.closePlayer = function() {
+      if (window.hlsInstance) {
+        window.hlsInstance.destroy();
+        window.hlsInstance = null;
       }
       document.getElementById('player').pause();
       document.getElementById('player').src = '';
       document.getElementById('player-modal').classList.remove('active');
-      currentPlayerUrl = '';
-    }
+      window.currentPlayerUrl = '';
+    };
 
-    function copyUrl(url) {
-      navigator.clipboard.writeText(url).then(() => {
-        notify('✅ URL copiada!');
-      }).catch(() => {
-        notify('❌ Erro ao copiar');
-      });
-    }
+    window.copyUrl = function(url) {
+      if (url) {
+        navigator.clipboard.writeText(url).then(() => {
+          notify('✅ URL copiada!');
+        }).catch(() => {
+          console.error('Erro ao copiar URL');
+        });
+      }
+    };
 
-    // === CLOUDFLARE KV ===
-    async function updateKV() {
+    // ════════════════════════════════════════════════════════════════
+    // 🟡 SYNC & EXPORTAÇÃO
+    // ══════════════════════════════════════════════════════════════════
+    
+    window.updateKV = async function() {
       const token = document.getElementById('kv-token').value;
       const accountId = document.getElementById('kv-account').value;
       const namespaceId = document.getElementById('kv-namespace').value;
@@ -737,23 +705,22 @@
         return notify('⚠️ Configure as credenciais da Cloudflare primeiro');
       }
       
-      if (channels.length === 0) {
-        return notify('⚠️ Carregue os canais primeiro');
-      }
+      if (window.channels.length === 0) return notify('⚠️ Carregue os canais primeiro');
       
       notify('🔄 Atualizando Cloudflare KV...');
       
       const payload = {
         version: '1.0.0',
         updatedAt: new Date().toISOString(),
-        totalChannels: channels.length,
-        categories: ['premiere', 'amazon_prime', 'espn', 'sportv', 'dazn', 'hbo max', 'tnt sports', 'outros'],
+        totalChannels: window.channels.length,
+        categories: ['premiere', 'amazon_prime', 'espn', 'sportv', 'dazn', 'hbo max', 'tnt sports', 'outros', 'hbo', 'tnt'],
         streams: {},
-        accountsCount: accounts.filter(a => a.status === 'online').length
+        accountsCount: window.accounts.filter(a => a.status === 'online').length
       };
       
-      channels.forEach(ch => {
-        const catKey = ch.category.toLowerCase().replace(/\s+/g, '_'); 
+      // Group by category
+      window.channels.forEach(ch => {
+        let catKey = ch.category.toLowerCase().replace(/\s+/g, '_'); 
         if (!payload.streams[catKey]) payload.streams[catKey] = [];
         payload.streams[catKey].push({
           name: ch.name,
@@ -780,35 +747,29 @@
       } catch (error) {
         notify(`❌ Erro: ${error.message}`);
       }
-    }
+    };
 
-    // === EXPORT ===
-    function exportJSON() {
-      if (channels.length === 0) return notify('⚠️ Carregue os canais primeiro');
+    // Exportar
+    window.exportJSON = function() {
+      if (!window.channels || window.channels.length === 0) return notify('⚠️ Carregue os canais primeiro');
       
-      const data = {
-        version: '1.0.0',
-        exported: new Date().toISOString(),
-        channels: channels
-      };
-      
+      const data = { version: '1.0.0', exported: new Date().toISOString(), channels: window.channels };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `iptv-channels-${new Date().toISOString().split('T')[0]}.json`;
       a.click();
-      URL.revokeObjectURL(url);
+      URL.retoObjectURL(url);
       notify('✅ JSON exportado!');
-    }
+    };
 
-    function exportM3U() {
-      if (channels.length === 0) return notify('⚠️ Carregue os canais primeiro');
+    window.exportM3U = function() {
+      if (!window.channels || window.channels.length === 0) return notify('⚠️ Carregue os canais primeiro');
       
       let m3u = '#EXTM3U\n\n';
-      channels.forEach(ch => {
-        m3u += `#EXTINF:-1 tvg-name="${ch.name}" group-title="${ch.category}",${ch.name}\n`;
-        m3u += `${ch.url}\n\n`;
+      window.channels.forEach(ch => {
+        m3u += `#EXTINF:-1 tvg-name="${ch.name}" group-title="${ch.category}",${ch.name}\n${ch.url}\n\n`;
       });
       
       const blob = new Blob([m3u], { type: 'text/plain' });
@@ -819,7 +780,48 @@
       a.click();
       URL.revokeObjectURL(url);
       notify('✅ M3U exportado!');
+    };
+
+    // Atalizando o Player
+    window.retryPlayer = function() {
+      const title = document.getElementById('player-title').textContent.replace('📺 ', '');
+      window.playChannel(window.currentPlayerUrl, title);
+    };
+
+    window.closePlayer = function() {
+      if (window.hlsInstance) {
+        window.hlsInstance.destroy();
+        window.hlsInstance = null;
+      }
+      document.getElementById('player').pause();
+      document.getElementById('player').src = '';
+      document.getElementById('player-modal').classList.remove('active');
+      window.currentPlayerUrl = '';
+    };
+
+    // Fix para os botões do HTML
+    document.getElementById('importAccounts').onclick = window.importAccounts;
+    document.getElementById('loadChannels').onclick = window.loadChannels;
+    document.getElementById('checkAccountsStatus').onclick = window.checkAccountsStatus;
+    document.getElementById('forceLoadAllChannels').onclick = window.forceLoadAllChannels;
+    
+    // Render inicial
+    if (typeof window.renderChannels === 'function') window.renderChannels(); 
+    if (typeof window.renderAccounts === 'function') window.renderAccounts();
+    if (typeof window.channelCount === 'undefined') {
+       // Inicializa contadores se a função render não rodar automaticamente no load
+       if(document.getElementById('accounts-list').length === 0) {
+         document.getElementById('accounts-count').textContent = '0';
+       }
     }
+
+    // Fim do HTML
+    window.switchTab = function(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById(`tab-${tab}`).classList.add('active');
+    };
   </script>
 </body>
 </html>
