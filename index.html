@@ -1,666 +1,911 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IPTV Manager - Auto Cache & Multi-Account</title>
-  
-  <!-- React & ReactDOM -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  
-  <!-- Babel -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- HLS.js -->
+  <title>⚡ IPTV Vasco 2025/2026</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-
   <style>
-    body { background-color: #09090b; color: white; }
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #18181b; }
-    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #000;
+      color: #fff;
+      min-height: 100vh;
+    }
+    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+    
+    /* Header */
+    header {
+      background: #18181b;
+      border-bottom: 1px solid #27272a;
+      padding: 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    h1 {
+      font-size: 28px;
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      font-size: 12px;
+      color: #71717a;
+    }
+    
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .tab {
+      padding: 10px 20px;
+      background: #27272a;
+      border: none;
+      color: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .tab:hover { background: #3f3f46; }
+    .tab.active { background: #a855f7; }
+    
+    /* Sections */
+    .section {
+      display: none;
+      animation: fadeIn 0.3s;
+    }
+    .section.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    
+    /* Cards */
+    .card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .card h2 {
+      font-size: 18px;
+      margin-bottom: 15px;
+    }
+    
+    /* Forms */
+    textarea, input {
+      width: 100%;
+      padding: 12px;
+      background: #000;
+      border: 1px solid #3f3f46;
+      border-radius: 6px;
+      color: #fff;
+      font-family: monospace;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+    textarea { resize: vertical; min-height: 120px; }
+    
+    /* Buttons */
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 14px;
+    }
+    .btn-primary { background: #a855f7; color: #fff; }
+    .btn-primary:hover { background: #9333ea; }
+    .btn-success { background: #22c55e; color: #fff; }
+    .btn-success:hover { background: #16a34a; }
+    .btn-danger { background: #ef4444; color: #fff; }
+    .btn-danger:hover { background: #dc2626; }
+    .btn-secondary { background: #27272a; color: #fff; }
+    .btn-secondary:hover { background: #3f3f46; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    /* Accounts List */
+    .account-item {
+      background: #000;
+      border: 1px solid #27272a;
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .account-info { flex: 1; min-width: 200px; }
+    .account-name { font-weight: 600; font-size: 14px; }
+    .account-host { font-size: 11px; color: #71717a; font-family: monospace; }
+    .account-actions { display: flex; gap: 8px; }
+    
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+    }
+    .status-online { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+    .status-offline { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+    .status-checking { background: #facc15; box-shadow: 0 0 8px #facc15; }
+    
+    /* Channels Grid */
+    .search-bar {
+      position: sticky;
+      top: 100px;
+      z-index: 50;
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+    .search-bar input {
+      margin: 0;
+    }
+    
+    .channels-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+    
+    .channel-card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 15px;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .channel-card:hover {
+      border-color: #a855f7;
+      box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+    }
+    
+    .channel-category {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+    }
+    .cat-premiere { color: #22c55e; }
+    .cat-amazon { color: #3b82f6; }
+    .cat-espn { color: #ef4444; }
+    .cat-sportv { color: #a855f7; }
+    .cat-outros { color: #71717a; }
+    
+    .channel-name {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 12px;
+      line-height: 1.3;
+    }
+    
+    .channel-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .channel-actions .btn {
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+    
+    /* Player Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 1000;
+      padding: 20px;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal.active { display: flex; }
+    
+    .modal-content {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 12px;
+      max-width: 1200px;
+      width: 100%;
+      overflow: hidden;
+    }
+    .modal-header {
+      padding: 15px 20px;
+      border-bottom: 1px solid #27272a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #000;
+    }
+    .modal-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .modal-body {
+      background: #000;
+      aspect-ratio: 16/9;
+      position: relative;
+    }
+    #player {
+      width: 100%;
+      height: 100%;
+      background: #000;
+    }
+    
+    .player-error {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      padding: 20px;
+      text-align: center;
+    }
+    .player-error.active { display: flex; }
+    .player-error h4 { color: #ef4444; margin-bottom: 10px; }
+    .player-error p { color: #71717a; margin-bottom: 20px; font-size: 14px; }
+    
+    .player-loading {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      flex-direction: column;
+    }
+    .player-loading.active { display: flex; }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #27272a;
+      border-top-color: #a855f7;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    /* Notification */
+    .notification {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 15px 20px;
+      z-index: 2000;
+      display: none;
+      animation: slideDown 0.3s;
+      max-width: 90%;
+    }
+    .notification.active { display: block; }
+    @keyframes slideDown { from { transform: translate(-50%, -100%); } to { transform: translate(-50%, 0); } }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .channels-grid { grid-template-columns: 1fr; }
+      .btn-group { flex-direction: column; }
+      .btn-group .btn { width: 100%; }
+      .account-item { flex-direction: column; align-items: flex-start; }
+      .account-actions { width: 100%; }
+    }
   </style>
 </head>
 <body>
-  <div id="root"></div>
+  <div class="notification" id="notification"></div>
 
-  <script type="text/babel">
-    const { useState, useEffect, useCallback, useRef } = React;
-    const { createRoot } = ReactDOM;
+  <header>
+    <div class="container">
+      <h1>⚡ IPTV Vasco 2025/2026</h1>
+      <p class="subtitle">PREMIERE • AMAZON PRIME • ESPN • SPORTV</p>
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('config')">⚙️ Configurações</button>
+        <button class="tab" onclick="switchTab('channels')">📺 Canais (<span id="channel-count">0</span>)</button>
+      </div>
+    </div>
+  </header>
 
-    // ============================================
-    // CONFIGURAÇÕES E PROXIES
-    // ============================================
-    const CORS_PROXIES = [
-      '', 
-      'https://corsproxy.io/?',
-      'https://api.allorigins.win/raw?url=',
-    ];
+  <div class="container">
+    <!-- CONFIG TAB -->
+    <div id="tab-config" class="section active">
+      <div class="card">
+        <h2>🧠 Importar Acessos IPTV</h2>
+        <textarea id="import-text" placeholder="Cole aqui os logs do Telegram com os links IPTV...&#10;&#10;Exemplo:&#10;http://servidor.com:8080/get.php?username=usuario&password=senha"></textarea>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="importAccounts()">🔍 Extrair Acessos</button>
+          <button class="btn btn-secondary" onclick="document.getElementById('import-text').value = ''">Limpar</button>
+        </div>
+      </div>
 
-    const CACHE_DURATION_MS = 30 * 60 * 1000; // 30 minutos
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+          <h2 style="margin: 0;">📋 Contas (<span id="accounts-count">0</span>)</h2>
+          <div class="btn-group" style="margin: 0;">
+            <button class="btn btn-secondary" onclick="checkAccountsStatus()">🔄 Verificar Status</button>
+            <button class="btn btn-primary" onclick="loadChannels()">📺 Carregar Canais</button>
+          </div>
+        </div>
+        <div id="accounts-list"></div>
+      </div>
 
-    const PRIORITY_CONFIG = {
-      'PREMIERE': 1,
-      'AMAZON PRIME': 2,
-      'ESPN': 3,
-      'SPORTV': 4
-    };
+      <div class="card">
+        <h2>☁️ Cloudflare KV (Stremio)</h2>
+        <input type="password" id="kv-token" placeholder="API Token">
+        <input type="text" id="kv-account" placeholder="Account ID">
+        <input type="text" id="kv-namespace" placeholder="Namespace ID">
+        <div class="btn-group">
+          <button class="btn btn-success" onclick="updateKV()">⚡ Atualizar KV</button>
+          <button class="btn btn-secondary" onclick="exportJSON()">📄 Exportar JSON</button>
+          <button class="btn btn-secondary" onclick="exportM3U()">📺 Exportar M3U</button>
+        </div>
+      </div>
+    </div>
 
-    const KEYWORDS = [
-      'PREMIERE', 'PREMIERE FC', 'PREMIERE CLUBES',
-      'AMAZON PRIME', 'PRIME VIDEO', 'AMAZON',
-      'ESPN', 'ESPN 2', 'ESPN 3', 'ESPN BRASIL', 'ESPN4',
-      'SPORTV', 'SPOR TV', 'SPORTV 2', 'SPORTV 3'
-    ];
+    <!-- CHANNELS TAB -->
+    <div id="tab-channels" class="section">
+      <div class="search-bar">
+        <input type="text" id="search-input" placeholder="🔍 Buscar canais..." oninput="filterChannels()">
+      </div>
+      <div id="channels-grid" class="channels-grid"></div>
+    </div>
+  </div>
 
-    // ============================================
-    // FETCH COM PROXY
-    // ============================================
-    async function fetchWithProxy(url, timeout = 10000) {
-      for (const proxy of CORS_PROXIES) {
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), timeout);
-          
-          const finalUrl = proxy ? `${proxy}${encodeURIComponent(url)}` : url;
-          const res = await fetch(finalUrl, { signal: controller.signal });
-          clearTimeout(timeoutId);
-          
-          if (res.ok) return res;
-        } catch {
-          continue;
+  <!-- PLAYER MODAL -->
+  <div id="player-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="player-title">📺 Canal</h3>
+        <div class="btn-group" style="margin: 0;">
+          <button class="btn btn-secondary" style="padding: 8px 12px; font-size: 12px;" onclick="copyPlayerUrl()">📋 Copiar URL</button>
+          <button class="btn btn-danger" style="padding: 8px 12px; font-size: 12px;" onclick="closePlayer()">✕ Fechar</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <video id="player" controls></video>
+        <div class="player-loading" id="player-loading">
+          <div class="spinner"></div>
+          <p style="margin-top: 15px; color: #71717a;">Carregando stream...</p>
+        </div>
+        <div class="player-error" id="player-error">
+          <h4>⚠️ Erro ao Carregar Stream</h4>
+          <p id="error-message">Não foi possível reproduzir este canal.</p>
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="retryPlayer()">🔄 Tentar Novamente</button>
+            <button class="btn btn-secondary" onclick="copyPlayerUrl()">📋 Copiar URL</button>
+            <button class="btn btn-secondary" onclick="closePlayer()">✕ Fechar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // === ESTADO GLOBAL ===
+    let accounts = [];
+    let channels = [];
+    let currentPlayerUrl = '';
+    let hlsInstance = null;
+
+    // === INICIALIZAÇÃO ===
+    window.addEventListener('DOMContentLoaded', () => {
+      loadFromStorage();
+      renderAccounts();
+      renderChannels();
+      
+      // ESC para fechar player
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closePlayer();
+      });
+    });
+
+    function loadFromStorage() {
+      const savedAccounts = localStorage.getItem('iptv_accounts');
+      if (savedAccounts) accounts = JSON.parse(savedAccounts);
+      
+      const savedChannels = localStorage.getItem('iptv_channels');
+      if (savedChannels) channels = JSON.parse(savedChannels);
+      
+      const savedKV = localStorage.getItem('iptv_kv');
+      if (savedKV) {
+        const kv = JSON.parse(savedKV);
+        document.getElementById('kv-token').value = kv.token || '';
+        document.getElementById('kv-account').value = kv.accountId || '';
+        document.getElementById('kv-namespace').value = kv.namespaceId || '';
+      }
+    }
+
+    function saveToStorage() {
+      localStorage.setItem('iptv_accounts', JSON.stringify(accounts));
+      localStorage.setItem('iptv_channels', JSON.stringify(channels));
+      
+      const kv = {
+        token: document.getElementById('kv-token').value,
+        accountId: document.getElementById('kv-account').value,
+        namespaceId: document.getElementById('kv-namespace').value
+      };
+      localStorage.setItem('iptv_kv', JSON.stringify(kv));
+    }
+
+    // === UI ===
+    function notify(message) {
+      const el = document.getElementById('notification');
+      el.textContent = message;
+      el.classList.add('active');
+      setTimeout(() => el.classList.remove('active'), 4000);
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      
+      event.target.classList.add('active');
+      document.getElementById(`tab-${tab}`).classList.add('active');
+    }
+
+    // === IMPORT ACCOUNTS ===
+    function importAccounts() {
+      const text = document.getElementById('import-text').value.trim();
+      if (!text) return notify('⚠️ Cole os logs primeiro');
+      
+      const regex = /(https?:\/\/[^\/\s:]+)(?::(\d+))?\/get\.php\?username=([^&\s]+)&password=([^&\s]+)/gi;
+      let match, found = 0;
+      
+      while ((match = regex.exec(text)) !== null) {
+        const protocol = match[0].split('://')[0] + '://';
+        const host = match[1].replace(/https?:\/\//, '');
+        const port = match[2] || '80';
+        const user = match[3];
+        const pass = match[4];
+        const finalUrl = `${protocol}${user}:${pass}@${host}:${port}`;
+        
+        if (!accounts.find(a => a.url === finalUrl)) {
+          accounts.push({
+            name: `${host.split('.')[0]}-${user.slice(0, 6)}`,
+            url: finalUrl,
+            status: 'checking'
+          });
+          found++;
         }
       }
-      throw new Error('Falha em todos os proxies');
+      
+      if (found > 0) {
+        document.getElementById('import-text').value = '';
+        saveToStorage();
+        renderAccounts();
+        notify(`✅ ${found} acessos importados`);
+        checkAccountsStatus();
+      } else {
+        notify('⚠️ Nenhum acesso válido encontrado');
+      }
     }
 
-    // ============================================
-    // COMPONENTE PRINCIPAL
-    // ============================================
-    function App() {
-      const [accounts, setAccounts] = useState([]);
-      const [channels, setChannels] = useState([]);
-      const [kvConfig, setKvConfig] = useState({ token: '', accountId: '', namespaceId: '' });
-      const [importText, setImportText] = useState('');
-      const [loading, setLoading] = useState(false);
-      const [loadingMessage, setLoadingMessage] = useState('');
-      const [lastUpdated, setLastUpdated] = useState(null);
-      const [searchTerm, setSearchTerm] = useState('');
-      const [playerUrl, setPlayerUrl] = useState('');
-      const [playerTitle, setPlayerTitle] = useState('');
-      const [notification, setNotification] = useState('');
-      const [activeTab, setActiveTab] = useState('channels');
-      const [showKvConfig, setShowKvConfig] = useState(false);
+    function removeAccount(index) {
+      if (!confirm('Remover esta conta?')) return;
+      accounts.splice(index, 1);
+      saveToStorage();
+      renderAccounts();
+      notify('✅ Conta removida');
+    }
 
-      // ============================================
-      // LÓGICA DE CACHE E LIMPEZA
-      // ============================================
-      const clearChannelsCache = useCallback(() => {
-        setChannels([]);
-        setLastUpdated(null);
-        localStorage.removeItem('iptv_channels_cache');
-        console.log('🗑️ Cache de canais limpo.');
-      }, []);
-
-      useEffect(() => {
-        const savedAccounts = localStorage.getItem('iptv_accounts');
-        if (savedAccounts) setAccounts(JSON.parse(savedAccounts));
+    function renderAccounts() {
+      const list = document.getElementById('accounts-list');
+      document.getElementById('accounts-count').textContent = accounts.length;
+      
+      if (accounts.length === 0) {
+        list.innerHTML = '<p style="text-align: center; padding: 40px; color: #71717a;">Nenhuma conta configurada</p>';
+        return;
+      }
+      
+      list.innerHTML = accounts.map((acc, i) => {
+        const match = acc.url.match(/https?:\/\/([^:]+):([^@]+)@([^:\/]+)/);
+        const host = match ? match[3] : '???';
+        const statusClass = acc.status === 'online' ? 'status-online' : acc.status === 'checking' ? 'status-checking' : 'status-offline';
         
-        const savedKv = localStorage.getItem('iptv_kv');
-        if (savedKv) setKvConfig(JSON.parse(savedKv));
+        return `
+          <div class="account-item">
+            <div class="account-info">
+              <span class="status-dot ${statusClass}"></span>
+              <span class="account-name">${acc.name}</span>
+              <div class="account-host">${host}</div>
+            </div>
+            <div class="account-actions">
+              <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="removeAccount(${i})">✕ Remover</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
 
-        const cachedRaw = localStorage.getItem('iptv_channels_cache');
-        if (cachedRaw) {
-          try {
-            const cached = JSON.parse(cachedRaw);
-            // Valida cache contra contas atuais
-            const validCacheChannels = cached.channels.filter(ch => accounts.some(a => a.id === ch.accountId));
-            setChannels(validCacheChannels.length !== cached.channels.length ? validCacheChannels : cached.channels);
-            setLastUpdated(cached.timestamp);
-          } catch (e) { console.error('Erro ao ler cache', e); }
+    // === CHECK STATUS ===
+    async function checkAccountsStatus() {
+      if (accounts.length === 0) return notify('⚠️ Adicione contas primeiro');
+      
+      accounts.forEach(acc => acc.status = 'checking');
+      renderAccounts();
+      notify('🔄 Verificando status...');
+      
+      const checks = accounts.map(async (acc, i) => {
+        const match = acc.url.match(/https?:\/\/([^:]+):([^@]+)@([^:\/]+):?(\d+)?/);
+        if (!match) {
+          accounts[i].status = 'offline';
+          return;
         }
-      }, []);
-
-      useEffect(() => { localStorage.setItem('iptv_accounts', JSON.stringify(accounts)); }, [accounts]);
-      useEffect(() => { localStorage.setItem('iptv_kv', JSON.stringify(kvConfig)); }, [kvConfig]);
-      useEffect(() => { 
-        if (channels.length > 0) {
-          localStorage.setItem('iptv_channels_cache', JSON.stringify({ channels, timestamp: Date.now() }));
-        }
-      }, [channels]);
-
-      const notify = useCallback((msg) => {
-        setNotification(msg);
-        setTimeout(() => setNotification(''), 4000);
-      }, []);
-
-      const parseAccountUrl = (url) => {
-        const match = url.match(/https?:\/\/([^:]+):([^@]+)@([^:\/]+):?(\d+)?/);
-        if (!match) return null;
-        return { user: match[1], pass: match[2], host: match[3], port: match[4] || '80' };
-      };
-
-      // ============================================
-      // FUNÇÕES DE GERENCIAMENTO
-      // ============================================
-      const smartParse = () => {
-        if (!importText.trim()) return notify('⚠️ Cole os logs primeiro');
         
-        const regex = /(https?:\/\/[^\/\s:]+)(?::(\d+))?\/get\.php\?username=([^&\s]+)&password=([^&\s]+)/gi;
-        let match, found = 0;
-        const newAccounts = [...accounts];
-
-        while ((match = regex.exec(importText)) !== null) {
-          const protocol = match[0].split('://')[0] + '://';
-          const host = match[1].replace(/https?:\/\//, '');
-          const port = match[2] || '80';
-          const user = match[3];
-          const pass = match[4];
-          const finalUrl = `${protocol}${user}:${pass}@${host}:${port}`;
-          
-          if (!newAccounts.find(a => a.url === finalUrl)) {
-            const id = `${host}-${user}-${Date.now()}`;
-            newAccounts.push({ id, name: `${host.split('.')[0]}-${user.slice(0, 6)}`, url: finalUrl, status: 'unknown' });
-            found++;
-          }
-        }
-
-        if (found > 0) {
-          setAccounts(newAccounts);
-          setImportText('');
-          notify(`✅ ${found} conta(s) importada(s)`);
-          clearChannelsCache(); // LIMPEZA AUTOMÁTICA
-        } else {
-          notify('⚠️ Nenhum acesso válido encontrado');
-        }
-      };
-
-      const removeAccount = (id) => {
-        clearChannelsCache(); // LIMPEZA AUTOMÁTICA
-        setAccounts(accounts.filter(a => a.id !== id));
-        notify('✅ Conta removida e cache limpo');
-      };
-
-      const handleManualClearCache = () => {
-        clearChannelsCache();
-        notify('🗑️ Cache limpo manualmente');
-      };
-
-      // ============================================
-      // CARREGAMENTO DE CANAIS
-      // ============================================
-      const loadChannels = async () => {
-        if (accounts.length === 0) return notify('⚠️ Adicione contas primeiro');
-
-        setLoading(true);
-        setLoadingMessage('Iniciando...');
-        const allChannels = [];
-        let successCount = 0;
-
-        for (let i = 0; i < accounts.length; i++) {
-          const account = accounts[i];
-          setLoadingMessage(`Conta ${i + 1}/${accounts.length}: ${account.name}`);
-          const parsed = parseAccountUrl(account.url);
-          if (!parsed) {
-            setAccounts(prev => prev.map(a => a.id === account.id ? { ...a, status: 'offline' } : a));
-            continue;
-          }
-
-          const { user, pass, host, port } = parsed;
-          const baseUrl = `http://${host}:${port}`;
-
-          try {
-            setLoadingMessage(`${account.name}: Autenticando...`);
-            const authRes = await fetchWithProxy(`${baseUrl}/player_api.php?username=${user}&password=${pass}`);
-            const authData = await authRes.json();
-            
-            if (!authData.user_info?.auth) {
-              setAccounts(prev => prev.map(a => a.id === account.id ? { ...a, status: 'offline' } : a));
-              continue;
-            }
-
-            const active = authData.user_info?.active_cons || 0;
-            const max = authData.user_info?.max_connections || 1;
-            setAccounts(prev => prev.map(a => a.id === account.id ? { ...a, status: 'online', connections: `${active}/${max}` } : a));
-
-            setLoadingMessage(`${account.name}: Carregando canais...`);
-            const channelsRes = await fetchWithProxy(`${baseUrl}/player_api.php?username=${user}&password=${pass}&action=get_live_streams`);
-            const channelsData = await channelsRes.json();
-            
-            if (!Array.isArray(channelsData)) continue;
-
-            for (const ch of channelsData) {
-              const upper = ch.name.toUpperCase();
-              const isTarget = KEYWORDS.some(kw => upper.includes(kw));
-              if (!isTarget) continue;
-
-              const serverUrl = authData.server_info?.url || `http://${host}`;
-              const serverPort = authData.server_info?.port || port;
-              const streamUrl = `${serverUrl}:${serverPort}/live/${user}/${pass}/${ch.stream_id}.m3u8`;
-              
-              let category = 'OUTROS';
-              if (upper.includes('PREMIERE')) category = 'PREMIERE';
-              else if (upper.includes('AMAZON') || upper.includes('PRIME')) category = 'AMAZON PRIME';
-              else if (upper.includes('ESPN')) category = 'ESPN';
-              else if (upper.includes('SPORTV') || upper.includes('SPOR TV')) category = 'SPORTV';
-
-              const channelId = `${account.id}-${ch.stream_id}`; // ID Composto para múltiplos acessos
-              
-              if (!allChannels.find(c => c.id === channelId)) {
-                allChannels.push({ 
-                  id: channelId,
-                  name: ch.name, 
-                  url: streamUrl, 
-                  account: account.name,
-                  accountId: account.id,
-                  category
-                });
-              }
-            }
-            successCount++;
-          } catch (error) {
-            console.error(`Erro na conta ${account.name}:`, error);
-            setAccounts(prev => prev.map(a => a.id === account.id ? { ...a, status: 'offline' } : a));
-          }
-        }
-
-        allChannels.sort((a, b) => {
-          const pA = PRIORITY_CONFIG[a.category] || 99;
-          const pB = PRIORITY_CONFIG[b.category] || 99;
-          if (pA !== pB) return pA - pB;
-          return a.name.localeCompare(b.name);
-        });
-
-        setChannels(allChannels);
-        setLastUpdated(Date.now());
-        setLoading(false);
-        setLoadingMessage('');
+        const [, user, pass, host, port = '80'] = match;
+        const authUrl = `http://${host}:${port}/player_api.php?username=${user}&password=${pass}`;
         
-        if (allChannels.length > 0) {
-          notify(`✅ ${allChannels.length} canais de ${successCount} conta(s)`);
-          setActiveTab('channels');
-        } else {
-          notify('⚠️ Nenhum canal encontrado.');
-        }
-      };
-
-      // ============================================
-      // SYNC & EXPORT
-      // ============================================
-      const updateKV = async () => {
-        if (!kvConfig.token || !kvConfig.accountId || !kvConfig.namespaceId) return notify('⚠️ Configure as credenciais do KV');
-        if (channels.length === 0) return notify('⚠️ Carregue os canais primeiro');
-
-        setLoading(true);
-        setLoadingMessage('Atualizando Cloudflare KV...');
-
         try {
-          const streamsByCategory = {};
-          for (const ch of channels) {
-            const cat = ch.category.toLowerCase().replace(' ', '_');
-            if (!streamsByCategory[cat]) streamsByCategory[cat] = [];
-            streamsByCategory[cat].push({
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 8000);
+          
+          const res = await fetch(authUrl, { signal: controller.signal });
+          clearTimeout(timeout);
+          
+          if (res.ok) {
+            const data = await res.json();
+            accounts[i].status = data.user_info?.auth ? 'online' : 'offline';
+          } else {
+            accounts[i].status = 'offline';
+          }
+        } catch {
+          accounts[i].status = 'offline';
+        }
+      });
+      
+      await Promise.all(checks);
+      saveToStorage();
+      renderAccounts();
+      notify('✅ Verificação concluída');
+    }
+
+    // === LOAD CHANNELS ===
+    async function loadChannels() {
+      if (accounts.length === 0) return notify('⚠️ Adicione contas primeiro');
+      
+      const activeAccounts = accounts.filter(a => a.status === 'online');
+      if (activeAccounts.length === 0) {
+        return notify('⚠️ Nenhuma conta online. Verifique o status primeiro.');
+      }
+      
+      notify('🔄 Carregando canais...');
+      channels = [];
+      
+      const keywords = ['PREMIERE', 'AMAZON PRIME', 'PRIME VIDEO', 'ESPN', 'SPORTV', 'SPOR TV'];
+      
+      for (const account of activeAccounts) {
+        try {
+          const match = account.url.match(/https?:\/\/([^:]+):([^@]+)@([^:\/]+):?(\d+)?/);
+          if (!match) continue;
+          
+          const [, user, pass, host, port = '80'] = match;
+          const baseUrl = `http://${host}:${port}`;
+          
+          // Get auth info
+          const authRes = await fetch(`${baseUrl}/player_api.php?username=${user}&password=${pass}`);
+          if (!authRes.ok) continue;
+          const authData = await authRes.json();
+          if (!authData.user_info?.auth) continue;
+          
+          // Get channels
+          const channelsRes = await fetch(`${baseUrl}/player_api.php?username=${user}&password=${pass}&action=get_live_streams`);
+          if (!channelsRes.ok) continue;
+          const channelsData = await channelsRes.json();
+          if (!Array.isArray(channelsData)) continue;
+          
+          for (const ch of channelsData) {
+            const upper = ch.name.toUpperCase();
+            const isTarget = keywords.some(kw => upper.includes(kw.toUpperCase()));
+            if (!isTarget) continue;
+            
+            const streamUrl = `http://${host}:${port}/live/${user}/${pass}/${ch.stream_id}.m3u8`;
+            
+            let category = 'OUTROS';
+            if (upper.includes('PREMIERE')) category = 'PREMIERE';
+            else if (upper.includes('AMAZON') || upper.includes('PRIME')) category = 'AMAZON PRIME';
+            else if (upper.includes('ESPN')) category = 'ESPN';
+            else if (upper.includes('SPORTV') || upper.includes('SPOR TV')) category = 'SPORTV';
+            
+            channels.push({
+              id: `${account.name}-${ch.stream_id}`,
               name: ch.name,
-              title: ch.epgTitle || '',
-              url: ch.url,
-              behaviorHints: { notWebReady: true }
+              url: streamUrl,
+              account: account.name,
+              category
             });
           }
-
-          const payload = {
-            version: '2.0.0',
-            updatedAt: new Date().toISOString(),
-            totalChannels: channels.length,
-            categories: Object.keys(streamsByCategory),
-            streams: streamsByCategory
-          };
-
-          const kvUrl = `https://api.cloudflare.com/client/v4/accounts/${kvConfig.accountId}/storage/kv/namespaces/${kvConfig.namespaceId}/values/iptv_streams`;
-          const res = await fetch(kvUrl, {
-            method: 'PUT',
-            headers: { 'Authorization': `Bearer ${kvConfig.token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-
-          if (res.ok) notify('✅ KV atualizado!');
-          else notify(`❌ Erro: ${(await res.text()).slice(0, 100)}`);
-        } catch (error) { notify(`❌ Erro: ${error.message}`); }
-        setLoading(false);
-        setLoadingMessage('');
-      };
-
-      const exportM3U = () => {
-        if (channels.length === 0) return notify('⚠️ Carregue os canais primeiro');
-        let m3u = '#EXTM3U\n';
-        for (const ch of channels) m3u += `#EXTINF:-1 group-title="${ch.category}",${ch.name}\n${ch.url}\n`;
-        const blob = new Blob([m3u], { type: 'audio/x-mpegurl' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `canais-${new Date().toISOString().split('T')[0]}.m3u`;
-        a.click();
-        URL.revokeObjectURL(url);
-        notify('✅ Arquivo M3U baixado');
-      };
-
-      const copyUrl = (url) => {
-        navigator.clipboard.writeText(url);
-        notify('✅ URL copiada!');
-      };
-
-      const castToTV = (url, title) => {
-        const wvcUrl = `https://nicoapps.com/wvc/?video=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`;
-        window.open(wvcUrl, '_blank');
-      };
-
-      const filteredChannels = channels.filter(ch => {
-        if (!searchTerm) return true;
-        const term = searchTerm.toLowerCase();
-        return ch.name.toLowerCase().includes(term) || ch.category.toLowerCase().includes(term);
-      });
-
-      const groupedChannels = filteredChannels.reduce((acc, ch) => {
-        if (!acc[ch.category]) acc[ch.category] = [];
-        acc[ch.category].push(ch);
-        return acc;
-      }, {});
-
-      const categoryOrder = ['PREMIERE', 'AMAZON PRIME', 'ESPN', 'SPORTV', 'OUTROS'];
-      const sortedCategories = Object.keys(groupedChannels).sort((a, b) => categoryOrder.indexOf(a) - categoryOrder.indexOf(b));
-
-      const timeAgo = lastUpdated ? Math.floor((Date.now() - lastUpdated) / 60000) : null;
-      const cacheStale = lastUpdated ? (Date.now() - lastUpdated) > CACHE_DURATION_MS : false;
-
-      return (
-        <div className="min-h-screen bg-zinc-950 text-white">
-          {notification && (
-            <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-zinc-800 border border-zinc-700 rounded-lg px-6 py-3 shadow-xl z-50">
-              {notification}
-            </div>
-          )}
-
-          {loading && (
-            <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-              <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-8 text-center">
-                <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-zinc-400">{loadingMessage || 'Carregando...'}</p>
-              </div>
-            </div>
-          )}
-
-          {playerUrl && (
-            <PlayerModal 
-              url={playerUrl} 
-              title={playerTitle} 
-              onClose={() => { setPlayerUrl(''); setPlayerTitle(''); }}
-              onCast={() => castToTV(playerUrl, playerTitle)}
-              onCopy={() => copyUrl(playerUrl)}
-            />
-          )}
-
-          <header className="bg-zinc-900 border-b border-zinc-800 sticky top-0 z-40">
-            <div className="max-w-6xl mx-auto px-4 py-3">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h1 className="text-xl font-bold text-purple-400">📺 IPTV Manager v3</h1>
-                  {timeAgo !== null && (
-                    <p className={`text-xs ${cacheStale ? 'text-yellow-500' : 'text-zinc-500'}`}>
-                      Atualizado há {timeAgo} min {cacheStale && '(antigo)'}
-                    </p>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => setActiveTab('channels')} className={`px-4 py-2 rounded text-sm font-medium transition ${activeTab === 'channels' ? 'bg-purple-600' : 'bg-zinc-800 hover:bg-zinc-700'}`}>
-                    📺 Canais {channels.length > 0 && `(${channels.length})`}
-                  </button>
-                  <button onClick={() => setActiveTab('config')} className={`px-4 py-2 rounded text-sm font-medium transition ${activeTab === 'config' ? 'bg-purple-600' : 'bg-zinc-800 hover:bg-zinc-700'}`}>
-                    ⚙️ Config
-                  </button>
-                </div>
-              </div>
-            </div>
-          </header>
-
-          <main className="max-w-6xl mx-auto px-4 py-6">
-            {activeTab === 'config' ? (
-              <div className="space-y-6">
-                {/* Importar */}
-                <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-                  <h2 className="text-lg font-bold mb-4">📥 Importar Acessos</h2>
-                  <textarea value={importText} onChange={(e) => setImportText(e.target.value)} rows={4} placeholder="Cole os logs aqui..." className="w-full bg-black border border-zinc-700 rounded px-3 py-2 text-sm font-mono mb-4 placeholder:text-zinc-600" />
-                  <button onClick={smartParse} className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded font-medium transition">🔍 Extrair Acessos</button>
-                </div>
-
-                {/* Contas */}
-                <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-bold">👤 Contas ({accounts.length})</h2>
-                    <button onClick={loadChannels} disabled={loading || accounts.length === 0} className="bg-green-600 hover:bg-green-700 disabled:bg-zinc-700 disabled:cursor-not-allowed px-6 py-2 rounded font-medium transition">🔄 Carregar Canais</button>
-                  </div>
-
-                  {accounts.length === 0 ? (
-                    <p className="text-zinc-500 text-center py-8">Nenhuma conta adicionada</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {accounts.map(acc => {
-                        const parsed = parseAccountUrl(acc.url);
-                        const statusColors = { 'online': 'bg-green-500', 'offline': 'bg-red-500', 'checking': 'bg-yellow-500', 'unknown': 'bg-zinc-500' };
-                        return (
-                          <div key={acc.id} className="bg-black border border-zinc-800 rounded-lg p-3 flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className={`w-2.5 h-2.5 rounded-full ${statusColors[acc.status]}`}></div>
-                              <div className="min-w-0">
-                                <p className="font-medium truncate">{acc.name}</p>
-                                <p className="text-xs text-zinc-500 truncate">{parsed?.host || 'URL inválida'}</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              {acc.connections && <span className="text-xs text-zinc-400">{acc.connections}</span>}
-                              <button onClick={() => removeAccount(acc.id)} className="text-red-400 hover:text-red-300 text-sm">✕</button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Ferramentas & Cache */}
-                <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-bold">🛠️ Ferramentas & Dados</h2>
-                    <button onClick={() => setShowKvConfig(!showKvConfig)} className="bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded font-medium transition">☁️ Cloudflare KV</button>
-                  </div>
-
-                  {/* Seção de Cache */}
-                  <div className="mb-6 p-4 bg-black/50 border border-zinc-800 rounded-lg flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium text-sm">🗑️ Cache de Canais</h3>
-                      <p className="text-xs text-zinc-500">Limpa a lista carregada na memória e no navegador.</p>
-                    </div>
-                    <button onClick={handleManualClearCache} className="bg-red-900/50 hover:bg-red-600 text-red-300 hover:text-white px-4 py-2 rounded text-sm transition">Limpar Agora</button>
-                  </div>
-
-                  {/* Botão Exportar */}
-                  <button onClick={exportM3U} disabled={channels.length === 0} className="bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 disabled:cursor-not-allowed px-6 py-2 rounded font-medium transition">📄 Baixar M3U</button>
-
-                  {/* Config KV */}
-                  {showKvConfig && (
-                    <div className="mt-4 p-4 bg-black border border-zinc-800 rounded-lg space-y-3">
-                      <p className="text-xs text-zinc-400 mb-2">Sincronizar com Stremio</p>
-                      <input type="password" placeholder="API Token" value={kvConfig.token} onChange={(e) => setKvConfig({ ...kvConfig, token: e.target.value })} className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-sm" />
-                      <input type="text" placeholder="Account ID" value={kvConfig.accountId} onChange={(e) => setKvConfig({ ...kvConfig, accountId: e.target.value })} className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-sm" />
-                      <input type="text" placeholder="Namespace ID" value={kvConfig.namespaceId} onChange={(e) => setKvConfig({ ...kvConfig, namespaceId: e.target.value })} className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-sm" />
-                      <button onClick={updateKV} disabled={loading || channels.length === 0} className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-zinc-700 px-4 py-2 rounded font-medium transition">⬆️ Enviar para KV</button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {channels.length > 0 && (
-                  <div className="sticky top-16 z-30 bg-zinc-950 py-2">
-                    <input type="text" placeholder="🔍 Buscar..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 focus:border-purple-500 outline-none transition" />
-                  </div>
-                )}
-
-                {channels.length === 0 ? (
-                  <div className="text-center py-16">
-                    <p className="text-zinc-500 mb-4">Nenhum canal carregado</p>
-                    <button onClick={() => setActiveTab('config')} className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded font-medium transition">⚙️ Ir para Configurações</button>
-                  </div>
-                ) : filteredChannels.length === 0 ? (
-                  <p className="text-center text-zinc-500 py-8">Nenhum canal encontrado</p>
-                ) : (
-                  <div className="space-y-8">
-                    {sortedCategories.map(category => (
-                      <div key={category}>
-                        <h2 className="text-lg font-bold mb-3 text-zinc-300">
-                          {category === 'PREMIERE' && '⚽ '}
-                          {category === 'AMAZON PRIME' && '🔵 '}
-                          {category === 'ESPN' && '🏆 '}
-                          {category === 'SPORTV' && '📺 '}
-                          {category} ({groupedChannels[category].length})
-                        </h2>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                          {groupedChannels[category].map(ch => (
-                            <ChannelCard key={ch.id} channel={ch} onPlay={() => { setPlayerUrl(ch.url); setPlayerTitle(ch.name); }} onCast={() => castToTV(ch.url, ch.name)} onCopy={() => copyUrl(ch.url)} />
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </main>
-        </div>
-      );
-    }
-
-    // ============================================
-    // COMPONENTES FILHOS
-    // ============================================
-    function ChannelCard({ channel, onPlay, onCast, onCopy }) {
-      const categoryColors = {
-        'PREMIERE': 'border-l-green-500',
-        'AMAZON PRIME': 'border-l-blue-500',
-        'ESPN': 'border-l-red-500',
-        'SPORTV': 'border-l-purple-500',
-        'OUTROS': 'border-l-zinc-500'
-      };
-
-      return (
-        <div className={`bg-zinc-900 border border-zinc-800 border-l-4 ${categoryColors[channel.category] || categoryColors.OUTROS} rounded-lg p-4`}>
-          <p className="font-medium mb-1 truncate" title={channel.name}>{channel.name}</p>
-          <p className="text-xs text-zinc-500 mb-3">{channel.account}</p>
           
-          <div className="flex gap-2">
-            <button onClick={onPlay} className="flex-1 bg-zinc-800 hover:bg-zinc-700 py-2 rounded text-sm font-medium transition">▶ Play</button>
-            <button onClick={onCast} className="bg-purple-600 hover:bg-purple-700 px-3 py-2 rounded text-sm transition" title="Enviar para TV">📺</button>
-            <button onClick={onCopy} className="bg-zinc-800 hover:bg-zinc-700 px-3 py-2 rounded text-sm transition" title="Copiar URL">📋</button>
-          </div>
-        </div>
-      );
-    }
-
-    function PlayerModal({ url, title, onClose, onCast, onCopy }) {
-      const videoRef = useRef(null);
-      const hlsRef = useRef(null);
-      const [error, setError] = useState('');
-      const [loading, setLoading] = useState(true);
-
-      useEffect(() => {
-        const video = videoRef.current;
-        if (!video) return;
-
-        const handleKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
-        window.addEventListener('keydown', handleKeyDown);
-
-        if (Hls.isSupported()) {
-          const hls = new Hls({
-            enableWorker: true, lowLatencyMode: false, maxBufferLength: 30, maxMaxBufferLength: 60,
-            maxBufferSize: 60 * 1000 * 1000, maxBufferHole: 0.5,
-            fragLoadingTimeOut: 20000, manifestLoadingTimeOut: 15000, levelLoadingTimeOut: 15000,
-          });
-          
-          hlsRef.current = hls;
-          hls.loadSource(url);
-          hls.attachMedia(video);
-
-          hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            setLoading(false);
-            video.play().catch(() => {});
-          });
-
-          hls.on(Hls.Events.ERROR, (_, data) => {
-            if (data.fatal) {
-              setLoading(false);
-              if (data.type === Hls.ErrorTypes.NETWORK_ERROR) setError('Erro de rede.');
-              else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
-              else setError('Erro ao reproduzir.');
-            }
-          });
-
-          return () => {
-            hls.destroy();
-            window.removeEventListener('keydown', handleKeyDown);
-          };
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-          video.src = url;
-          video.addEventListener('loadedmetadata', () => setLoading(false));
-          video.addEventListener('error', () => setError('Erro ao carregar'));
-          return () => window.removeEventListener('keydown', handleKeyDown);
-        } else {
-          setError('Navegador não suporta HLS');
-          setLoading(false);
-          return () => window.removeEventListener('keydown', handleKeyDown);
+          notify(`✅ ${account.name}: OK`);
+        } catch (error) {
+          console.error(error);
+          notify(`❌ ${account.name}: Erro`);
         }
-      }, [url, onClose]);
-
-      return (
-        <div className="fixed inset-0 bg-black z-50 flex flex-col">
-          <div className="flex items-center justify-between p-4 bg-zinc-900">
-            <h3 className="font-medium truncate pr-4">{title}</h3>
-            <div className="flex items-center gap-2">
-              <button onClick={onCopy} className="bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded text-sm transition">📋 Copiar URL</button>
-              <button onClick={onCast} className="bg-purple-600 hover:bg-purple-700 px-3 py-1.5 rounded text-sm transition">📺 Enviar TV</button>
-              <button onClick={onClose} className="bg-red-600 hover:bg-red-700 px-4 py-1.5 rounded text-sm transition">✕ Fechar</button>
-            </div>
-          </div>
-
-          <div className="flex-1 flex items-center justify-center bg-black relative">
-            {loading && !error && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            )}
-            
-            {error ? (
-              <div className="text-center p-8">
-                <p className="text-red-400 mb-4">❌ {error}</p>
-                <div className="flex justify-center gap-3">
-                  <button onClick={onCopy} className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded transition">📋 Copiar URL</button>
-                  <button onClick={onCast} className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded transition">📺 Enviar para TV</button>
-                </div>
-                <p className="text-xs text-zinc-500 mt-4">Use em VLC ou outro player.</p>
-              </div>
-            ) : (
-              <video ref={videoRef} controls autoPlay playsInline className="w-full h-full" />
-            )}
-          </div>
-        </div>
-      );
+      }
+      
+      // Sort by category priority
+      const priority = { 'PREMIERE': 1, 'AMAZON PRIME': 2, 'ESPN': 3, 'SPORTV': 4, 'OUTROS': 5 };
+      channels.sort((a, b) => (priority[a.category] || 99) - (priority[b.category] || 99));
+      
+      saveToStorage();
+      renderChannels();
+      switchTab('channels');
+      notify(`✅ ${channels.length} canais carregados!`);
     }
 
-    // Renderização
-    const root = createRoot(document.getElementById('root'));
-    root.render(<App />);
+    // === RENDER CHANNELS ===
+    function renderChannels() {
+      const grid = document.getElementById('channels-grid');
+      document.getElementById('channel-count').textContent = channels.length;
+      
+      if (channels.length === 0) {
+        grid.innerHTML = '<p style="text-align: center; padding: 40px; color: #71717a; grid-column: 1/-1;">Nenhum canal carregado</p>';
+        return;
+      }
+      
+      const searchTerm = document.getElementById('search-input').value.toLowerCase();
+      const filtered = channels.filter(ch => 
+        !searchTerm || ch.name.toLowerCase().includes(searchTerm) || ch.category.toLowerCase().includes(searchTerm)
+      );
+      
+      grid.innerHTML = filtered.map(ch => {
+        const catClass = ch.category.replace(' ', '-').toLowerCase();
+        const catEmoji = {
+          'PREMIERE': '⚽',
+          'AMAZON PRIME': '🔵',
+          'ESPN': '🏆',
+          'SPORTV': '📺',
+          'OUTROS': '📡'
+        };
+        
+        return `
+          <div class="channel-card">
+            <div class="channel-category cat-${catClass}">${catEmoji[ch.category] || '📡'} ${ch.category}</div>
+            <div class="channel-name">${ch.name}</div>
+            <div class="channel-actions">
+              <button class="btn btn-primary" onclick='playChannel(${JSON.stringify(ch.url)}, ${JSON.stringify(ch.name)})'>▶ Assistir</button>
+              <button class="btn btn-secondary" onclick='copyUrl(${JSON.stringify(ch.url)})'>📋 Copiar</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filterChannels() {
+      renderChannels();
+    }
+
+    // === PLAYER ===
+    function playChannel(url, title) {
+      currentPlayerUrl = url;
+      document.getElementById('player-title').textContent = `📺 ${title}`;
+      document.getElementById('player-modal').classList.add('active');
+      document.getElementById('player-loading').classList.add('active');
+      document.getElementById('player-error').classList.remove('active');
+      
+      const video = document.getElementById('player');
+      video.style.display = 'block';
+      
+      // Cleanup previous instance
+      if (hlsInstance) {
+        hlsInstance.destroy();
+        hlsInstance = null;
+      }
+      
+      if (Hls.isSupported()) {
+        hlsInstance = new Hls({
+          enableWorkerker: true,
+          lowLatencyMode: false,
+          backBufferLength: 90,
+          maxBufferLength: 30,
+          maxMaxBufferLength: 60,
+          manifestLoadingTimeOut: 10000,
+          manifestLoadingMaxRetry: 3,
+          manifestLoadingRetryDelay: 1000,
+          levelLoadingTimeOut: 10000,
+          levelLoadingMaxRetry: 3,
+          fragLoadingTimeOut: 20000,
+          fragLoadingMaxRetry: 6
+        });
+        
+        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+          document.getElementById('player-loading').classList.remove('active');
+          video.play().catch(e => {
+            showPlayerError('Erro ao iniciar reprodução: ' + e.message);
+          });
+        });
+        
+        hlsInstance.on(Hls.Events.ERROR, (event, data) => {
+          if (data.fatal) {
+            switch (data.type) {
+              case Hls.ErrorTypes.NETWORK_ERROR:
+                showPlayerError('Erro de rede. Verifique sua conexão ou tente copiar a URL para usar em outro player.');
+                break;
+              case Hls.ErrorTypes.MEDIA_ERROR:
+                console.log('Tentando recuperar erro de mídia...');
+                hlsInstance.recoverMediaError();
+                break;
+              default:
+                showPlayerError('Erro fatal ao reproduzir. Copie a URL e use em outro player (VLC, IPTV Smarters, etc).');
+                break;
+            }
+          }
+        });
+        
+        hlsInstance.loadSource(url);
+        hlsInstance.attachMedia(video);
+        
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        // Safari native HLS
+        video.src = url;
+        video.addEventListener('loadedmetadata', () => {
+          document.getElementById('player-loading').classList.remove('active');
+          video.play().catch(e => showPlayerError('Erro ao iniciar: ' + e.message));
+        });
+        video.addEventListener('error', () => {
+          showPlayerError('Erro ao carregar stream. Copie a URL para usar em outro player.');
+        });
+      } else {
+        showPlayerError('Seu navegador não suporta HLS. Copie a URL e use em outro player (VLC, IPTV Smarters, etc).');
+      }
+    }
+
+    function showPlayerError(message) {
+      document.getElementById('player-loading').classList.remove('active');
+      document.getElementById('player').style.display = 'none';
+      document.getElementById('error-message').textContent = message;
+      document.getElementById('player-error').classList.add('active');
+    }
+
+    function retryPlayer() {
+      const title = document.getElementById('player-title').textContent.replace('📺 ', '');
+      playChannel(currentPlayerUrl, title);
+    }
+
+    function copyPlayerUrl() {
+      copyUrl(currentPlayerUrl);
+    }
+
+    function closePlayer() {
+      if (hlsInstance) {
+        hlsInstance.destroy();
+        hlsInstance = null;
+      }
+      document.getElementById('player').pause();
+      document.getElementById('player').src = '';
+      document.getElementById('player-modal').classList.remove('active');
+      currentPlayerUrl = '';
+    }
+
+    function copyUrl(url) {
+      navigator.clipboard.writeText(url).then(() => {
+        notify('✅ URL copiada! Cole em VLC, IPTV Smarters, Kodi, etc.');
+      }).catch(() => {
+        notify('❌ Erro ao copiar');
+      });
+    }
+
+    // === CLOUDFLARE KV ===
+    async function updateKV() {
+      const token = document.getElementById('kv-token').value;
+      const accountId = document.getElementById('kv-account').value;
+      const namespaceId = document.getElementById('kv-namespace').value;
+      
+      if (!token || !accountId || !namespaceId) {
+        return notify('⚠️ Configure as credenciais da Cloudflare primeiro');
+      }
+      
+      if (channels.length === 0) {
+        return notify('⚠️ Carregue os canais primeiro');
+      }
+      
+      notify('🔄 Atualizando Cloudflare KV...');
+      
+      const payload = {
+        version: '1.0.0',
+        updatedAt: new Date().toISOString(),
+        totalChannels: channels.length,
+        categories: ['premiere', 'amazon_prime', 'espn', 'sportv', 'outros'],
+        streams: {},
+        accountsCount: accounts.filter(a => a.status === 'online').length
+      };
+      
+      // Group by category
+      channels.forEach(ch => {
+        const catKey = ch.category.toLowerCase().replace(' ', '_');
+        if (!payload.streams[catKey]) payload.streams[catKey] = [];
+        payload.streams[catKey].push({
+          name: ch.name,
+          url: ch.url,
+          behaviorHints: { notWebReady: true }
+        });
+      });
+      
+      try {
+        const kvUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/storage/kv/namespaces/${namespaceId}/values/iptv_channels`;
+        const res = await fetch(kvUrl, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+        
+        if (res.ok) {
+          saveToStorage();
+          notify('✅ KV atualizado com sucesso!');
+        } else {
+          const error = await res.text();
+          notify(`❌ Erro: ${error}`);
+        }
+      } catch (error) {
+        notify(`❌ Erro: ${error.message}`);
+      }
+    }
+
+    // === EXPORT ===
+    function exportJSON() {
+      if (channels.length === 0) return notify('⚠️ Carregue os canais primeiro');
+      
+      const data = {
+        version: '1.0.0',
+        exported: new Date().toISOString(),
+        channels: channels
+      };
+      
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `iptv-channels-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      notify('✅ JSON exportado!');
+    }
+
+    function exportM3U() {
+      if (channels.length === 0) return notify('⚠️ Carregue os canais primeiro');
+      
+      let m3u = '#EXTM3U\n\n';
+      channels.forEach(ch => {
+        m3u += `#EXTINF:-1 tvg-name="${ch.name}" group-title="${ch.category}",${ch.name}\n`;
+        m3u += `${ch.url}\n\n`;
+      });
+      
+      const blob = new Blob([m3u], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `iptv-playlist-${new Date().toISOString().split('T')[0]}.m3u`;
+      a.click();
+      URL.revokeObjectURL(url);
+      notify('✅ M3U exportado!');
+    }
   </script>
 </body>
 </html>
