@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IPLINKS V6 TACTICAL</title>
+  <title>IPLINKS V7 UNIVERSAL</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
     :root { --bg: #050505; --fg: #00ff9d; --err: #ff4444; --dim: #333; --panel: #111; --warn: #ffbb00; }
@@ -61,18 +61,23 @@
     #v { width: 100%; max-width: 900px; aspect-ratio: 16/9; background: #000; box-shadow: 0 0 20px rgba(0,255,157,0.1); }
     .ctrl { position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; z-index: 10; }
     
-    /* Proxy Status */
     .proxy-status { 
       position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); color: var(--warn); 
       padding: 4px 8px; font-size: 10px; border: 1px solid var(--warn); pointer-events: none;
     }
 
-    /* Fallback Overlay */
-    #fallback-overlay {
-      position: absolute; inset: 0; background: rgba(0,0,0,0.9); 
-      display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 20;
+    /* EXTERNAL LAUNCHER (COMMAND CENTER) */
+    #cmd-center {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.95); 
+      display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 30; text-align: center;
     }
-    #fallback-overlay button { margin-top: 20px; padding: 15px 30px; font-size: 14px; background: var(--err); border: none; color: white; cursor: pointer; }
+    .cmd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; max-width: 500px; width: 90%; }
+    .cmd-btn {
+      background: #222; border: 1px solid #444; padding: 15px; color: #fff; cursor: pointer; 
+      display: flex; flex-direction: column; align-items: center; gap: 8px; transition: 0.2s;
+    }
+    .cmd-btn:hover { border-color: var(--fg); background: #2a2a2a; }
+    .cmd-icon { font-size: 24px; }
     
     .hidden { display: none !important; }
     .w-full { width: 100%; }
@@ -86,7 +91,7 @@
   <div class="top">
     <div class="hd">
       <div>
-        <h1>IPLINKS <span style="font-size:0.6em; vertical-align:middle; color:var(--warn)">TACTICAL_V6</span></h1>
+        <h1>IPLINKS <span style="font-size:0.6em; vertical-align:middle; color:var(--fg)">UNIVERSAL_V7</span></h1>
       </div>
       <nav>
         <button id="b-cfg" class="on" onclick="V.go('cfg')">CONFIG</button>
@@ -150,14 +155,34 @@
       <button class="btn" onclick="V.x()">CLOSE</button>
     </div>
 
-    <!-- Fallback UI -->
-    <div id="fallback-overlay">
-      <h2 style="color:var(--err); margin-bottom:10px;">STREAM PROXY FAILED</h2>
-      <p style="color:#ccc; font-size:12px; text-align:center; max-width:400px; line-height:1.4;">
-        Browser blocked Mixed Content (HTTP on HTTPS).<br>
-        All public proxies exhausted for this host.
+    <!-- COMMAND CENTER: EXTERNAL LAUNCHER -->
+    <div id="cmd-center">
+      <h2 style="color:var(--err); margin-bottom:10px;">STREAM BLOCKED (MIXED CONTENT)</h2>
+      <p style="color:#aaa; font-size:12px; max-width:400px; line-height:1.4;">
+        Browser blocked HTTP stream on HTTPS site.<br>
+        Use an external player to bypass this restriction.
       </p>
-      <button onclick="V.openExternal()">OPEN IN NEW TAB (VLC)</button>
+      
+      <div class="cmd-grid">
+        <button class="cmd-btn" onclick="V.launch('vlc')">
+          <span class="cmd-icon">🦆</span>
+          <span>VLC Media Player</span>
+        </button>
+        <button class="cmd-btn" onclick="V.launch('mx')">
+          <span class="cmd-icon">🤖</span>
+          <span>MX Player (Android)</span>
+        </button>
+        <button class="cmd-btn" onclick="V.launch('web')">
+          <span class="cmd-icon">🌐</span>
+          <span>HLS.js Web Player</span>
+        </button>
+        <button class="cmd-btn" onclick="V.launch('copy')">
+          <span class="cmd-icon">📋</span>
+          <span>Copy Link Only</span>
+        </button>
+      </div>
+      
+      <button class="btn mt-1" style="border:none; color:#555;" onclick="V.retryInternal()">Try Internal Player Again</button>
     </div>
   </div>
 </div>
@@ -168,31 +193,24 @@ const V = {
   hls: null,
   cur: '',
   
-  // TACTICAL PROXY CHAIN
-  // 1. AllOrigins (Funcionou para a API JSON, tenta para Stream primeiro)
-  // 2. Corsproxy (Alternativa)
+  // Proxy Chain
   proxies: [
     'https://api.allorigins.win/raw?url=',
     'https://corsproxy.io/?'
   ],
   proxyIdx: 0,
-  
-  // API Proxy (Fixo no que funcionou)
   apiProxy: 'https://api.allorigins.win/raw?url=',
-
   useProxy: location.protocol === 'https:',
 
   init() {
-    this.log("SYSTEM INIT [TACTICAL]", "info");
+    this.log("SYSTEM INIT [UNIVERSAL]", "info");
     this.log("Protocol: " + location.protocol.toUpperCase(), "info");
-    this.log("Proxy Chain: [" + this.proxies.length + " backends ready]", "info");
-    
-    const s = localStorage.getItem('iplinks_v6');
+    const s = localStorage.getItem('iplinks_v7');
     if (s) { this.d = JSON.parse(s); this.log(`Loaded ${this.d.acc.length} accounts.`, "ok"); }
     this.rndAcc();
   },
 
-  sv() { localStorage.setItem('iplinks_v6', JSON.stringify(this.d)); },
+  sv() { localStorage.setItem('iplinks_v7', JSON.stringify(this.d)); },
 
   go(x) {
     ['cfg','lst','dbg'].forEach(id => document.getElementById(id).classList.add('hidden'));
@@ -216,24 +234,11 @@ const V = {
   async fetchRaw(url, label) {
     try {
       this.log(`REQ [${label}]...`, "info");
-      const t0 = performance.now();
-      
-      let res;
-      // Usa o proxy que funcionou para a API
-      if (this.useProxy) {
-        res = await fetch(this.apiProxy + encodeURIComponent(url));
-      } else {
-        res = await fetch(url);
-      }
-      
-      this.log(`RES [${label}]: ${res.status} (${Math.round(performance.now()-t0)}ms)`, res.ok ? "ok" : "err");
+      let res = this.useProxy ? await fetch(this.apiProxy + encodeURIComponent(url)) : await fetch(url);
+      this.log(`RES [${label}]: ${res.status}`, res.ok ? "ok" : "err");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
       const text = await res.text();
-      if (text.length < 50 && text.trim().startsWith('<')) {
-        this.log(`WARN [${label}]: Proxy blocked.`, "warn");
-        return null;
-      }
+      if (text.length < 50 && text.trim().startsWith('<')) return null;
       return JSON.parse(text);
     } catch (e) {
       this.log(`ERR [${label}]: ${e.message}`, "err");
@@ -260,9 +265,7 @@ const V = {
       this.rndAcc();
       this.log(`+${c} ACCOUNTS`, "ok");
       this.chk();
-    } else {
-      this.log("No access found.", "warn");
-    }
+    } else { this.log("No access found.", "warn"); }
   },
 
   async chk() {
@@ -351,46 +354,39 @@ const V = {
     `).join('') || '<div style="grid-column:1/-1; text-align:center; color:#333; padding:20px">EMPTY</div>';
   },
 
-  // --- TACTICAL PLAYER WITH PROXY ROTATION ---
+  // --- PLAYER & EXTERNAL LAUNCHER ---
   pl(url, name) {
     this.cur = decodeURIComponent(url);
-    this.proxyIdx = 0; // Reset proxy chain
+    this.proxyIdx = 0;
     const v = document.getElementById('v');
     const m = document.getElementById('m');
     const pb = document.getElementById('proxy-badge');
-    const fo = document.getElementById('fallback-overlay');
+    const cc = document.getElementById('cmd-center');
     
     m.classList.add('open');
-    fo.style.display = 'none'; // Hide fallback
+    cc.style.display = 'none';
     v.style.display = 'block';
-    
     this.log(`Playing: ${name}`, "info");
-    this.initHls(v, pb, fo);
+    this.initHls(v, pb, cc);
   },
 
   initHls(video, badge, fallback) {
     if (this.hls) this.hls.destroy();
     
     if (Hls.isSupported()) {
-      this.hls = new Hls({ 
-        enableWorker: true,
-        debug: false,
-        // Configuração Tática: Intercepta requests
-        xhrSetup: (xhr, reqUrl) => {
-          if (this.useProxy) {
-            // Usa o proxy atual da cadeia
-            const pUrl = this.proxies[this.proxyIdx] + encodeURIComponent(reqUrl);
-            this.log(`Proxy[${this.proxyIdx}] Req: ${reqUrl.substring(0,40)}...`, "info");
-            badge.innerText = `PROXY ${this.proxyIdx+1}/${this.proxies.length}`;
-            badge.style.color = '#ffbb00';
-            xhr.open('GET', pUrl, true);
-          } else {
-            xhr.open('GET', reqUrl, true);
-            badge.innerText = "DIRECT";
-            badge.style.color = '#00ff9d';
-          }
+      this.hls = new Hls({ enableWorker: true, debug: false, xhrSetup: (xhr, reqUrl) => {
+        if (this.useProxy) {
+          const pUrl = this.proxies[this.proxyIdx] + encodeURIComponent(reqUrl);
+          this.log(`Proxy[${this.proxyIdx}]...`, "info");
+          badge.innerText = `PROXY ${this.proxyIdx+1}/${this.proxies.length}`;
+          badge.style.color = '#ffbb00';
+          xhr.open('GET', pUrl, true);
+        } else {
+          xhr.open('GET', reqUrl, true);
+          badge.innerText = "DIRECT";
+          badge.style.color = '#00ff9d';
         }
-      });
+      }});
       
       this.hls.loadSource(this.cur);
       this.hls.attachMedia(video);
@@ -401,20 +397,15 @@ const V = {
         badge.style.color = "#00ff9d";
       });
 
-      // LÓGICA DE ROTAÇÃO DE ERRO
       this.hls.on(Hls.Events.ERROR, (e, d) => {
         if (d.fatal) {
-          this.log(`HLS Error: ${d.type} (Proxy ${this.proxyIdx})`, "err");
-          
-          // Se ainda tiver proxies na cadeia, tenta o próximo
+          this.log(`HLS Error: ${d.type}`, "err");
           if (this.proxyIdx < this.proxies.length - 1 && this.useProxy) {
             this.proxyIdx++;
-            this.log(`Switching to Proxy Backend ${this.proxyIdx}...`, "warn");
             this.hls.destroy();
-            this.initHls(video, badge, fallback); // Retry
+            this.initHls(video, badge, fallback);
           } else {
-            // Acabaram os proxies. Mostra Fallback.
-            this.log("All Proxies Failed. Browser likely blocking Mixed Content.", "err");
+            // ALL PROXIES FAILED -> SHOW COMMAND CENTER
             badge.innerText = "FAILED";
             badge.style.color = "#ff4444";
             fallback.style.display = 'flex';
@@ -429,10 +420,39 @@ const V = {
     }
   },
 
-  openExternal() {
-    if(this.cur) {
-      this.log("Opening external player...", "info");
-      window.open(this.cur, '_blank');
+  retryInternal() {
+    const v = document.getElementById('v');
+    const pb = document.getElementById('proxy-badge');
+    const cc = document.getElementById('cmd-center');
+    cc.style.display = 'none';
+    v.style.display = 'block';
+    this.proxyIdx = 0; // Reset proxies
+    this.initHls(v, pb, cc);
+  },
+
+  // --- EXTERNAL LAUNCHER LOGIC ---
+  launch(type) {
+    const url = this.cur;
+    if(!url) return;
+    
+    this.log(`Launching external: ${type}`, "info");
+
+    if (type === 'vlc') {
+      // VLC Protocol (Works on Desktop mostly, and some mobiles)
+      window.location.href = `vlc://${url}`;
+    } 
+    else if (type === 'mx') {
+      // MX Player Android Intent
+      window.location.href = `intent://${url}#Intent;package=com.mxtech.videoplayer.ad;S.type=video/x-mpegurl;end`;
+    } 
+    else if (type === 'web') {
+      // Opens the official HLS.js demo page in a new tab
+      // This sometimes works if the user allows mixed content in the new tab, or if the demo site handles proxying
+      window.open(`https://hls-js.github.io/hls.js/demo/?src=${encodeURIComponent(url)}`, '_blank');
+    } 
+    else if (type === 'copy') {
+      navigator.clipboard.writeText(url);
+      this.log("URL Copied to clipboard", "ok");
     }
   },
 
