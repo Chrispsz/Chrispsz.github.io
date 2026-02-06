@@ -188,6 +188,11 @@
             margin-top: 10px;
             font-size: 14px;
         }
+        .loading {
+            color: #00ff88;
+            margin-top: 10px;
+            font-size: 14px;
+        }
         .empty {
             padding: 40px;
             text-align: center;
@@ -206,11 +211,12 @@
         <div class="header">
             <h1>IPTV PLAYER</h1>
             <div class="input-area">
-                <textarea id="input" placeholder="Cole M3U ou URL aqui..."></textarea>
+                <textarea id="input" placeholder="Cole URL do M3U aqui...&#10;Ex: http://site.crepusculo.shop/get.php?username=xxx&password=xxx&type=m3u_plus"></textarea>
                 <button class="btn btn-primary" onclick="loadPlaylist()">CARREGAR</button>
                 <button class="btn btn-secondary" id="externalBtn" style="display:none" onclick="toggleExternal()">ABRIR EM EXTERNO</button>
             </div>
             <div id="error" class="error"></div>
+            <div id="loading" class="loading" style="display:none">Carregando...</div>
         </div>
 
         <div class="main">
@@ -255,9 +261,50 @@
             
             const savedPlaylist = localStorage.getItem('iptv-playlist');
             if (savedPlaylist) {
+                const lines = savedPlaylist.split('\n');
+                document.getElementById('input').value = savedPlaylist;
                 parseM3U(savedPlaylist);
             }
         });
+
+        // Load playlist from URL using CORS proxy
+        async function loadPlaylist() {
+            const input = document.getElementById('input').value.trim();
+            if (!input) return;
+            
+            const errorDiv = document.getElementById('error');
+            const loadingDiv = document.getElementById('loading');
+            errorDiv.textContent = '';
+            loadingDiv.style.display = 'block';
+            
+            try {
+                if (input.includes('http')) {
+                    // Use CORS proxy
+                    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(input)}`;
+                    
+                    const response = await fetch(proxyUrl);
+                    const data = await response.json();
+                    
+                    if (data.contents) {
+                        parseM3U(data.contents);
+                        localStorage.setItem('iptv-playlist', data.contents);
+                    } else {
+                        throw new Error('Nenhum conteúdo retornado');
+                    }
+                } else {
+                    // Parse as M3U content
+                    parseM3U(input);
+                    localStorage.setItem('iptv-playlist', input);
+                }
+                
+                document.getElementById('input').value = '';
+            } catch (e) {
+                console.error('Erro:', e);
+                errorDiv.textContent = 'Erro ao carregar playlist: ' + e.message;
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        }
 
         // Parse M3U
         function parseM3U(content) {
@@ -287,37 +334,7 @@
                 }
             }
             
-            localStorage.setItem('iptv-playlist', content);
             renderChannels();
-        }
-
-        // Load playlist
-        async function loadPlaylist() {
-            const input = document.getElementById('input').value.trim();
-            if (!input) return;
-            
-            const errorDiv = document.getElementById('error');
-            errorDiv.textContent = '';
-            
-            try {
-                if (input.includes('http')) {
-                    // Fetch from URL via backend
-                    const response = await fetch('/api/playlist/fetch', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ url: input })
-                    });
-                    const data = await response.json();
-                    parseM3U(data.content);
-                } else {
-                    // Parse as M3U content
-                    parseM3U(input);
-                }
-                
-                document.getElementById('input').value = '';
-            } catch (e) {
-                errorDiv.textContent = 'Erro ao carregar playlist';
-            }
         }
 
         // Play channel
@@ -343,16 +360,21 @@
                 hls.attachMedia(video);
                 
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                    video.play().catch(() => {});
+                    video.play().catch(() => {
+                        document.getElementById('error').textContent = 'Erro ao iniciar playback - tente abrir em VLC';
+                    });
                 });
                 
-                hls.on(Hls.Events.ERROR, () => {
-                    document.getElementById('error').textContent = 'Erro ao carregar stream';
+                hls.on(Hls.Events.ERROR, (event, data) => {
+                    console.error('HLS Error:', data);
+                    if (data.fatal) {
+                        document.getElementById('error').textContent = 'Erro no stream - tente abrir em VLC';
+                    }
                 });
             } else {
                 video.src = channel.url;
                 video.play().catch(() => {
-                    document.getElementById('error').textContent = 'Erro ao carregar stream';
+                    document.getElementById('error').textContent = 'Erro ao carregar stream - tente abrir em VLC';
                 });
             }
             
