@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>V15.3 ARCHITECT</title>
+  <title>V15.3 FIX</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
     body { background: #000; color: #0f0; font-family: monospace; margin: 0; padding: 5px; font-size: 13px; }
@@ -66,20 +66,20 @@
     </div>
   </div>
 
-  <textarea id="in" rows="3" placeholder="LOGS..."></textarea>
+  <textarea id="in" rows="4" placeholder="Cole os logs SUZANOR (M3U+ link)..."></textarea>
   <div class="flex">
-    <button class="w-full" onclick="V.imp()">IMPORT</button>
-    <button onclick="V.chk()">CHECK</button>
+    <button class="w-full" onclick="V.imp()">1. IMPORTAR</button>
+    <button onclick="V.chk()">2. CHECK</button>
   </div>
-  <div id="acc" style="max-height: 100px; overflow-y: auto; border: 1px solid #222; margin-bottom: 5px;"></div>
+  <div id="acc" style="max-height: 120px; overflow-y: auto; border: 1px solid #222; margin-bottom: 5px;"></div>
   
   <label><input type="checkbox" id="force"> FORÇAR TUDO</label>
-  <button onclick="V.load()">CARREGAR</button>
+  <button onclick="V.load()">3. CARREGAR</button>
 
   <div class="mt-1" style="border-top: 1px solid #333; padding-top: 5px;">
     <div class="flex"><input id="t" placeholder="TOKEN"><input id="a" placeholder="ACC ID"></div>
     <div class="flex"><input id="n" placeholder="NS ID"><input id="k" placeholder="KEY"></div>
-    <button class="purple w-full" onclick="V.sync()">SYNC STEALTH</button>
+    <button class="purple w-full" onclick="V.sync()">4. SYNC STEALTH</button>
   </div>
 </div>
 
@@ -115,7 +115,7 @@ const V = {
   d: { acc: [], ch: [] }, hls: null, cur: '',
 
   init() {
-    const x = localStorage.getItem('v15_3');
+    const x = localStorage.getItem('v15_3_fix');
     if(x) this.d = JSON.parse(x);
     const c = JSON.parse(localStorage.getItem('v15_cf')||'{}');
     if(c.t) document.getElementById('t').value=c.t;
@@ -127,7 +127,7 @@ const V = {
   },
 
   save() { 
-    localStorage.setItem('v15_3', JSON.stringify(this.d)); 
+    localStorage.setItem('v15_3_fix', JSON.stringify(this.d)); 
     localStorage.setItem('v15_cf', JSON.stringify({
       t: document.getElementById('t').value,
       a: document.getElementById('a').value,
@@ -143,14 +143,56 @@ const V = {
     d.scrollTop = d.scrollHeight; 
   },
 
-  // LÓGICA DE PROXY INTELIGENTE
+  // CORRIGIDO: IMPORTADOR SUZANOR
+  imp() {
+    const txt = document.getElementById('in').value;
+    if(!txt.trim()) return alert('Cole os logs primeiro!');
+    
+    let c = 0;
+    
+    // 1. Regex Suzanor (M3U Link): http://host:port/get.php?username=X&password=Y
+    const reM3U = /https?:\/\/([^\/:]+)(?::(\d+))?\/get\.php\?username=([^&]+)&password=([^&\s]+)/gi;
+    let m;
+    
+    while ((m = reM3U.exec(txt)) !== null) {
+      const host = m[1];
+      const port = m[2] || '80';
+      const user = m[3];
+      const pass = m[4];
+      
+      // Monta URL no formato Xtream Codes: http://user:pass@host:port
+      const url = `http://${user}:${pass}@${host}:${port}`;
+      
+      // Verifica duplicata
+      if (!this.d.acc.find(x => x.url === url)) {
+        this.d.acc.push({ 
+          url: url, 
+          h: host, 
+          p: port, 
+          u: user, 
+          pw: pass, 
+          s: '?' 
+        });
+        c++;
+      }
+    }
+    
+    if (c > 0) {
+      document.getElementById('in').value = '';
+      this.save();
+      this.rndAcc();
+      this.log(`+${c} CONTAS IMPORTADAS (Suzanor)`);
+      this.chk(); // Auto check
+    } else {
+      alert('Nenhum acesso válido encontrado no formato M3U (Suzanor).');
+    }
+  },
+
   getProxy() {
     const myWorker = document.getElementById('wurl').value.trim();
     if (myWorker) {
-      this.log(`USANDO MEU WORKER: ${myWorker}`);
       return (url) => myWorker + '?url=' + encodeURIComponent(url);
     }
-    // Se não tiver worker, usa padrão AllOrigins (fallback)
     this.log(`USANDO PROXY PÚBLICO (ALLORIGINS)`);
     return (url) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
   },
@@ -161,20 +203,6 @@ const V = {
     document.getElementById(p==='cfg'?'cfg':(p==='lst'?'lst':'log')).classList.remove('hidden');
     document.querySelectorAll('.tab')[p==='cfg'?0:(p==='lst'?1:2)].classList.add('on');
     if(p==='lst') this.rnd();
-  },
-
-  imp() {
-    const txt = document.getElementById('in').value;
-    const r = /https?:\/\/([^\/:]+):([^@]+)@([^:\/]+):?(\d+)?/gi;
-    let m, c=0;
-    while((m=r.exec(txt))!==null) {
-      const u=`http://${m[1]}:${m[2]}@${m[3]}:${m[4]||80}`;
-      if(!this.d.acc.find(x=>x.url===u)) {
-        this.d.acc.push({url:u,h:m[3],p:m[4]||80,u:m[1],pw:m[2],s:'?'});
-        c++;
-      }
-    }
-    if(c>0) { document.getElementById('in').value=''; this.save(); this.rndAcc(); this.chk(); }
   },
 
   async chk() {
@@ -227,7 +255,7 @@ const V = {
     this.log('SYNC START...');
     const KW=['PREMIERE','SPORTV','ESPN','DAZN','HBO MAX','AMAZON PRIME','TNT SPORTS'];
     const MAX=90;
-    const proxyFn = this.getProxy(); // Usa o proxy (Worker ou Público) para baixar as listas
+    const proxyFn = this.getProxy();
     
     // HELPERS
     const cln=n=>n.replace(/\s*(HD|SD|4K|UHD|FHD)\s*/gi,'').replace(/[^\s\-\.]+/g,'').replace(/\s+/g,' ').trim();
@@ -337,7 +365,6 @@ const V = {
     
     if(this.hls)this.hls.destroy();
     if(Hls.isSupported()){
-      // Usa a função getProxy() que agora retorna a URL do Worker se configurado
       const proxyFn = this.getProxy();
       
       this.hls=new Hls({
