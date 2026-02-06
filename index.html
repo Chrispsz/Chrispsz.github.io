@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>IPLINKS V9 SPEED</title>
+  <title>IPLINKS V10 ROBUST</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
     body { background: #000; color: #ddd; font-family: sans-serif; margin: 0; padding: 10px; font-size: 14px; }
     
-    /* UI BÁSICA */
+    /* UI */
     .box { max-width: 800px; margin: 0 auto; }
     .btn { background: #222; color: #fff; border: 1px solid #444; padding: 12px; width: 100%; margin-bottom: 8px; border-radius: 4px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
     .btn:active { background: #444; }
-    .btn-green { background: #009944; border-color: #009944; color: #fff; }
-    .btn-red { background: #cc0000; border-color: #cc0000; color: #fff; }
+    .btn-green { background: #006622; border-color: #006622; color: #fff; }
+    .btn-red { background: #880000; border-color: #880000; color: #fff; }
     
     input, textarea { background: #111; border: 1px solid #333; color: #fff; padding: 10px; width: 100%; margin-bottom: 10px; border-radius: 4px; box-sizing: border-box; font-family: monospace; }
     
@@ -22,7 +22,7 @@
     .tab { flex: 1; padding: 10px; text-align: center; background: #111; cursor: pointer; border: 1px solid #333; border-bottom: none; margin-bottom: -1px; }
     .tab.active { background: #000; border-bottom: 1px solid #000; color: #0f0; }
 
-    /* LISTAS */
+    /* LISTS */
     .item { padding: 10px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
     .item span { word-break: break-all; }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100%, 1fr)); gap: 8px; }
@@ -49,13 +49,13 @@
 
     .hidden { display: none !important; }
     .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
-    .on { background: #0f0; } .off { background: #f00; }
+    .on { background: #0f0; } .off { background: #f00; } .warn { background: #ffaa00; }
   </style>
 </head>
 <body>
 
 <div class="box">
-  <h1 style="text-align: center; margin-bottom: 10px;">IPLINKS <span style="color:#0f0">V9</span></h1>
+  <h1 style="text-align: center; margin-bottom: 10px;">IPLINKS <span style="color:#0f0">V10</span></h1>
   
   <div class="tabs">
     <div class="tab active" onclick="App.show('config')">CONFIG</div>
@@ -120,24 +120,27 @@ const App = {
   data: { acc: [], ch: [] },
   hls: null,
   curUrl: '',
-  // Proxy
-  proxies: ['https://api.allorigins.win/raw?url=', 'https://corsproxy.io/?'],
-  pIdx: 0,
+  // Proxy Chain (Order matters)
+  proxies: [
+    'https://api.allorigins.win/raw?url=', 
+    'https://corsproxy.io/?'
+  ],
   useProxy: location.protocol === 'https:',
 
   init() {
-    this.log('SISTEMA INICIADO V9');
-    const s = localStorage.getItem('iplinks_v9');
+    this.log('SISTEMA V10 ROBUST INIT');
+    const s = localStorage.getItem('iplinks_v10');
     if(s) this.data = JSON.parse(s);
     this.renderAcc();
   },
 
-  save() { localStorage.setItem('iplinks_v9', JSON.stringify(this.data)); },
+  save() { localStorage.setItem('iplinks_v10', JSON.stringify(this.data)); },
   
-  log(msg) {
+  log(msg, type='info') {
     const div = document.getElementById('logs');
     const t = new Date().toLocaleTimeString();
-    div.innerHTML += `[${t}] ${msg}\n`;
+    const color = type === 'err' ? '#f00' : (type === 'warn' ? '#ffaa00' : '#0f0');
+    div.innerHTML += `<div style="color:${color}">[${t}] ${msg}</div>`;
     div.scrollTop = div.scrollHeight;
   },
 
@@ -192,7 +195,7 @@ const App = {
       this.renderAcc();
       try {
         const url = `http://${a.h}:${a.p}/player_api.php?username=${a.u}&password=${a.pw}`;
-        // Usa proxy fixo para check (API)
+        // Usa proxy fixo para check (API é pequena)
         const res = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(url));
         if(!res.ok) throw new Error();
         const j = await res.json();
@@ -200,50 +203,81 @@ const App = {
         this.log(`Check ${a.h}: ${a.s}`);
       } catch(e) {
         a.s = 'OFF';
-        this.log(`Erro check ${a.h}`);
+        this.log(`Erro check ${a.h}`, 'warn');
       }
     }
     this.save();
     this.renderAcc();
   },
 
+  // --- ROBUST LOAD CHANNELS ---
   async loadChannels() {
     const valid = this.data.acc.filter(a => a.s === 'ON');
     const target = valid.length ? valid : this.data.acc;
     if(!target.length) return alert('Sem contas online!');
     
     this.data.ch = [];
-    this.log('Carregando canais...');
+    this.log('Iniciando carregamento de canais...', 'warn');
     
     const force = document.getElementById('force-load').checked;
     const keys = ['PREMIERE', 'ESPN', 'SPORTV', 'AMAZON', 'PRIME', 'HBO', 'DAZN', 'TNT'];
 
-    for(const a of target) {
-      try {
-        const url = `http://${a.h}:${a.p}/player_api.php?username=${a.u}&password=${a.pw}&action=get_live_streams`;
-        const res = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(url));
-        if(!res.ok) continue;
-        const data = await res.json();
-        
-        if(Array.isArray(data)) {
-          data.forEach(x => {
-            const n = x.name.toUpperCase();
-            const isTarget = force ? true : keys.some(k => n.includes(k));
-            if(isTarget) {
-              this.data.ch.push({
-                n: x.name,
-                u: `http://${a.h}:${a.p}/live/${a.u}/${a.pw}/${x.stream_id}.m3u8`,
-                q: n.includes('4K')?'4K':(n.includes('HD')?'HD':'SD')
-              });
-            }
-          });
+    // Helper para tentar baixar com proxy rotativo
+    const fetchList = async (host, port, user, pass) => {
+      const url = `http://${host}:${port}/player_api.php?username=${user}&password=${pass}&action=get_live_streams`;
+      
+      for(let i=0; i < this.proxies.length; i++) {
+        try {
+          this.log(`Tentando Proxy ${i+1} para ${host}...`);
+          const res = await fetch(this.proxies[i] + encodeURIComponent(url));
+          
+          if(!res.ok) throw new Error(`Status HTTP ${res.status}`);
+          
+          const text = await res.text();
+          const sizeKb = Math.round(text.length / 1024);
+          this.log(`Recebido ${sizeKb}KB. Verificando JSON...`);
+          
+          // Verifica se voltou HTML (erro do proxy)
+          if (text.trim().startsWith('<')) throw new Error('Proxy retornou HTML (Bloqueio/Limite)');
+          
+          const data = JSON.parse(text); // Tenta parsear
+          return data;
+          
+        } catch(e) {
+          this.log(`Falha Proxy ${i+1}: ${e.message}`, 'err');
         }
-      } catch(e) { this.log('Erro ao carregar lista'); }
+      }
+      return null; // Todos falharam
+    };
+
+    for(const a of target) {
+      const data = await fetchList(a.h, a.p, a.u, a.pw);
+      
+      if(data && Array.isArray(data)) {
+        this.log(`Sucesso! ${data.length} canais brutos.`);
+        let added = 0;
+        
+        data.forEach(x => {
+          const n = x.name.toUpperCase();
+          const isTarget = force ? true : keys.some(k => n.includes(k));
+          if(isTarget) {
+            this.data.ch.push({
+              n: x.name,
+              u: `http://${a.h}:${a.p}/live/${a.u}/${a.pw}/${x.stream_id}.m3u8`,
+              q: n.includes('4K')?'4K':(n.includes('HD')?'HD':'SD')
+            });
+            added++;
+          }
+        });
+        this.log(`Filtrados: +${added} canais.`);
+      } else {
+        this.log(`Impossível carregar lista de ${a.h}`, 'err');
+      }
     }
     
     this.save();
     this.show('list');
-    this.log(`Total: ${this.data.ch.length} canais.`);
+    this.log(`Processo finalizado. Total: ${this.data.ch.length}`, 'warn');
   },
 
   // --- RENDER ---
@@ -323,7 +357,6 @@ const App = {
             this.hls.destroy();
             this.initHls(video, menu);
           } else {
-            // Falhou tudo
             video.pause();
             video.style.display = 'none';
             document.getElementById('p-ctrl').style.display = 'none';
