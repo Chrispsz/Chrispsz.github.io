@@ -3,47 +3,63 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IPLINKS V3 CORE</title>
+  <title>IPLINKS V4 DEBUGGER</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
-    :root { --bg: #000; --fg: #0f0; --dim: #333; --input: #111; }
+    :root { --bg: #050505; --fg: #0f0; --err: #f00; --dim: #333; --panel: #111; }
     * { box-sizing: border-box; margin: 0; padding: 0; outline: none; font-family: 'Consolas', monospace; }
-    body { background: var(--bg); color: #ccc; font-size: 12px; }
+    body { background: var(--bg); color: #ccc; font-size: 12px; overflow-x: hidden; }
     
     /* LAYOUT */
-    .c { max-width: 900px; margin: 0 auto; padding: 20px; }
-    .hd { display: flex; justify-content: space-between; border-bottom: 1px solid var(--dim); padding-bottom: 10px; margin-bottom: 20px; }
-    h1 { color: var(--fg); font-size: 20px; letter-spacing: -1px; }
+    .c { max-width: 1000px; margin: 0 auto; padding: 10px; display: flex; flex-direction: column; height: 100vh; }
+    .top { flex: 0 0 auto; }
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; margin-top: 10px; }
     
-    /* NAV */
-    nav button { background: none; border: none; color: #555; cursor: pointer; padding: 5px 10px; text-transform: uppercase; font-weight: bold; }
-    nav button.on { color: var(--fg); border-bottom: 1px solid var(--fg); }
+    /* HEADER & NAV */
+    .hd { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--dim); padding-bottom: 10px; }
+    h1 { color: var(--fg); font-size: 18px; letter-spacing: -1px; }
+    
+    nav { display: flex; gap: 5px; }
+    nav button { background: none; border: none; color: #555; cursor: pointer; padding: 5px 10px; text-transform: uppercase; font-weight: bold; font-size: 11px; }
+    nav button.on { color: var(--bg); background: var(--fg); }
 
     /* UI ELEMENTS */
-    .btn { background: var(--input); border: 1px solid var(--dim); color: #fff; cursor: pointer; padding: 8px 12px; font-family: inherit; font-size: 11px; text-transform: uppercase; }
+    .btn { background: var(--panel); border: 1px solid var(--dim); color: #fff; cursor: pointer; padding: 8px 12px; font-family: inherit; font-size: 11px; text-transform: uppercase; transition: 0.2s; }
     .btn:hover { border-color: var(--fg); color: var(--fg); }
     .btn:active { background: var(--fg); color: #000; }
-    .btn.primary { border-color: var(--fg); color: var(--fg); }
+    .btn.danger { border-color: var(--err); color: var(--err); }
     
-    input, textarea, select { background: var(--input); border: 1px solid var(--dim); color: var(--fg); padding: 10px; width: 100%; font-family: inherit; margin-bottom: 10px; }
-    textarea { height: 80px; font-size: 11px; resize: vertical; }
+    input, textarea, select { background: #000; border: 1px solid var(--dim); color: var(--fg); padding: 8px; font-family: inherit; width: 100%; margin-bottom: 5px; }
+    textarea { height: 60px; font-size: 11px; resize: vertical; }
     
-    /* LISTS */
-    .list { border-top: 1px solid var(--dim); }
-    .row { border-bottom: 1px solid var(--dim); padding: 8px; display: flex; justify-content: space-between; align-items: center; }
-    .row:hover { background: #050505; }
-    .ok { color: var(--fg); } .err { color: #555; } .dot { width: 8px; height: 8px; background: currentColor; border-radius: 50%; display: inline-block; margin-right: 8px; }
+    /* DEBUG CONSOLE */
+    #console-box {
+      flex: 1; background: #000; border: 1px solid var(--dim);
+      padding: 10px; overflow-y: auto; font-size: 11px; color: #888;
+      margin-bottom: 10px; display: flex; flex-direction: column-reverse; /* Auto scroll bottom */
+    }
+    .log-line { padding: 2px 0; border-bottom: 1px solid #111; }
+    .log-ok { color: var(--fg); }
+    .log-err { color: var(--err); }
+    .log-warn { color: yellow; }
+    .log-info { color: #666; font-style: italic; }
+    .ts { color: #444; margin-right: 10px; user-select: none; }
+
+    /* LISTS & GRID */
+    .list { border-top: 1px solid var(--dim); max-height: 150px; overflow-y: auto; }
+    .row { border-bottom: 1px solid var(--dim); padding: 6px; display: flex; justify-content: space-between; align-items: center; }
+    .row:hover { background: #0a0a0a; }
+    .ok { color: var(--fg); } .err { color: var(--err); } .dot { width: 6px; height: 6px; background: currentColor; border-radius: 50%; display: inline-block; margin-right: 6px; }
     
-    /* GRID */
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 5px; }
-    .card { border: 1px solid var(--dim); padding: 10px; display: flex; flex-direction: column; justify-content: space-between; min-height: 80px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 5px; overflow-y: auto; padding-right: 5px; }
+    .card { border: 1px solid var(--dim); padding: 8px; display: flex; flex-direction: column; justify-content: space-between; min-height: 70px; }
     .card:hover { border-color: var(--fg); }
-    .c-name { font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px; color: #fff; }
-    .c-meta { font-size: 10px; color: #555; margin-bottom: 8px; }
-    .c-act { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .c-name { font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; color: #eee; font-size: 11px; }
+    .c-meta { font-size: 10px; color: #555; margin-bottom: 5px; }
+    .c-act { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
     
     /* MODAL */
-    #m { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 99; display: none; align-items: center; justify-content: center; }
+    #m { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 999; display: none; align-items: center; justify-content: center; }
     #m.open { display: flex; }
     #v { width: 100%; max-width: 900px; aspect-ratio: 16/9; background: #000; }
     .ctrl { position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; }
@@ -51,56 +67,68 @@
     /* UTILS */
     .hidden { display: none !important; }
     .w-full { width: 100%; }
-    .flex { display: flex; gap: 10px; }
-    .mt-1 { margin-top: 10px; }
+    .flex { display: flex; gap: 5px; }
+    .mt-1 { margin-top: 5px; }
   </style>
 </head>
 <body>
 
 <div class="c">
-  <div class="hd">
-    <h1>IPLINKS<span style="font-size:0.5em; vertical-align:top; opacity:0.5">v3</span></h1>
-    <nav>
-      <button id="b-cfg" class="on" onclick="V.go('cfg')">CONFIG</button>
-      <button id="b-lst" onclick="V.go('lst')">LIST</button>
-    </nav>
-  </div>
-
-  <!-- CONFIG -->
-  <div id="cfg">
-    <textarea id="in" placeholder="PASTE LOGS HERE (SUZANOR / M3U LINKS)"></textarea>
-    <button class="btn primary w-full" onclick="V.imp()">IMPORT & EXTRACT</button>
-    
-    <div class="mt-1 flex">
-      <button class="btn" onclick="V.chk()">CHECK (AUTO-PROXY)</button>
-      <button class="btn primary" onclick="V.load()">LOAD CHANNELS</button>
-      <button class="btn" style="color:red" onclick="V.rst()">RESET</button>
-    </div>
-
-    <div class="list" id="acc"></div>
-    
-    <div class="mt-1" style="padding-top:10px; border-top:1px dashed #333">
-      <div style="color:#555; margin-bottom:5px;">CLOUDFLARE KV (OPT)</div>
-      <div class="flex">
-        <input type="password" id="kv-t" placeholder="TOKEN" style="margin:0">
-        <input type="text" id="kv-a" placeholder="ACC ID" style="margin:0">
-        <input type="text" id="kv-n" placeholder="NS ID" style="margin:0">
+  <div class="top">
+    <div class="hd">
+      <div>
+        <h1>IPLINKS <span style="font-size:0.6em; vertical-align:middle; color:var(--err)">DEBUG_V4</span></h1>
       </div>
-      <button class="btn w-full mt-1" onclick="V.sync()">SYNC TO KV</button>
+      <nav>
+        <button id="b-cfg" class="on" onclick="V.go('cfg')">CONFIG</button>
+        <button id="b-lst" onclick="V.go('lst')">LIST</button>
+        <button id="b-dbg" onclick="V.go('dbg')">LOGS</button>
+      </nav>
     </div>
-  </div>
 
-  <!-- LIST -->
-  <div id="lst" class="hidden">
-    <div class="flex">
-      <input type="text" id="s" placeholder="FILTER..." onkeyup="V.rnd()" style="margin:0">
-      <select id="f-q" onchange="V.rnd()" style="width:80px; margin:0">
-        <option value="all">ALL</option>
-        <option value="hd">HD</option>
-        <option value="sd">SD</option>
-      </select>
+    <!-- CONFIG TAB -->
+    <div id="cfg">
+      <textarea id="in" placeholder="PASTE LOGS (SUZANOR/M3U)"></textarea>
+      <div class="flex">
+        <button class="btn" style="border-color:var(--fg)" onclick="V.imp()">IMPORT</button>
+        <button class="btn" onclick="V.chk()">CHECK AUTH</button>
+        <button class="btn danger" onclick="V.rst()">RESET</button>
+      </div>
+      
+      <div class="list" id="acc"></div>
+      
+      <div class="mt-1" style="border-top:1px dashed #333; padding-top:10px;">
+        <div class="flex" style="align-items:center; color:#666; font-size:10px; margin-bottom:5px;">
+          <span>FORCE LOAD (BYPASS FILTER):</span>
+          <input type="checkbox" id="force-all" style="width:auto; margin:0;">
+        </div>
+        <div class="flex">
+          <button class="btn w-full" onclick="V.load()">LOAD CHANNELS</button>
+        </div>
+      </div>
     </div>
-    <div class="grid mt-1" id="g"></div>
+
+    <!-- LIST TAB -->
+    <div id="lst" class="hidden" style="height: 100%; display: flex; flex-direction: column;">
+      <div class="flex" style="flex:0 0 auto;">
+        <input type="text" id="s" placeholder="FILTER..." onkeyup="V.rnd()" style="margin:0">
+        <select id="f-q" onchange="V.rnd()" style="width:70px; margin:0">
+          <option value="all">ALL</option>
+          <option value="hd">HD</option>
+          <option value="sd">SD</option>
+        </select>
+      </div>
+      <div class="grid mt-1" id="g" style="flex:1 1 auto;"></div>
+    </div>
+
+    <!-- DEBUG TAB -->
+    <div id="dbg" class="hidden" style="height: 100%; display: flex; flex-direction: column;">
+      <div class="flex" style="justify-content: space-between; margin-bottom: 5px;">
+        <span style="color:#666">SYSTEM LOGS</span>
+        <button class="btn" style="padding:2px 8px;" onclick="V.clrLog()">CLEAR</button>
+      </div>
+      <div id="console-box"></div>
+    </div>
   </div>
 </div>
 
@@ -116,64 +144,81 @@
 </div>
 
 <script>
-// --- CORE ENGINE ---
 const V = {
-  d: { acc: [], ch: [] }, // Data
+  d: { acc: [], ch: [] },
   hls: null,
   cur: '',
-  // PROXY CONFIG: Automaticamente usa proxy se estiver em HTTPS (ex: GitHub Pages)
+  // Configurações avançadas
   useProxy: location.protocol === 'https:',
   proxyUrl: 'https://api.allorigins.win/raw?url=', 
-
+  
   init() {
-    const s = localStorage.getItem('iplinks_v3');
-    if (s) this.d = JSON.parse(s);
-    const k = JSON.parse(localStorage.getItem('iplinks_kv') || '{}');
-    if(k.t) document.getElementById('kv-t').value = k.t;
-    if(k.a) document.getElementById('kv-a').value = k.a;
-    if(k.n) document.getElementById('kv-n').value = k.n;
+    this.log("SYSTEM INIT", "info");
+    this.log("Protocol: " + location.protocol.toUpperCase(), "info");
+    this.log("Proxy Mode: " + (this.useProxy ? "ENABLED (AllOrigins)" : "DISABLED (Direct)"), "info");
+    
+    const s = localStorage.getItem('iplinks_v4');
+    if (s) { this.d = JSON.parse(s); this.log(`Loaded ${this.d.acc.length} accounts from storage.`, "ok"); }
     this.rndAcc();
   },
 
-  sv() {
-    localStorage.setItem('iplinks_v3', JSON.stringify(this.d));
-    localStorage.setItem('iplinks_kv', JSON.stringify({
-      t: document.getElementById('kv-t').value,
-      a: document.getElementById('kv-a').value,
-      n: document.getElementById('kv-n').value
-    }));
-  },
+  sv() { localStorage.setItem('iplinks_v4', JSON.stringify(this.d)); },
 
   go(x) {
-    document.getElementById('cfg').classList.toggle('hidden', x !== 'cfg');
-    document.getElementById('lst').classList.toggle('hidden', x !== 'lst');
-    document.getElementById('b-cfg').classList.toggle('on', x === 'cfg');
-    document.getElementById('b-lst').classList.toggle('on', x === 'lst');
+    ['cfg','lst','dbg'].forEach(id => document.getElementById(id).classList.add('hidden'));
+    ['b-cfg','b-lst','b-dbg'].forEach(id => document.getElementById(id).classList.remove('on'));
+    
+    document.getElementById(x).classList.remove('hidden');
+    document.getElementById('b-'+x).classList.add('on');
     if (x === 'lst') this.rnd();
   },
 
-  msg(t) {
-    const m = document.createElement('div');
-    m.style.cssText = "position:fixed; bottom:20px; right:20px; background:#0f0; color:#000; padding:10px 20px; z-index:999; font-weight:bold;";
-    m.innerText = t;
-    document.body.appendChild(m);
-    setTimeout(() => m.remove(), 2000);
+  // --- LOGGER ---
+  log(msg, type = 'info') {
+    const box = document.getElementById('console-box');
+    const div = document.createElement('div');
+    div.className = `log-line log-${type}`;
+    const time = new Date().toLocaleTimeString().split(' ')[0];
+    div.innerHTML = `<span class="ts">[${time}]</span> ${msg}`;
+    box.prepend(div); // Adiciona no topo (flex-direction reverse visual)
+    // Limita logs
+    if(box.children.length > 100) box.lastChild.remove();
   },
+  clrLog() { document.getElementById('console-box').innerHTML = ''; this.log("Logs cleared.", "info"); },
 
-  // --- SMART FETCH (Handles CORS/HTTPS) ---
-  async fetchRaw(url) {
+  // --- FETCH COM DEBUG ---
+  async fetchRaw(url, label) {
     try {
+      this.log(`REQ [${label}]: ${url.substring(0, 50)}...`, "info");
+      const t0 = performance.now();
+      
+      let res;
       if (this.useProxy) {
-        // Encode URL para o proxy
-        const res = await fetch(this.proxyUrl + encodeURIComponent(url));
-        if (!res.ok) throw new Error('Proxy Fail');
-        return await res.json();
+        // Codifica a URL para o proxy
+        res = await fetch(this.proxyUrl + encodeURIComponent(url));
       } else {
-        const res = await fetch(url);
-        return await res.json();
+        res = await fetch(url);
       }
+      
+      const t1 = performance.now();
+      const size = res.headers.get('content-length') || '?';
+      
+      this.log(`RES [${label}]: Status ${res.status} (${Math.round(t1-t0)}ms)`, res.ok ? "ok" : "err");
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const text = await res.text();
+      this.log(`DATA [${label}]: Size ~${Math.round(text.length/1024)}KB. Parsing...`, "info");
+      
+      // Verifica se voltou vazio (possível falha de proxy em lista grande)
+      if (text.length < 50 && text.trim().startsWith('<')) {
+        this.log(`WARN [${label}]: Proxy returned HTML (Blocking?). Try HTTP server.`, "warn");
+        return null;
+      }
+
+      return JSON.parse(text);
     } catch (e) {
-      console.warn("Fetch failed", e);
+      this.log(`ERR [${label}]: ${e.message}`, "err");
       return null;
     }
   },
@@ -181,10 +226,8 @@ const V = {
   // --- IMPORT ---
   imp() {
     const txt = document.getElementById('in').value;
-    if (!txt.trim()) return this.msg('INPUT EMPTY');
+    if (!txt.trim()) return this.log("Input empty.", "err");
     let c = 0;
-
-    // Regex M3U Get (Suzanor style)
     const re = /https?:\/\/([^\/:]+)(?::(\d+))?\/get\.php\?username=([^&]+)&password=([^&\s]+)/gi;
     let m;
     while ((m = re.exec(txt)) !== null) {
@@ -194,65 +237,98 @@ const V = {
         c++;
       }
     }
-    
     if (c > 0) {
       document.getElementById('in').value = '';
       this.sv();
       this.rndAcc();
-      this.chk(); // Auto check
-      this.msg(`+${c} ACCOUNTS`);
+      this.log(`Imported ${c} accounts.`, "ok");
+      this.chk();
     } else {
-      this.msg('NO ACCESS FOUND');
+      this.log("No valid access found in text.", "warn");
     }
   },
 
   // --- CHECK ---
   async chk() {
     if (this.d.acc.length === 0) return;
-    this.msg('CHECKING (PROXY: '+this.useProxy+')...');
-    
+    this.log("Starting Account Check...", "info");
     for (let a of this.d.acc) {
       a.s = '..';
       this.rndAcc();
       const url = `http://${a.h}:${a.p}/player_api.php?username=${a.u}&password=${a.pw}`;
-      const data = await this.fetchRaw(url);
+      const data = await this.fetchRaw(url, `CHK ${a.h}`);
       a.s = (data && data.user_info && data.user_info.status === 'Active') ? 'ON' : 'OFF';
+      this.log(`Account [${a.h}]: Status ${a.s}`, a.s === 'ON' ? "ok" : "warn");
     }
     this.sv();
     this.rndAcc();
   },
 
-  // --- LOAD ---
+  // --- LOAD COM DEBUG DETALHADO ---
   async load() {
     const valid = this.d.acc.filter(a => a.s === 'ON');
-    // Fallback: Se nenhum ON, tenta carregar de todos (útil se check falhou por proxy lento)
-    const target = valid.length ? valid : this.d.acc; 
+    // Se nenhum ON, tenta de todos (force mode)
+    const target = valid.length ? valid : this.d.acc;
     
-    if (!target.length) return this.msg('NO ACCOUNTS');
-    this.msg('LOADING...');
+    if (!target.length) return this.log("No accounts to load.", "err");
+    
     this.d.ch = [];
+    this.log("Starting Load Process...", "info");
     
+    // Verifica modo força
+    const forceAll = document.getElementById('force-all').checked;
     const keys = ['PREMIERE', 'ESPN', 'SPORTV', 'AMAZON', 'PRIME', 'HBO', 'DAZN', 'TNT'];
+    this.log(`Filter Mode: ${forceAll ? 'DISABLED (Loading ALL)' : 'ENABLED (Keywords only)'}`, "info");
 
     for (const a of target) {
+      this.log(`Processing Account: ${a.h}...`, "info");
       const url = `http://${a.h}:${a.p}/player_api.php?username=${a.u}&password=${a.pw}&action=get_live_streams`;
-      const data = await this.fetchRaw(url);
+      const data = await this.fetchRaw(url, `LOAD ${a.h}`);
+      
       if (Array.isArray(data)) {
+        const totalRaw = data.length;
+        this.log(`  >> Received ${totalRaw} channels.`, "ok");
+        
+        let added = 0;
+        // Processamento em lote para não travar se for mt grande
+        // Mas para debug, processamos normal
         data.forEach(x => {
           const n = x.name.toUpperCase();
-          if (keys.some(k => n.includes(k))) {
+          
+          // Lógica de Filtro
+          let isTarget = false;
+          if (forceAll) {
+            isTarget = true; // Pega tudo
+          } else {
+            isTarget = keys.some(k => n.includes(k)); // Pega só keywords
+          }
+
+          if (isTarget) {
             this.d.ch.push({
               n: x.name,
               u: `http://${a.h}:${a.p}/live/${a.u}/${a.pw}/${x.stream_id}.m3u8`,
               q: n.includes('4K')?'4K':(n.includes('HD')?'HD':'SD')
             });
+            added++;
           }
         });
+        
+        this.log(`  >> Filtered: ${added} channels added.`, "ok");
+        
+        // Early stop se for força all e já tiver muitos para não estourar memória
+        if (forceAll && this.d.ch.length > 500) {
+           this.log("Limit reached (500 channels) to prevent crash in Force Mode.", "warn");
+           break;
+        }
+
+      } else {
+        this.log(`  >> Failed to parse channels from ${a.h}.`, "err");
       }
     }
+    
     this.sv();
     this.go('lst');
-    this.msg(`${this.d.ch.length} CH`);
+    this.log(`Process Complete. Total in list: ${this.d.ch.length}`, "ok");
   },
 
   // --- RENDER ---
@@ -260,12 +336,12 @@ const V = {
     document.getElementById('acc').innerHTML = this.d.acc.map((a, i) => `
       <div class="row">
         <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-          <span class="dot" style="color:${a.s==='ON'?'#0f0':'#555'}"></span>
-          <span style="color:#555">[${a.h}]</span> ${a.u}
+          <span class="dot" style="color:${a.s==='ON'?'#0f0':(a.s==='OFF'?'#f00':'#666')}"></span>
+          <span style="color:#444; font-size:10px;">[${a.h}]</span> ${a.u}
         </div>
-        <button class="btn" style="color:red; padding:2px 5px;" onclick="V.del(${i})">X</button>
+        <button class="btn" style="color:red; padding:2px 5px; font-size:10px;" onclick="V.del(${i})">X</button>
       </div>
-    `).join('') || '<div style="padding:10px; color:#333; text-align:center">NO DATA</div>';
+    `).join('') || '<div style="padding:10px; text-align:center; color:#333">NO ACCOUNTS</div>';
   },
 
   rnd() {
@@ -286,11 +362,11 @@ const V = {
           <div class="c-meta" style="color:${c.q==='HD'?'#0f0':'#555'}">${c.q}</div>
         </div>
         <div class="c-act">
-          <button class="btn primary" onclick="V.pl('${encodeURIComponent(c.u)}','${c.n.replace(/'/g,"\\'")}')">PLAY</button>
+          <button class="btn" style="border-color:#0f0; color:#0f0" onclick="V.pl('${encodeURIComponent(c.u)}','${c.n.replace(/'/g,"\\'")}')">PLAY</button>
           <button class="btn" onclick="V.cpU('${c.u}')">LINK</button>
         </div>
       </div>
-    `).join('') || '<div style="grid-column:1/-1; text-align:center; color:#333; padding:20px">EMPTY</div>';
+    `).join('') || '<div style="grid-column:1/-1; text-align:center; color:#333; padding:20px">EMPTY LIST</div>';
   },
 
   // --- PLAYER ---
@@ -299,6 +375,7 @@ const V = {
     const v = document.getElementById('v');
     const m = document.getElementById('m');
     m.classList.add('open');
+    this.log(`Playing: ${name}`, "info");
     
     if (this.hls) this.hls.destroy();
     
@@ -306,7 +383,8 @@ const V = {
       this.hls = new Hls({ enableWorker: true });
       this.hls.loadSource(this.cur);
       this.hls.attachMedia(v);
-      this.hls.on(Hls.Events.MANIFEST_PARSED, () => v.play().catch(()=>{}));
+      this.hls.on(Hls.Events.MANIFEST_PARSED, () => v.play().catch(()=>this.log("Autoplay blocked by browser", "warn")));
+      this.hls.on(Hls.Events.ERROR, (e, d) => this.log(`HLS Error: ${d.type}`, "err"));
     } else if (v.canPlayType('application/vnd.apple.mpegurl')) {
       v.src = this.cur;
       v.play().catch(()=>{});
@@ -319,28 +397,10 @@ const V = {
     if (this.hls) this.hls.destroy();
   },
 
-  cpU(u) { navigator.clipboard.writeText(u); this.msg('COPIED'); },
+  cpU(u) { navigator.clipboard.writeText(u); this.log("URL Copied to clipboard", "ok"); },
   cp() { if(this.cur) this.cpU(this.cur); },
   del(i) { this.d.acc.splice(i,1); this.sv(); this.rndAcc(); },
-  rst() { if(confirm('RESET?')) { this.d = { acc:[], ch:[] }; this.sv(); this.rndAcc(); this.rnd(); }},
-
-  // --- SYNC ---
-  async sync() {
-    const t = document.getElementById('kv-t').value;
-    const a = document.getElementById('kv-a').value;
-    const n = document.getElementById('kv-n').value;
-    if(!t || !a || !n) return this.msg('MISSING KV CREDS');
-    
-    this.msg('SYNCING...');
-    try {
-      await fetch(`https://api.cloudflare.com/client/v4/accounts/${a}/storage/kv/namespaces/${n}/values/iplinks_core`, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${t}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ t: Date.now(), d: this.d.ch })
-      });
-      this.msg('SYNC OK');
-    } catch(e) { this.msg('SYNC ERR'); }
-  }
+  rst() { if(confirm('RESET ALL?')) { this.d = { acc:[], ch:[] }; this.sv(); this.rndAcc(); this.rnd(); this.log("System Reset.", "warn"); }}
 };
 
 window.onload = () => V.init();
