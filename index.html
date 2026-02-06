@@ -1,373 +1,454 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>IPLINKS V17.2 UPDATER</title>
-  <script src="https://cloudflare.com/cdn-cgi/npm/hls.js@latest"></script>
-  <style>
-    /* Design Minimalista Profissional */
-    :root { --bg: #000; --fg: #e5e5e5; --accent: #0f0; --danger: #ef4444; --card: #111; --border: #333; }
-    body { background: var(--bg); color: var(--fg); font-family: 'Consolas', monospace; margin: 0; padding: 10px; }
-    
-    .container { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; height: 100vh; }
-    
-    /* Tabs */
-    .nav { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 15px; padding-bottom: 15px; border-style: solid; }
-    .btn-nav { background: none; border: none; color: #666; padding: 10px 20px; cursor: pointer; font-family: inherit; font-size: 14px; }
-    .btn-nav:hover { color: #fff; }
-    .btn-nav.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
-    
-    /* Cards & Grid */
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100%, 1fr)); gap: 10px; overflow-y: auto; flex: 1; padding-bottom: 50px; } /* Espaço para o rodapé */
-    @media (min-width: 600px) { .grid { grid-template-columns: 1fr 1fr; } }
-    
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; height: 100%; }
-    
-    .c-name { font-weight: bold; font-size: 14px; margin-bottom: 5px; color: #fff; line-height: 1.2; }
-    .c-meta { font-size: 11px; color: #888; margin-bottom: 10px; display: flex; justify-content: space-between; }
-    
-    /* Inputs */
-    input, textarea { 
-      background: #000; border: 1px solid var(--border); color: #fff; padding: 10px; width: 100%; box-sizing: border-box; font-family: monospace; font-size: 13px; margin-bottom: 10px; 
-    }
-    input:focus, textarea:focus { outline: none; border-color: var(--accent); }
-    
-    /* Buttons */
-    .btn { background: #222; border: 1px solid var(--border); color: #fff; padding: 10px 15px; border-radius: 4px; cursor: pointer; text-transform: uppercase; font-weight: 600; transition: 0.2s; }
-    .btn:hover { background: #333; }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-primary { background: #0891f2; border: 0; color: white; width: 100%; }
-    .btn-primary:hover { background: #2563eb; }
-    
-    /* Log Box */
-    #log-box { 
-      background: #000; border: 1px solid #333; color: #0f0; font-size: 11px; 
-      height: 150px; overflow-y: auto; padding: 10px; white-space: pre-wrap; margin-bottom: 10px;
-    }
-
-    /* Status Indicator */
-    .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
-    .online { background: #22c55e; }
-    .offline { background: #555; }
-    
-    .badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-    .badge-new { background: var(--accent); color: #000; }
-
-    /* Modal (Update Logs) */
-    #update-modal {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 999; display: none; align-items: center; justify-content: center; padding: 20px; text-align: center; }
-    .modal-card { background: #111; padding: 20px; border-radius: 8px; max-width: 400px; width: 90%; text-align: center; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPTV Player</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #000;
+            color: #fff;
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 20px;
+            font-size: 14px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #333;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .header h1 {
+            font-size: 24px;
+            color: #00ff88;
+            margin: 0;
+        }
+        .input-area {
+            display: flex;
+            gap: 10px;
+            flex: 1;
+            min-width: 300px;
+            flex-wrap: wrap;
+        }
+        .input-area textarea {
+            flex: 1;
+            min-width: 300px;
+            padding: 10px;
+            background: #111;
+            border: 1px solid #333;
+            color: #fff;
+            font-size: 14px;
+            font-family: monospace;
+            min-height: 60px;
+            resize: vertical;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        .btn-primary {
+            background: #00ff88;
+            color: #000;
+        }
+        .btn-primary:hover {
+            background: #00dd77;
+        }
+        .btn-secondary {
+            background: #333;
+            color: #fff;
+            border: 1px solid #666;
+        }
+        .btn-secondary:hover {
+            background: #444;
+        }
+        .btn-vlc {
+            background: #ff7700;
+            color: #fff;
+        }
+        .btn-web {
+            background: #4285f4;
+            color: #fff;
+        }
+        .main {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .video-container {
+            flex: 2;
+            min-width: 300px;
+        }
+        .video-wrapper {
+            background: #111;
+            border: 1px solid #333;
+            margin-bottom: 20px;
+        }
+        video {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #000;
+            display: block;
+        }
+        .external-panel {
+            display: none;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .external-panel.show {
+            display: flex;
+        }
+        .channels-container {
+            flex: 1;
+            min-width: 300px;
+        }
+        .channels-header {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .btn-small {
+            padding: 8px 15px;
+            font-size: 12px;
+        }
+        .info {
+            color: #666;
+            font-size: 12px;
+        }
+        .channels-list {
+            max-height: calc(100vh - 350px);
+            overflow-y: auto;
+            background: #111;
+            border: 1px solid #333;
+        }
+        .channel {
+            padding: 12px;
+            border-bottom: 1px solid #222;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .channel:hover {
+            background: #1a1a1a;
+        }
+        .channel.playing {
+            background: #222;
+        }
+        .channel img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+        .channel-info {
+            flex: 1;
+        }
+        .channel-name {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .channel-group {
+            font-size: 11px;
+            color: #666;
+        }
+        .fav-btn {
+            padding: 5px 10px;
+            background: #333;
+            border: 1px solid #444;
+            color: #666;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .fav-btn.favorite {
+            background: #ffcc00;
+            border-color: #ffcc00;
+            color: #000;
+        }
+        .error {
+            color: #ff4444;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .empty {
+            padding: 40px;
+            text-align: center;
+            color: #666;
+        }
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .main { flex-direction: column; }
+            .video-container, .channels-container { flex: 1; min-width: 100%; }
+            .channels-list { max-height: 400px; }
+        }
+    </style>
 </head>
 <body>
-
-<div class="container">
-  
-  <div class="nav">
-    <div>
-      <h1 style="font-size: 1.2rem; font-weight: 800; letter-spacing: -0.5px; background: linear-gradient(135deg, #0f0, #0ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">IPLINKS <span style="font-size: 0.7em; color: #fff; font-weight: normal; margin-left: 10px;">V17 UPDATER</span></h1>
-    </div>
-    
-    <div>
-      <button class="btn-nav on" onclick="App.show('cfg')">1. CONFIGURAÇÃO</button>
-      <button class="btn-nav" onclick="App.show('logs')">2. LOGS</button>
-    </div>
-  </div>
-
-  <!-- ABA CONFIGURAÇÃO -->
-  <div id="cfg" class="container">
-    
-    <!-- Config Worker -->
-    <div style="margin-bottom: 20px;">
-      <div style="display:flex; gap: 10px; align-items: center; background: #111; padding: 10px; border-radius: 4px; border: 1px solid #222; margin-bottom: 10px; justify-content: space-between;">
-        <span style="font-weight: bold; color: #aaa;">CONFIGURAÇÃO DO WORKER</span>
-        <span id="worker-status" class="status-dot"></span>
-        <span id="worker-status-text" style="font-size: 10px; color: #555;">DESCONECTADO</span>
-      </div>
-      <div style="display:flex; gap: 10px;">
-        <input type="text" id="wurl" placeholder="URL DO WORKER (Ex: https://worker.seudominio.workers.dev)" class="w-full">
-        <button class="btn btn-primary" onclick="App.testWorker()">TESTAR CONEXÃO</button>
-      </div>
-
-      <!-- Logs Input -->
-      <textarea id="logs-input" rows="4" placeholder="Cole seus logs (Suzanor / M3U+) aqui..."></textarea>
-      <div class="flex" style="margin-bottom: 10px;">
-        <button class="btn" onclick="App.import()">1. IMPORTAR LOGS</button>
-        <button class="btn btn-danger" onclick="App.clear()">LIMPAR TUDO</button>
-      </div>
-
-      <!-- Contas -->
-      <div style="border-bottom: 1px solid #222; padding-bottom: 10px; margin-bottom: 10px;">
-        <div style="display:flex; justify-content: space-between; align-items: center;">
-          <span style="font-weight: bold; font-size: 0.9rem; color: #fff;">MINHAS CONTAS ATIVAS</span>
-          <span id="active-accs-count" class="badge-new">0</span>
+    <div class="container">
+        <div class="header">
+            <h1>IPTV PLAYER</h1>
+            <div class="input-area">
+                <textarea id="input" placeholder="Cole M3U ou URL aqui..."></textarea>
+                <button class="btn btn-primary" onclick="loadPlaylist()">CARREGAR</button>
+                <button class="btn btn-secondary" id="externalBtn" style="display:none" onclick="toggleExternal()">ABRIR EM EXTERNO</button>
+            </div>
+            <div id="error" class="error"></div>
         </div>
-        <div id="acc-list"></div>
-      </div>
 
-      <!-- Action -->
-      <div style="display:flex; gap: 10px;">
-        <button class="btn btn-primary" onclick="App.updateList()">2. ATUALIZAR LISTA (PROXY)</button>
-        <button class="btn" onclick="App.openModal()">⬇ EXPORTAR</button>
-      </div>
-      
-      <div style="margin-top: 10px; font-size: 11px; color: #555;">
-        Dica: Clique em ATUALIZAR LISTA para processar contas e atualizar o KV automaticamente.
-      </div>
-  </div>
+        <div class="main">
+            <div class="video-container">
+                <div class="video-wrapper">
+                    <video id="video" controls autoplay></video>
+                </div>
+                
+                <div class="external-panel" id="externalPanel">
+                    <button class="btn btn-vlc" onclick="openVLC()">VLC</button>
+                    <button class="btn btn-web" onclick="openWebCaster()">WEB VIDEO CASTER</button>
+                    <button class="btn btn-secondary" onclick="copyURL()">COPIAR URL</button>
+                </div>
+            </div>
 
-  <!-- ABA LOGS -->
-  <div id="logs" style="display: none; height: 100%; display: flex; flex-direction: column; overflow: hidden;">
-    <button onclick="document.getElementById('logs').innerHTML=''; location.reload()" style="cursor: pointer; color: #aaa; background: none; text-align: right; font-family: inherit; font-size: 0.8rem;">LIMPAR LOGS</button>
-    <div id="log-content" style="flex: 1; overflow-y: auto; padding: 10px;">
-      <div style="color: #666; font-family: monospace; white-space: pre-wrap; font-size: 11px;"></div>
+            <div class="channels-container">
+                <div class="channels-header">
+                    <button class="btn btn-small btn-secondary" onclick="clearFavorites()">
+                        LIMPAR FAVORITOS (<span id="favCount">0</span>)
+                    </button>
+                    <span class="info"><span id="channelCount">0</span> canais</span>
+                </div>
+                
+                <div class="channels-list" id="channelsList"></div>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <!-- PLAYER MODAL -->
-  <div id="modal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 999; align-items: center; justify-content: center; flex-direction: column; padding: 20px;">
-    <div class="modal-card">
-      <h2 style="font-size: 1.2rem; margin-bottom: 10px; color: #fff;">ATUALIZANDO...</h2>
-      <div id="modal-msg" style="color: #aaa; margin-bottom: 15px; text-align: center; font-size: 0.9rem;">
-        Processando contas... Isso pode levar até 1 minuto.
-      </div>
-      <div class="spinner"></div>
-    </div>
-  </div>
+    <script>
+        let channels = [];
+        let favorites = [];
+        let currentChannel = null;
+        let hls = null;
 
-<script>
-const App = {
-  data: {
-    acc: [], // Lista de contas locais
-    remoteData: null, // Dados remotos (vindo do Worker)
-    workerUrl: '',
-    updateUrl: '' // URL para o update manual (opcional)
-  },
-
-  init() {
-    const saved = localStorage.getItem('iplinks_v17_2');
-    if(saved) {
-      const parsed = JSON.parse(saved);
-      this.data.acc = parsed.acc || [];
-      this.workerUrl = parsed.workerUrl || '';
-      this.remoteData = parsed.remoteData || null;
-      if (this.remoteData) {
-        this.data.ch = this.remoteData.channels || [];
-        this.renderList();
-      }
-    }
-    
-    // Configura URL Worker
-    const wUrl = localStorage.getItem('iplinks_worker_url');
-    if(wurl) {
-      this.workerUrl = wurl;
-      document.getElementById('wurl').updateUrl(wurl);
-      this.testWorkerConnection();
-    }
-  },
-
-  save() {
-    localStorage.setItem('iplinks_v17_2', JSON.stringify({
-      acc: this.data.acc,
-      workerUrl: document.getElementById('wurl').value.trim(),
-      remoteData: this.remoteData
-    }));
-    this.renderList();
-  },
-
-  // --- UI LOGS ---
-  log(msg) {
-    const el = document.getElementById('log-content');
-    const time = new Date().toLocaleTimeString().split('show_msg')[0];
-    el.innerHTML += `[${time}] ${msg}\n`;
-    el.scrollTop = el.scrollHeight;
-  },
-
-  switchTab(id) {
-    document.querySelectorAll('.btn-nav').forEach(b => b.classList.remove('active'));
-    document.getElementById('cfg').style.display = id === 'cfg' ? 'block' : 'none';
-    document.getElementById('logs').style.display = id === 'logs' ? 'flex' : 'none';
-    document.getElementById(`nav-${id}`).classList.add('active');
-  },
-
-  // --- IMPORTAÇÃO -->
-  import() {
-    const txt = document.getElementById('logs-input').value;
-    const r = /https?:\/\/([^\/:]+):?(\d+)?\/get\.php\?username=([^&]+)&password=([^&\s]+)/gi;
-    let m, c = 0;
-    while((m = r.exec(txt)) !== null) {
-      const u = `http://${m[3]}:${m[4]}@${m[1]}:${m[2]||80}`;
-      if (!this.data.acc.find(x => x.url === u)) {
-        this.data.acc.push({
-          url: u, h: m[1], p: m[2] || '80', u: m[3], pw: m[4], s: 'Pending' // Estado inicial
+        // Load saved data
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedFavs = localStorage.getItem('iptv-favs');
+            if (savedFavs) {
+                favorites = JSON.parse(savedFavs);
+                updateFavCount();
+            }
+            
+            const savedPlaylist = localStorage.getItem('iptv-playlist');
+            if (savedPlaylist) {
+                parseM3U(savedPlaylist);
+            }
         });
-        c++;
-      }
-    }
-    
-    if (c > 0) {
-      document.getElementById('logs-input').value = '';
-      this.save();
-      this.renderAcc();
-      this.log(`${c} contas importadas. Clique em Atualizar Lista.`);
-    } else {
-      this.log('Nenhum acesso encontrado no texto.', 'error');
-    }
-  },
 
-  // --- TESTE DO WORKER ---
-  async testWorker() {
-    if (!this.workerUrl) return alert('Cole a URL do Worker primeiro.');
-    
-    this.workerUrl = document.getElementById('wurl').value.trim();
-    this.log(`Testando: ${this.workerUrl}/health...`);
-    
-    try {
-      const res = await fetch(`${this.workerUrl}/health`);
-      const data = await res.json();
-      
-      const statusInd = document.getElementById('worker-status');
-      const statusText = document.getElementById('worker-status-text');
-      
-      if (data.ok && data.canais > 0) {
-        statusInd.className = 'status-dot online';
-        statusText.innerText = "ONLINE";
-        this.save(); // Salva a URL para não digitar sempre
-        this.log(`Worker Online. ${data.canais} canais no KV.`);
-      } else {
-        statusInd.className = 'status-dot offline';
-        statusText = "OFFLINE OU VAZIO";
-        this.log(`Worker Status: ${data.canais} canais. KV vazio.`);
-      }
-    } catch (e) {
-      const statusInd = document.getElementById('worker-url').parentElement.querySelector('.status-dot');
-      statusInd.className = 'status-dot offline';
-      this.log(`Erro Worker: ${e.message}`, 'error');
-    }
-  },
+        // Parse M3U
+        function parseM3U(content) {
+            channels = [];
+            const lines = content.split('\n');
+            let current = null;
+            let id = 0;
 
-  // --- ATUALIZAÇÃO INTELIGENTE ---
-  async updateList() {
-    if (!this.workerUrl) return alert('Configurar URL do Worker primeiro.');
-    
-    const activeAcc = this.data.acc.filter(a => a.s === 'ON' || a.s === 'Pending');
-    if (activeAcc.length === 0) return alert('Nenhuma conta online encontrada.');
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                
+                if (line.startsWith('#EXTINF:')) {
+                    const name = line.split(',').pop() || 'Canal';
+                    const logoMatch = line.match(/tvg-logo="([^"]+)"/);
+                    const groupMatch = line.match(/group-title="([^"]+)"/);
+                    
+                    current = {
+                        id: id++,
+                        name: name.trim(),
+                        logo: logoMatch ? logoMatch[1] : null,
+                        group: groupMatch ? groupMatch[1] : null
+                    };
+                } else if (!line.startsWith('#') && line && current) {
+                    current.url = line;
+                    channels.push(current);
+                    current = null;
+                }
+            }
+            
+            localStorage.setItem('iptv-playlist', content);
+            renderChannels();
+        }
 
-    // 1. Abre o modal de Loading
-    const modal = document.getElementById('modal');
-    const msg = document.getElementById('modal-msg');
-    const loader = document.querySelector('.spinner');
-    modal.style.display = 'flex';
-    msg.style.display = 'block';
+        // Load playlist
+        async function loadPlaylist() {
+            const input = document.getElementById('input').value.trim();
+            if (!input) return;
+            
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = '';
+            
+            try {
+                if (input.includes('http')) {
+                    // Fetch from URL via backend
+                    const response = await fetch('/api/playlist/fetch', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url: input })
+                    });
+                    const data = await response.json();
+                    parseM3U(data.content);
+                } else {
+                    // Parse as M3U content
+                    parseM3U(input);
+                }
+                
+                document.getElementById('input').value = '';
+            } catch (e) {
+                errorDiv.textContent = 'Erro ao carregar playlist';
+            }
+        }
 
-    try {
-      this.log('Enviando contas para o Worker...');
-      
-      // Envia contas para o Worker (V8 Logic)
-      const payload = {
-        t: Date.now(),
-        accounts: activeAcc.map(a => ({ url: a.url }))
-      };
-      
-      const res = await fetch(`${this.workerUrl}/update`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+        // Play channel
+        function playChannel(channel) {
+            currentChannel = channel;
+            const video = document.getElementById('video');
+            
+            if (hls) {
+                hls.destroy();
+                hls = null;
+            }
+            
+            video.src = '';
+            
+            const isHls = channel.url.includes('.m3u8') || channel.url.includes('.m3u');
+            
+            if (isHls && Hls.isSupported()) {
+                hls = new Hls({
+                    enableWorker: true,
+                    maxBufferLength: 30
+                });
+                hls.loadSource(channel.url);
+                hls.attachMedia(video);
+                
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    video.play().catch(() => {});
+                });
+                
+                hls.on(Hls.Events.ERROR, () => {
+                    document.getElementById('error').textContent = 'Erro ao carregar stream';
+                });
+            } else {
+                video.src = channel.url;
+                video.play().catch(() => {
+                    document.getElementById('error').textContent = 'Erro ao carregar stream';
+                });
+            }
+            
+            document.getElementById('externalBtn').style.display = 'block';
+            document.getElementById('externalPanel').classList.remove('show');
+            renderChannels();
+        }
 
-      const data = await res.json();
-      
-      if(data.error) throw new Error(data.error);
+        // Toggle favorite
+        function toggleFavorite(id) {
+            const idStr = String(id);
+            const index = favorites.indexOf(idStr);
+            
+            if (index > -1) {
+                favorites.splice(index, 1);
+            } else {
+                favorites.push(idStr);
+            }
+            
+            localStorage.setItem('iptv-favs', JSON.stringify(favorites));
+            updateFavCount();
+            renderChannels();
+        }
 
-      // Worker retorna channels e streams
-      // Precisamos atualizar `this.data` localmente para que o Player HTML mostre os canais
-      // E atualizar o KV no Worker (Worker já cuida disso)
-      
-      this.data = data.channels || [];
-      
-      // Sincroniza o tempo remoto também
-      this.save();
-      
-      this.renderList();
-      this.log(`Sucesso! ${this.data.length} canais atualizados no Worker.`);
-      this.switchTab('list');
-      alert('Lista atualizada com sucesso!');
-      
-    } catch (e) {
-      this.log(`Erro na atualização: ${e.message}`, 'error');
-      alert('Falha na conexão com o Worker. Verifique a URL e o código do Worker.');
-    } finally {
-      modal.style.display = 'none';
-    }
-  },
+        function clearFavorites() {
+            favorites = [];
+            localStorage.setItem('iptv-favs', '[]');
+            updateFavCount();
+            renderChannels();
+        }
 
-  // --- RENDER ---
-  renderList() {
-    const list = document.getElementById('channel-grid');
-    document.getElementById('active-accs-count').innerText = this.data.length;
+        function updateFavCount() {
+            document.getElementById('favCount').textContent = favorites.length;
+        }
 
-    if (this.data.length === 0) {
-      list.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">Nenhum canal.</div>';
-      return;
-    }
+        function toggleExternal() {
+            document.getElementById('externalPanel').classList.toggle('show');
+        }
 
-    // Renderiza Grade
-    list.innerHTML = this.data.map(c => `
-      <div class="card">
-        <div class="c-name">${c.name}</div>
-        <div class="c-meta">
-          <span style="font-size: 10px; color: #aaa;">${c.id}</span>
-          <span style="color: var(--accent);">• LIVE</span>
-        </div>
-        <div class="c-meta">
-          <span style="margin-right: 10px;">FONTES:</span>
-          ${Object.keys(c.streams).length} 
-            /* Exibe 'Main' se tiver apenas 1, ou 'Main + 1 backup' se tiver mais */
-            .map(k => k.includes('_b1') ? 'Backup' : 'Principal')
-            .join(', ')
-        </div>
-        
-        <div class="c-actions">
-          <button class="btn btn-primary" onclick="App.play('${c.streams.main}', '${c.name.replace(/'/g, "\\'")}')">PLAY</button>
-          <button class="btn" onclick="App.cast('wvc', '${c.streams.main}')">📺 CAST</button>
-        </div>
-      </div>
-    `).join('');
-  },
+        function openVLC() {
+            if (!currentChannel) return;
+            window.location.href = `vlc://${currentChannel.url}`;
+        }
 
-  // --- PLAYERS ---
-  play(url, title) {
-    const wurl = document.getElementById('wurl').value.trim();
-    // Se tiver Worker configurado, usa Proxy do Worker. Se não, tenta direto.
-    const target = wurl ? `${wurl}/proxy?url=${encodeURIComponent(url)}` : url;
-    window.open(target, '_blank');
-  },
+        function openWebCaster() {
+            if (!currentChannel) return;
+            window.location.href = `wvc://video?url=${encodeURIComponent(currentChannel.url)}`;
+        }
 
-  cast(app, url) {
-    if (!url) return alert('Selecione um canal primeiro.');
-    if (app === 'wvc') {
-      window.location.href = `intent://x#Intent;package=com.instantbits.cast.webvideo;S.url=${encodeURIComponent(url)};end`;
-    } else if (app === 'vlc') {
-      window.location.href = `vlc://${url}`;
-    }
-  },
+        function copyURL() {
+            if (!currentChannel) return;
+            navigator.clipboard.writeText(currentChannel.url);
+            alert('URL copiada!');
+        }
 
-  clear() {
-    this.data = [];
-    this.save();
-    this.renderList();
-    this.log('Lista limpa.');
-  },
+        // Render channels
+        function renderChannels() {
+            const container = document.getElementById('channelsList');
+            const searchTerm = document.getElementById('input').value.toLowerCase();
+            
+            const filtered = channels.filter(c => 
+                c.name.toLowerCase().includes(searchTerm) || !searchTerm
+            );
+            
+            document.getElementById('channelCount').textContent = filtered.length;
+            
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty">Nenhum canal encontrado</div>';
+                return;
+            }
+            
+            container.innerHTML = filtered.map(channel => {
+                const isFav = favorites.includes(String(channel.id));
+                const isPlaying = currentChannel && currentChannel.id === channel.id;
+                
+                return `
+                    <div class="channel ${isPlaying ? 'playing' : ''}" onclick="playChannel(${JSON.stringify(channel).replace(/"/g, '&quot;')})">
+                        ${channel.logo ? `<img src="${channel.logo}" alt="" onerror="this.style.display='none'">` : ''}
+                        <div class="channel-info">
+                            <div class="channel-name">${channel.name}</div>
+                            ${channel.group ? `<div class="channel-group">${channel.group}</div>` : ''}
+                        </div>
+                        <button class="fav-btn ${isFav ? 'favorite' : ''}" onclick="event.stopPropagation(); toggleFavorite(${channel.id})">
+                            ${isFav ? '★' : '☆'}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
 
-  openModal() {
-    const el = document.getElementById('modal');
-    el.style.display = 'none'; // Esconde primeiro
-    el.style.display = 'flex'; // Depois mostra
-  }
-};
-
-window.onload = () => App.init();
-</script>
+        // Search on input
+        document.getElementById('input').addEventListener('input', () => {
+            if (channels.length > 0) {
+                renderChannels();
+            }
+        });
+    </script>
 </body>
 </html>
