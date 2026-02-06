@@ -3,474 +3,691 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IPTV Player</title>
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <title>IPTV Brasil Player</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        background: '#0a0a0a',
+                        foreground: '#fafafa',
+                        primary: '#3b82f6',
+                        'primary-foreground': '#ffffff',
+                        muted: '#6b7280',
+                    }
+                }
+            }
+        }
+    </script>
+    
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            background: #000;
-            color: #fff;
-            font-family: system-ui, -apple-system, sans-serif;
-            padding: 20px;
-            font-size: 14px;
-            min-height: 100vh;
-        }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #333;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .header h1 {
-            font-size: 24px;
-            color: #00ff88;
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .input-area {
-            display: flex;
-            gap: 10px;
-            flex: 1;
-            min-width: 300px;
-            flex-wrap: wrap;
+        
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #0a0a0a;
+            color: #fafafa;
         }
-        .input-area textarea {
-            flex: 1;
-            min-width: 300px;
-            padding: 10px;
-            background: #111;
-            border: 1px solid #333;
-            color: #fff;
-            font-size: 14px;
-            font-family: monospace;
-            min-height: 60px;
-            resize: vertical;
+        
+        .scrollbar-custom::-webkit-scrollbar {
+            width: 8px;
         }
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            text-transform: uppercase;
-        }
-        .btn-primary {
-            background: #00ff88;
-            color: #000;
-        }
-        .btn-primary:hover {
-            background: #00dd77;
-        }
-        .btn-secondary {
-            background: #333;
-            color: #fff;
-            border: 1px solid #666;
-        }
-        .btn-secondary:hover {
-            background: #444;
-        }
-        .btn-vlc {
-            background: #ff7700;
-            color: #fff;
-        }
-        .btn-web {
-            background: #4285f4;
-            color: #fff;
-        }
-        .main {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-        .video-container {
-            flex: 2;
-            min-width: 300px;
-        }
-        .video-wrapper {
-            background: #111;
-            border: 1px solid #333;
-            margin-bottom: 20px;
-        }
-        video {
-            width: 100%;
-            aspect-ratio: 16/9;
-            background: #000;
-            display: block;
-        }
-        .external-panel {
-            display: none;
-            gap: 10px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-        }
-        .external-panel.show {
-            display: flex;
-        }
-        .channels-container {
-            flex: 1;
-            min-width: 300px;
-        }
-        .channels-header {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-            align-items: center;
-        }
-        .btn-small {
-            padding: 8px 15px;
-            font-size: 12px;
-        }
-        .info {
-            color: #666;
-            font-size: 12px;
-        }
-        .channels-list {
-            max-height: calc(100vh - 350px);
-            overflow-y: auto;
-            background: #111;
-            border: 1px solid #333;
-        }
-        .channel {
-            padding: 12px;
-            border-bottom: 1px solid #222;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .channel:hover {
+        .scrollbar-custom::-webkit-scrollbar-track {
             background: #1a1a1a;
         }
-        .channel.playing {
-            background: #222;
+        .scrollbar-custom::-webkit-scrollbar-thumb {
+            background: #3b82f6;
+            border-radius: 4px;
         }
-        .channel img {
-            width: 40px;
-            height: 40px;
-            object-fit: contain;
+        
+        .loading-spinner {
+            animation: spin 1s linear infinite;
         }
-        .channel-info {
-            flex: 1;
-        }
-        .channel-name {
-            font-size: 14px;
-            font-weight: 500;
-            margin-bottom: 4px;
-        }
-        .channel-group {
-            font-size: 11px;
-            color: #666;
-        }
-        .fav-btn {
-            padding: 5px 10px;
-            background: #333;
-            border: 1px solid #444;
-            color: #666;
-            font-size: 12px;
-            cursor: pointer;
-        }
-        .fav-btn.favorite {
-            background: #ffcc00;
-            border-color: #ffcc00;
-            color: #000;
-        }
-        .error {
-            color: #ff4444;
-            margin-top: 10px;
-            font-size: 14px;
-        }
-        .loading {
-            color: #00ff88;
-            margin-top: 10px;
-            font-size: 14px;
-        }
-        .empty {
-            padding: 40px;
-            text-align: center;
-            color: #666;
-        }
-        @media (max-width: 768px) {
-            body { padding: 10px; }
-            .main { flex-direction: column; }
-            .video-container, .channels-container { flex: 1; min-width: 100%; }
-            .channels-list { max-height: 400px; }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>IPTV PLAYER</h1>
-            <div class="input-area">
-                <textarea id="input" placeholder="Cole URL do M3U aqui...&#10;Ex: http://site.crepusculo.shop/get.php?username=xxx&password=xxx&type=m3u_plus"></textarea>
-                <button class="btn btn-primary" onclick="loadPlaylist()">CARREGAR</button>
-                <button class="btn btn-secondary" id="externalBtn" style="display:none" onclick="toggleExternal()">ABRIR EM EXTERNO</button>
-            </div>
-            <div id="error" class="error"></div>
-            <div id="loading" class="loading" style="display:none">Carregando...</div>
-        </div>
-
-        <div class="main">
-            <div class="video-container">
-                <div class="video-wrapper">
-                    <video id="video" controls autoplay></video>
-                </div>
+    <div id="app"></div>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- HLS.js -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.15/dist/hls.min.js"></script>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        
+        // Ícones simples
+        const Icons = {
+            tv: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 12 2"/></svg>`,
+            play: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 3 19 12"/></svg>`,
+            loader: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 1 18 0" class="loading-spinner"/></svg>`,
+            trash: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 0 2-2H7a2 2 0 0 0 2 2v14"/></svg>`,
+            folder: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1 2 2V5a2 2 0 0 1 2-2h5l2 3h9l2 3h5a2 2 0 0 1 2 2z"/><path d="m2 13 4 3"/></svg>`,
+            search: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>`,
+            cast: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 7-7 7 7"/><line x1="12" y1="5" x2="12" y2="19"/></svg>`,
+            x: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
+        };
+        
+        const CACHE_KEY = 'iptv-cache';
+        const CACHE_TTL = 3600000;
+        
+        const EXCLUDED_CATEGORIES = [
+            'filme', 'movie', 'film', 'vod', 'series', 'series4k', '4kseries',
+            'radio', 'rádio', 'music', 'musica', 'audio', 'som',
+            'adult', 'xxx', 'porn'
+        ];
+        
+        const BRAZILIAN_KEYWORDS = [
+            'brasil', 'brazil', 'brasileira', 'brasileiro', 'globo',
+            'record', 'sbt', 'band', 'rede', 'aberta', 'aberto',
+            'sao paulo', 'rio', 'minas', 'bahia', 'parana',
+            'catarinense', 'gaucha', 'brasilia', 'df', 'sp', 'rj',
+            'mg', 'rs', 'pr', 'sc', 'ba', 'pe', 'go', 'es', 'ce', 'am', 'pa', 'rn'
+        ];
+        
+        function App() {
+            const [rawInput, setRawInput] = useState('');
+            const [host, setHost] = useState('');
+            const [username, setUsername] = useState('');
+            const [password, setPassword] = useState('');
+            
+            const [categories, setCategories] = useState([]);
+            const [selectedCategory, setSelectedCategory] = useState(null);
+            const [allChannels, setAllChannels] = useState([]);
+            const [displayedChannels, setDisplayedChannels] = useState([]);
+            const [currentChannel, setCurrentChannel] = useState(null);
+            const [showPlayer, setShowPlayer] = useState(false);
+            
+            const [isLoading, setIsLoading] = useState(false);
+            const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+            const [isVideoLoading, setIsVideoLoading] = useState(false);
+            const [error, setError] = useState(null);
+            
+            const [searchQuery, setSearchQuery] = useState('');
+            const [cacheInfo, setCacheInfo] = useState({ exists: false, age: 0 });
+            
+            const videoRef = useRef(null);
+            const hlsRef = useRef(null);
+            const channelsScrollRef = useRef(null);
+            const [scrollPosition, setScrollPosition] = useState(0);
+            
+            // Carregar cache
+            useEffect(() => {
+                try {
+                    const cached = localStorage.getItem(CACHE_KEY);
+                    if (cached) {
+                        const data = JSON.parse(cached);
+                        const age = Date.now() - data.timestamp;
+                        if (age < CACHE_TTL) {
+                            setCacheInfo({ exists: true, age: Math.floor(age / 60000) });
+                            setCategories(data.categories || []);
+                        } else {
+                            localStorage.removeItem(CACHE_KEY);
+                        }
+                    }
+                } catch (e) {
+                    console.error('Cache error:', e);
+                }
+            }, []);
+            
+            // Filtrar canais
+            useEffect(() => {
+                let filtered = allChannels;
+                if (searchQuery && searchQuery.trim()) {
+                    const query = searchQuery.toLowerCase();
+                    filtered = allChannels.filter(channel =>
+                        channel.name.toLowerCase().includes(query) ||
+                        (channel.group && channel.group.toLowerCase().includes(query))
+                    );
+                }
+                setDisplayedChannels(filtered);
+            }, [allChannels, searchQuery]);
+            
+            // Parser de credenciais
+            const parseCredentials = (text) => {
+                const lines = text.split('\n');
+                let extractedHost = '';
+                let extractedUser = '';
+                let extractedPass = '';
                 
-                <div class="external-panel" id="externalPanel">
-                    <button class="btn btn-vlc" onclick="openVLC()">VLC</button>
-                    <button class="btn btn-web" onclick="openWebCaster()">WEB VIDEO CASTER</button>
-                    <button class="btn btn-secondary" onclick="copyURL()">COPIAR URL</button>
-                </div>
-            </div>
-
-            <div class="channels-container">
-                <div class="channels-header">
-                    <button class="btn btn-small btn-secondary" onclick="clearFavorites()">
-                        LIMPAR FAVORITOS (<span id="favCount">0</span>)
-                    </button>
-                    <span class="info"><span id="channelCount">0</span> canais</span>
-                </div>
-                
-                <div class="channels-list" id="channelsList"></div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let channels = [];
-        let favorites = [];
-        let currentChannel = null;
-        let hls = null;
-
-        // Load saved data
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedFavs = localStorage.getItem('iptv-favs');
-            if (savedFavs) {
-                favorites = JSON.parse(savedFavs);
-                updateFavCount();
-            }
-            
-            const savedPlaylist = localStorage.getItem('iptv-playlist');
-            if (savedPlaylist) {
-                const lines = savedPlaylist.split('\n');
-                document.getElementById('input').value = savedPlaylist;
-                parseM3U(savedPlaylist);
-            }
-        });
-
-        // Load playlist from URL using CORS proxy
-        async function loadPlaylist() {
-            const input = document.getElementById('input').value.trim();
-            if (!input) return;
-            
-            const errorDiv = document.getElementById('error');
-            const loadingDiv = document.getElementById('loading');
-            errorDiv.textContent = '';
-            loadingDiv.style.display = 'block';
-            
-            try {
-                if (input.includes('http')) {
-                    // Use CORS proxy
-                    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(input)}`;
+                lines.forEach(line => {
+                    const lower = line.toLowerCase().trim();
                     
-                    const response = await fetch(proxyUrl);
+                    if (lower.includes('servidor:') || lower.includes('*servidor:')) {
+                        const match = line.match(/[:*]\s*([^:\s]+)[^\d]*/);
+                        if (match) extractedHost = match[1].trim();
+                    }
+                    
+                    if (lower.includes('m3u+:')) {
+                        const urlMatch = line.match(/https?:\/\/([^\/]+)/);
+                        if (urlMatch) extractedHost = urlMatch[1].trim();
+                    }
+                    
+                    if (lower.includes('usuário:') || lower.includes('usuario:') || lower.includes('*usuário:') || lower.includes('*usuario:')) {
+                        const match = line.match(/[:*]\s*([^\s]+)/);
+                        if (match) extractedUser = match[1].trim();
+                    }
+                    
+                    if (lower.includes('senha:') || lower.includes('*senha:')) {
+                        const match = line.match(/[:*]\s*([^\s]+)/);
+                        if (match) extractedPass = match[1].trim();
+                    }
+                });
+                
+                if (!extractedHost || !extractedUser || !extractedPass) {
+                    const urlMatch = text.match(/https?:\/\/([^\/]+)\/get\.php\?username=([^&]+)&password=([^&]+)/);
+                    if (urlMatch) {
+                        extractedHost = extractedHost || urlMatch[1];
+                        extractedUser = extractedUser || urlMatch[2];
+                        extractedPass = extractedPass || urlMatch[3];
+                    }
+                }
+                
+                return { host: extractedHost, username: extractedUser, password: extractedPass };
+            };
+            
+            const handleRawInput = async () => {
+                if (!rawInput.trim()) return;
+                
+                const creds = parseCredentials(rawInput);
+                
+                if (creds.host && creds.username && creds.password) {
+                    setHost(creds.host);
+                    setUsername(creds.username);
+                    setPassword(creds.password);
+                    setRawInput('');
+                    await connect(creds.host, creds.username, creds.password);
+                } else {
+                    setError('Não foi possível extrair as credenciais');
+                }
+            };
+            
+            const connect = async (hostOverride, userOverride, passOverride) => {
+                const targetHost = hostOverride || host;
+                const targetUser = userOverride || username;
+                const targetPass = passOverride || password;
+                
+                if (!targetHost || !targetUser || !targetPass) {
+                    setError('Preencha suas credenciais');
+                    return;
+                }
+                
+                setIsLoadingCategories(true);
+                setError(null);
+                
+                try {
+                    const baseUrl = targetHost.startsWith('http') ? targetHost : 'http://' + targetHost;
+                    
+                    const response = await fetch('/api/iptv/xtream/categories', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            host: baseUrl,
+                            username: targetUser,
+                            password: targetPass,
+                            type: 'live'
+                        })
+                    });
+                    
                     const data = await response.json();
                     
-                    if (data.contents) {
-                        parseM3U(data.contents);
-                        localStorage.setItem('iptv-playlist', data.contents);
-                    } else {
-                        throw new Error('Nenhum conteúdo retornado');
+                    if (data.error) {
+                        throw new Error(data.error);
                     }
-                } else {
-                    // Parse as M3U content
-                    parseM3U(input);
-                    localStorage.setItem('iptv-playlist', input);
-                }
-                
-                document.getElementById('input').value = '';
-            } catch (e) {
-                console.error('Erro:', e);
-                errorDiv.textContent = 'Erro ao carregar playlist: ' + e.message;
-            } finally {
-                loadingDiv.style.display = 'none';
-            }
-        }
-
-        // Parse M3U
-        function parseM3U(content) {
-            channels = [];
-            const lines = content.split('\n');
-            let current = null;
-            let id = 0;
-
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i].trim();
-                
-                if (line.startsWith('#EXTINF:')) {
-                    const name = line.split(',').pop() || 'Canal';
-                    const logoMatch = line.match(/tvg-logo="([^"]+)"/);
-                    const groupMatch = line.match(/group-title="([^"]+)"/);
                     
-                    current = {
-                        id: id++,
-                        name: name.trim(),
-                        logo: logoMatch ? logoMatch[1] : null,
-                        group: groupMatch ? groupMatch[1] : null
-                    };
-                } else if (!line.startsWith('#') && line && current) {
-                    current.url = line;
-                    channels.push(current);
-                    current = null;
-                }
-            }
-            
-            renderChannels();
-        }
-
-        // Play channel
-        function playChannel(channel) {
-            currentChannel = channel;
-            const video = document.getElementById('video');
-            
-            if (hls) {
-                hls.destroy();
-                hls = null;
-            }
-            
-            video.src = '';
-            
-            const isHls = channel.url.includes('.m3u8') || channel.url.includes('.m3u');
-            
-            if (isHls && Hls.isSupported()) {
-                hls = new Hls({
-                    enableWorker: true,
-                    maxBufferLength: 30
-                });
-                hls.loadSource(channel.url);
-                hls.attachMedia(video);
-                
-                hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                    video.play().catch(() => {
-                        document.getElementById('error').textContent = 'Erro ao iniciar playback - tente abrir em VLC';
+                    const filteredCategories = (data.categories || []).filter(cat => {
+                        const catName = cat.category_name.toLowerCase();
+                        const isExcluded = EXCLUDED_CATEGORIES.some(excl => catName.includes(excl));
+                        if (isExcluded) return false;
+                        const isBrazilian = BRAZILIAN_KEYWORDS.some(kw => catName.includes(kw));
+                        return isBrazilian || !EXCLUDED_CATEGORIES.some(excl => catName.includes(excl));
                     });
-                });
+                    
+                    setCategories(filteredCategories);
+                    setSelectedCategory(null);
+                    setAllChannels([]);
+                    setDisplayedChannels([]);
+                    
+                    const cacheData = {
+                        categories: filteredCategories,
+                        timestamp: Date.now(),
+                        credentials: baseUrl + ':' + targetUser + ':' + targetPass
+                    };
+                    localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+                    setCacheInfo({ exists: true, age: 0 });
+                    
+                } catch (err) {
+                    setError(err.message || 'Erro ao conectar');
+                } finally {
+                    setIsLoadingCategories(false);
+                }
+            };
+            
+            const loadStreams = async (category) => {
+                setSelectedCategory(category);
+                setIsLoading(true);
+                setError(null);
                 
-                hls.on(Hls.Events.ERROR, (event, data) => {
-                    console.error('HLS Error:', data);
-                    if (data.fatal) {
-                        document.getElementById('error').textContent = 'Erro no stream - tente abrir em VLC';
+                try {
+                    const baseUrl = host.startsWith('http') ? host : 'http://' + host;
+                    
+                    const response = await fetch('/api/iptv/xtream/streams', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            host: baseUrl,
+                            username,
+                            password,
+                            type: 'live',
+                            category_id: category.category_id
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        throw new Error(data.error);
                     }
-                });
-            } else {
-                video.src = channel.url;
-                video.play().catch(() => {
-                    document.getElementById('error').textContent = 'Erro ao carregar stream - tente abrir em VLC';
-                });
-            }
+                    
+                    const channels = (data.streams || []).map(s => ({
+                        name: s.name,
+                        url: s.url,
+                        logo: s.stream_icon,
+                        group: category.category_name
+                    }));
+                    
+                    setAllChannels(channels);
+                    setDisplayedChannels(channels);
+                    setSearchQuery('');
+                    
+                } catch (err) {
+                    setError(err.message || 'Erro ao carregar');
+                } finally {
+                    setIsLoading(false);
+                }
+            };
             
-            document.getElementById('externalBtn').style.display = 'block';
-            document.getElementById('externalPanel').classList.remove('show');
-            renderChannels();
-        }
-
-        // Toggle favorite
-        function toggleFavorite(id) {
-            const idStr = String(id);
-            const index = favorites.indexOf(idStr);
-            
-            if (index > -1) {
-                favorites.splice(index, 1);
-            } else {
-                favorites.push(idStr);
-            }
-            
-            localStorage.setItem('iptv-favs', JSON.stringify(favorites));
-            updateFavCount();
-            renderChannels();
-        }
-
-        function clearFavorites() {
-            favorites = [];
-            localStorage.setItem('iptv-favs', '[]');
-            updateFavCount();
-            renderChannels();
-        }
-
-        function updateFavCount() {
-            document.getElementById('favCount').textContent = favorites.length;
-        }
-
-        function toggleExternal() {
-            document.getElementById('externalPanel').classList.toggle('show');
-        }
-
-        function openVLC() {
-            if (!currentChannel) return;
-            window.location.href = `vlc://${currentChannel.url}`;
-        }
-
-        function openWebCaster() {
-            if (!currentChannel) return;
-            window.location.href = `wvc://video?url=${encodeURIComponent(currentChannel.url)}`;
-        }
-
-        function copyURL() {
-            if (!currentChannel) return;
-            navigator.clipboard.writeText(currentChannel.url);
-            alert('URL copiada!');
-        }
-
-        // Render channels
-        function renderChannels() {
-            const container = document.getElementById('channelsList');
-            const searchTerm = document.getElementById('input').value.toLowerCase();
-            
-            const filtered = channels.filter(c => 
-                c.name.toLowerCase().includes(searchTerm) || !searchTerm
-            );
-            
-            document.getElementById('channelCount').textContent = filtered.length;
-            
-            if (filtered.length === 0) {
-                container.innerHTML = '<div class="empty">Nenhum canal encontrado</div>';
-                return;
-            }
-            
-            container.innerHTML = filtered.map(channel => {
-                const isFav = favorites.includes(String(channel.id));
-                const isPlaying = currentChannel && currentChannel.id === channel.id;
+            const playChannel = (channel) => {
+                if (channelsScrollRef.current) {
+                    setScrollPosition(channelsScrollRef.current.scrollTop);
+                }
                 
-                return `
-                    <div class="channel ${isPlaying ? 'playing' : ''}" onclick="playChannel(${JSON.stringify(channel).replace(/"/g, '&quot;')})">
-                        ${channel.logo ? `<img src="${channel.logo}" alt="" onerror="this.style.display='none'">` : ''}
-                        <div class="channel-info">
-                            <div class="channel-name">${channel.name}</div>
-                            ${channel.group ? `<div class="channel-group">${channel.group}</div>` : ''}
-                        </div>
-                        <button class="fav-btn ${isFav ? 'favorite' : ''}" onclick="event.stopPropagation(); toggleFavorite(${channel.id})">
-                            ${isFav ? '★' : '☆'}
-                        </button>
-                    </div>
-                `;
-            }).join('');
+                setCurrentChannel(channel);
+                setShowPlayer(true);
+                setError(null);
+                setIsVideoLoading(true);
+            };
+            
+            const openInWebVideoCaster = () => {
+                if (!currentChannel) return;
+                
+                const encodedUrl = encodeURIComponent(currentChannel.url);
+                const wvcUrl = 'webvideocaster://play?url=' + encodedUrl;
+                
+                let success = false;
+                try {
+                    window.location.href = wvcUrl;
+                    success = true;
+                } catch {}
+                
+                if (!success) {
+                    try {
+                        window.open(wvcUrl, '_self');
+                        success = true;
+                    } catch {}
+                }
+                
+                if (!success) {
+                    setError('Web Video Caster não detectado. Instale o app para usar esta função.');
+                }
+            };
+            
+            const clearCache = () => {
+                localStorage.removeItem(CACHE_KEY);
+                setCacheInfo({ exists: false, age: 0 });
+                setCategories([]);
+                setAllChannels([]);
+                setDisplayedChannels([]);
+                setSelectedCategory(null);
+                setSearchQuery('');
+                setHost('');
+                setUsername('');
+                setPassword('');
+                setRawInput('');
+                setShowPlayer(false);
+                
+                if (hlsRef.current) {
+                    try {
+                        hlsRef.current.destroy();
+                    } catch (e) {
+                        console.error('HLS destroy error:', e);
+                    }
+                    hlsRef.current = null;
+                }
+            };
+            
+            const closePlayer = () => {
+                setShowPlayer(false);
+                
+                if (hlsRef.current) {
+                    try {
+                        hlsRef.current.destroy();
+                    } catch (e) {
+                        console.error('HLS destroy error:', e);
+                    }
+                    hlsRef.current = null;
+                }
+                
+                if (videoRef.current) {
+                    videoRef.current.pause();
+                    videoRef.current.removeAttribute('src');
+                    videoRef.current.load();
+                }
+                
+                setIsVideoLoading(false);
+                setCurrentChannel(null);
+                
+                setTimeout(() => {
+                    if (channelsScrollRef.current) {
+                        channelsScrollRef.current.scrollTop = scrollPosition;
+                    }
+                }, 100);
+            };
+            
+            // Setup HLS player
+            useEffect(() => {
+                if (!currentChannel || !showPlayer || !videoRef.current) {
+                    return;
+                }
+                
+                const videoElement = videoRef.current;
+                const streamUrl = currentChannel.url;
+                
+                // Cleanup anterior
+                if (hlsRef.current) {
+                    try {
+                        hlsRef.current.destroy();
+                    } catch (e) {
+                        console.error('HLS destroy error:', e);
+                    }
+                    hlsRef.current = null;
+                }
+                
+                // Reset video
+                videoElement.pause();
+                videoElement.removeAttribute('src');
+                videoElement.load();
+                
+                // Check se é HLS
+                const isHls = streamUrl.includes('.m3u8') || streamUrl.includes('m3u8');
+                
+                if (isHls && typeof Hls !== 'undefined' && Hls.isSupported()) {
+                    const hls = new Hls({
+                        debug: false,
+                        enableWorker: true,
+                        lowLatencyMode: true,
+                        backBufferLength: 90,
+                        maxBufferLength: 90
+                    });
+                    
+                    hls.loadSource(streamUrl);
+                    hls.attachMedia(videoElement);
+                    
+                    hls.on('error', (event, data) => {
+                        if (data.fatal) {
+                            setError('Erro ao carregar vídeo. Tente outro canal.');
+                            hls.destroy();
+                        }
+                    });
+                    
+                    hls.on('manifestParsed', () => {
+                        setError(null);
+                        setIsVideoLoading(false);
+                    });
+                    
+                    hlsRef.current = hls;
+                } else {
+                    videoElement.src = streamUrl;
+                    
+                    videoElement.addEventListener('error', () => {
+                        setError('Erro ao carregar vídeo. Tente outro canal.');
+                        setIsVideoLoading(false);
+                    });
+                    
+                    videoElement.addEventListener('canplay', () => {
+                        setError(null);
+                        setIsVideoLoading(false);
+                    });
+                    
+                    videoElement.load();
+                }
+                
+                // Auto-play
+                const playPromise = videoElement.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(e => {
+                        console.log('Autoplay prevented:', e);
+                        videoElement.muted = true;
+                        videoElement.play();
+                    });
+                }
+                
+            }, [currentChannel, showPlayer]);
+            
+            // Renderizar
+            return React.createElement('div', { className: 'min-h-screen flex flex-col' },
+                // Header
+                React.createElement('header', { className: 'sticky top-0 z-50 border-b border-gray-800 bg-gray-900' },
+                    React.createElement('div', { className: 'container mx-auto px-4 py-3' },
+                        React.createElement('div', { className: 'flex items-center justify-between' },
+                            React.createElement('div', { className: 'flex items-center gap-3' },
+                                React.createElement('div', { 
+                                    dangerouslySetInnerHTML: { __html: `<div class="p-2 bg-primary rounded-lg">${Icons.tv}</div>` },
+                                    className: 'bg-primary rounded-lg'
+                                }),
+                                React.createElement('div', null,
+                                    React.createElement('h1', { className: 'text-xl font-bold text-white' }, 'IPTV Brasil'),
+                                    React.createElement('p', { className: 'text-xs text-gray-400' }, 'Canais ao Vivo')
+                                )
+                            ),
+                            cacheInfo.exists && React.createElement('button', {
+                                onClick: clearCache,
+                                className: 'p-2 text-gray-400 hover:text-white transition-colors',
+                                dangerouslySetInnerHTML: { __html: Icons.trash }
+                            })
+                        )
+                    )
+                ),
+                // Main Content
+                React.createElement('main', { className: 'flex-1 container mx-auto px-4 py-6 pb-20' },
+                    !categories.length && React.createElement('div', { className: 'max-w-md mx-auto space-y-6' },
+                        React.createElement('div', { className: 'bg-gray-800 rounded-xl p-6' },
+                            React.createElement('label', { className: 'text-sm font-semibold text-gray-300 mb-2 block' },
+                                'Cole suas credenciais'
+                            ),
+                            React.createElement('textarea', {
+                                placeholder: 'Cole aqui o texto com suas credenciais...\n\nExemplo:\n💥 USUÁRIO: KD3zn5\n💥 SENHA: 468612\n💥 EXPIRA: 19/09/2026 01:00\n💥 M3U+: http://tv14s.xyz:8080/get.php?username=KD3zn5&password=468612&type=m3u_plus',
+                                value: rawInput,
+                                onChange: (e) => setRawInput(e.target.value),
+                                className: 'w-full bg-gray-900 border border-gray-700 rounded-lg p-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[150px]'
+                            }),
+                            React.createElement('button', {
+                                onClick: handleRawInput,
+                                disabled: isLoadingCategories,
+                                className: 'w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg py-4 transition-colors disabled:opacity-50'
+                            },
+                                isLoadingCategories 
+                                    ? 'Conectando...'
+                                    : 'Conectar'
+                            )
+                        ),
+                        error && React.createElement('div', { className: 'p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm' }, error)
+                    ),
+                    
+                    categories.length > 0 && !selectedCategory && React.createElement('div', { className: 'space-y-6' },
+                        React.createElement('div', { className: 'flex items-center justify-between mb-4' },
+                            React.createElement('h2', { className: 'text-xl font-semibold text-white' }, 'Categorias Brasileiras'),
+                            React.createElement('span', { className: 'bg-gray-800 text-gray-300 px-3 py-1 rounded-full text-sm' }, categories.length + ' categorias')
+                        ),
+                        React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 gap-3' },
+                            ...categories.map(cat =>
+                                React.createElement('button', {
+                                    key: cat.category_id,
+                                    onClick: () => loadStreams(cat),
+                                    disabled: isLoading,
+                                    className: 'p-4 bg-gray-800 hover:bg-gray-700 rounded-xl text-left transition-colors disabled:opacity-50'
+                                },
+                                    React.createElement('div', { className: 'flex items-center gap-3' },
+                                        React.createElement('span', { dangerouslySetInnerHTML: { __html: Icons.folder } }),
+                                        React.createElement('span', { className: 'font-medium text-white' }, cat.category_name)
+                                    )
+                                )
+                            )
+                        )
+                    ),
+                    
+                    selectedCategory && displayedChannels.length > 0 && React.createElement('div', { className: 'space-y-4' },
+                        React.createElement('button', {
+                            onClick: () => {
+                                setSelectedCategory(null);
+                                setAllChannels([]);
+                                setDisplayedChannels([]);
+                                setSearchQuery('');
+                            },
+                            className: 'w-full bg-gray-800 hover:bg-gray-700 text-white rounded-lg py-3 transition-colors'
+                        },
+                            '← Voltar para Categorias'
+                        ),
+                        
+                        searchQuery && React.createElement('div', { className: 'relative mb-4' },
+                            React.createElement('input', {
+                                type: 'text',
+                                placeholder: 'Buscar canais...',
+                                value: searchQuery,
+                                onChange: (e) => setSearchQuery(e.target.value),
+                                className: 'w-full pl-12 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg'
+                            })
+                        ),
+                        
+                        React.createElement('div', { ref: channelsScrollRef, className: 'space-y-2 max-h-[50vh] overflow-y-auto scrollbar-custom' },
+                            ...displayedChannels.map((channel, index) =>
+                                React.createElement('button', {
+                                    key: channel.url + '-' + index,
+                                    onClick: () => playChannel(channel),
+                                    className: 'w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-xl text-left transition-colors'
+                                },
+                                    React.createElement('div', { className: 'flex items-center gap-3' },
+                                        channel.logo && React.createElement('img', {
+                                            src: channel.logo,
+                                            alt: channel.name,
+                                            className: 'w-14 h-14 rounded-lg object-cover bg-black flex-shrink-0',
+                                            onError: (e) => { e.currentTarget.style.display = 'none'; }
+                                        }),
+                                        !channel.logo && React.createElement('div', {
+                                            className: 'w-14 h-14 rounded-lg bg-gray-700 flex items-center justify-center flex-shrink-0',
+                                            dangerouslySetInnerHTML: { __html: Icons.tv }
+                                        }),
+                                        React.createElement('div', { className: 'flex-1 min-w-0' },
+                                            React.createElement('p', { className: 'font-medium text-white truncate' }, channel.name),
+                                            channel.group && React.createElement('span', { className: 'inline-block mt-1 bg-gray-700 text-gray-300 px-2 py-1 rounded text-xs' }, channel.group)
+                                        ),
+                                        currentChannel?.url === channel.url && React.createElement('span', { dangerouslySetInnerHTML: { __html: Icons.play } })
+                                    )
+                                )
+                            )
+                        ),
+                        
+                        displayedChannels.length === 0 && searchQuery && React.createElement('p', { className: 'text-center text-gray-500 py-8' },
+                            'Nenhum canal encontrado para "' + searchQuery + '"'
+                        )
+                    ),
+                    
+                    isLoading && React.createElement('div', { className: 'flex flex-col items-center justify-center py-12' },
+                        React.createElement('div', { 
+                            dangerouslySetInnerHTML: { __html: `<div class="text-blue-500 mb-4">${Icons.loader}</div>` },
+                            className: 'text-gray-400 text-sm'
+                        },
+                        'Carregando canais...'
+                    )
+                ),
+                
+                // Player Modal
+                showPlayer && currentChannel && React.createElement('div', { className: 'fixed inset-0 z-50 bg-black' },
+                    isVideoLoading && React.createElement('div', { className: 'absolute inset-0 z-20 bg-black/80 flex items-center justify-center' },
+                        React.createElement('div', { 
+                            dangerouslySetInnerHTML: { __html: `<div class="text-blue-500 mb-4">${Icons.loader}</div>` },
+                            className: 'text-white text-xl font-semibold'
+                        },
+                        'Carregando canal...'
+                    ),
+                    
+                    React.createElement('button', {
+                        onClick: closePlayer,
+                        className: 'absolute top-4 right-4 z-10 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors',
+                        dangerouslySetInnerHTML: { __html: Icons.x }
+                    }),
+                    
+                    React.createElement('div', { className: 'w-full h-full flex items-center justify-center' },
+                        React.createElement('video', {
+                            ref: videoRef,
+                            controls: true,
+                            playsInline: true,
+                            className: 'w-full h-full max-w-5xl mx-auto'
+                        })
+                    ),
+                    
+                    React.createElement('div', { className: 'absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 to-transparent' },
+                        React.createElement('div', { className: 'flex items-start justify-between gap-4 max-w-5xl mx-auto' },
+                            React.createElement('div', { className: 'flex-1' },
+                                React.createElement('h3', { className: 'text-white text-xl font-semibold mb-2' }, currentChannel.name),
+                                currentChannel.group && React.createElement('span', { className: 'inline-block bg-blue-600 text-white px-2 py-1 rounded text-sm' }, currentChannel.group)
+                            ),
+                            React.createElement('button', {
+                                onClick: openInWebVideoCaster,
+                                className: 'bg-white text-black hover:bg-gray-200 px-4 py-2 rounded-lg font-semibold transition-colors'
+                            },
+                                React.createElement('div', { className: 'flex items-center gap-2' },
+                                    React.createElement('span', { dangerouslySetInnerHTML: { __html: Icons.cast } }),
+                                    'Web Video Caster'
+                                )
+                            )
+                        )
+                    )
+                ),
+                
+                error && !showPlayer && React.createElement('div', { className: 'fixed bottom-4 left-4 right-4 z-40' },
+                    React.createElement('div', { className: 'p-4 bg-red-500 text-white rounded-lg shadow-xl max-w-md' }, error)
+                ),
+                
+                // Footer
+                React.createElement('footer', { className: 'border-t border-gray-800 bg-gray-900 mt-auto py-4' },
+                    React.createElement('div', { className: 'container mx-auto px-4 text-center' },
+                        React.createElement('p', { className: 'text-sm text-gray-500' }, 'IPTV Brasil Player v1.0 - Canais ao Vivo')
+                    )
+                )
+            );
         }
-
-        // Search on input
-        document.getElementById('input').addEventListener('input', () => {
-            if (channels.length > 0) {
-                renderChannels();
-            }
-        });
+        
+        // Renderizar
+        const root = ReactDOM.createRoot(document.getElementById('app'));
+        root.render(React.createElement(App));
     </script>
 </body>
 </html>
