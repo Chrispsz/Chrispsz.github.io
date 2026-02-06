@@ -3,63 +3,68 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>IPLINKS V11 MANUAL</title>
+  <title>IPLINKS V14 STEALTH</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
-    body { background: #000; color: #ddd; font-family: sans-serif; margin: 0; padding: 10px; font-size: 14px; }
+    body { background: #000; color: #ddd; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 10px; font-size: 14px; }
     
-    /* UI */
     .box { max-width: 800px; margin: 0 auto; }
-    .btn { background: #222; color: #fff; border: 1px solid #444; padding: 12px; width: 100%; margin-bottom: 8px; border-radius: 4px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-    .btn:active { background: #444; }
-    .btn-green { background: #006622; border-color: #006622; color: #fff; }
-    .btn-red { background: #880000; border-color: #880000; color: #fff; }
     
-    input, textarea { background: #111; border: 1px solid #333; color: #fff; padding: 10px; width: 100%; margin-bottom: 10px; border-radius: 4px; box-sizing: border-box; font-family: monospace; }
+    /* STATUS BAR */
+    .status-bar { background: #111; padding: 8px; font-size: 11px; color: #666; border-bottom: 1px solid #333; margin-bottom: 15px; display: flex; justify-content: space-between; }
+    .sb-ok { color: #5f5; font-weight: bold; }
+
+    /* UI ELEMENTS */
+    .btn { background: #222; color: #fff; border: 1px solid #444; padding: 12px; width: 100%; margin-bottom: 8px; border-radius: 4px; font-weight: 600; cursor: pointer; text-transform: uppercase; font-size: 12px; }
+    .btn:active { background: #444; transform: scale(0.99); }
+    .btn-green { background: #004411; border-color: #004411; color: #fff; }
+    .btn-blue { background: #002244; border-color: #003366; color: #fff; }
+    .btn-red { background: #660000; border-color: #660000; color: #fff; }
+    
+    input, textarea, select { background: #111; border: 1px solid #333; color: #fff; padding: 12px; width: 100%; margin-bottom: 10px; border-radius: 4px; box-sizing: border-box; font-family: monospace; font-size: 12px; }
     
     /* TABS */
     .tabs { display: flex; margin-bottom: 15px; border-bottom: 1px solid #333; }
-    .tab { flex: 1; padding: 10px; text-align: center; background: #111; cursor: pointer; border: 1px solid #333; border-bottom: none; margin-bottom: -1px; }
-    .tab.active { background: #000; border-bottom: 1px solid #000; color: #0f0; }
+    .tab { flex: 1; padding: 12px; text-align: center; background: #111; cursor: pointer; border: 1px solid #333; border-bottom: none; margin-bottom: -1px; }
+    .tab.active { background: #000; border-bottom: 1px solid #000; color: #0f0; font-weight: bold; }
 
     /* LISTS */
     .item { padding: 10px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
-    .item span { word-break: break-all; }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100%, 1fr)); gap: 8px; }
     @media (min-width: 600px) { .grid { grid-template-columns: 1fr 1fr; } }
     
-    .card { background: #111; padding: 10px; border: 1px solid #333; display: flex; flex-direction: column; justify-content: space-between; min-height: 80px; }
-    .c-name { font-weight: bold; margin-bottom: 5px; color: #eee; }
-    .c-meta { font-size: 11px; color: #888; margin-bottom: 8px; }
-    .c-btns { display: flex; gap: 5px; }
-    .c-btns button { flex: 1; padding: 8px; font-size: 12px; }
+    .card { background: #111; padding: 10px; border: 1px solid #333; border-radius: 4px; display: flex; flex-direction: column; justify-content: space-between; min-height: 80px; }
+    .c-name { font-weight: 600; margin-bottom: 4px; color: #eee; font-size: 13px; line-height: 1.2; }
+    .c-meta { font-size: 10px; color: #666; margin-bottom: 8px; }
+    .c-btns { display: flex; gap: 6px; }
+    .c-btns button { flex: 1; padding: 6px; font-size: 11px; }
 
     /* LOGS */
-    #logs { background: #080808; color: #0f0; font-family: monospace; padding: 10px; height: 150px; overflow-y: auto; border: 1px solid #333; font-size: 11px; margin-top: 10px; white-space: pre-wrap; }
+    #logs { background: #050505; color: #0f0; font-family: monospace; padding: 10px; height: 250px; overflow-y: auto; border: 1px solid #333; font-size: 11px; margin-top: 10px; white-space: pre-wrap; }
 
     /* MODAL */
     #player-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 999; display: none; flex-direction: column; }
     #player-modal.open { display: flex; }
     video { width: 100%; height: 100%; background: #000; }
     .p-controls { padding: 10px; display: flex; gap: 10px; background: #111; }
-
-    /* EXTERNAL MENU */
     #ext-menu { position: absolute; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-    .ext-btn { width: 100%; max-width: 300px; margin-bottom: 10px; padding: 15px; background: #222; border: 1px solid #555; color: #fff; text-align: left; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+    .ext-btn { width: 100%; max-width: 300px; margin-bottom: 10px; padding: 15px; background: #222; border: 1px solid #555; color: #fff; text-align: left; font-size: 13px; display: flex; align-items: center; gap: 10px; border-radius: 4px; }
 
     .hidden { display: none !important; }
-    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
-    .on { background: #0f0; } .off { background: #f00; } .warn { background: #ffaa00; }
-    
-    /* PROXY TOGGLE */
-    .proxy-box { background: #1a1a1a; border: 1px solid #333; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
-    .proxy-label { display: flex; align-items: center; gap: 10px; font-weight: bold; color: #ffaa00; cursor: pointer; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+    .on { background: #0f0; } .off { background: #f00; } 
+    .section-title { font-size: 11px; color: #555; text-transform: uppercase; margin: 15px 0 5px 0; font-weight: bold; border-bottom: 1px solid #222; padding-bottom: 2px; }
   </style>
 </head>
 <body>
 
 <div class="box">
-  <h1 style="text-align: center; margin-bottom: 10px;">IPLINKS <span style="color:#0f0">V11</span></h1>
+  <div class="status-bar">
+    <span id="sb-prot">Checking Protocol...</span>
+    <span id="sb-msg" class="sb-ok">READY</span>
+  </div>
+
+  <h1 style="text-align: center; margin-bottom: 15px; letter-spacing: -1px;">IPLINKS <span style="color:#0f0">V14 STEALTH</span></h1>
   
   <div class="tabs">
     <div class="tab active" onclick="App.show('config')">CONFIG</div>
@@ -69,42 +74,44 @@
 
   <!-- CONFIG -->
   <div id="config">
-    <!-- PROXY CONTROL (NEW) -->
-    <div class="proxy-box">
-      <label class="proxy-label">
-        <input type="checkbox" id="use-proxy" onchange="App.toggleProxy()">
-        <span>USAR PROXY (Para GitHub/HTTPS)</span>
-      </label>
-      <div style="font-size:10px; color:#666; margin-top:5px; margin-left:24px;">
-        Se estiver rodando localmente, DESMARQUE isso para evitar bloqueio 403.
-      </div>
-    </div>
-
-    <textarea id="input-logs" rows="4" placeholder="Cole aqui (Suzanor / M3U)..."></textarea>
+    <textarea id="input-logs" rows="4" placeholder="Cole os logs (M3U/Suzanor)..."></textarea>
     <button class="btn btn-green" onclick="App.import()">1. IMPORTAR LOGS</button>
     
-    <div style="margin-top: 10px;">
-      <button class="btn" onclick="App.check()">2. VERIFICAR CONTAS</button>
-      <button class="btn btn-red" onclick="App.reset()">RESET</button>
+    <div class="section-title">CONTAS</div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn" style="flex:1" onclick="App.check()">VERIFICAR</button>
+      <button class="btn btn-red" style="width:60px" onclick="App.reset()">CLR</button>
     </div>
+    <div id="acc-list" style="margin-top: 5px; border: 1px solid #333; border-radius: 4px; max-height: 150px; overflow-y: auto;"></div>
 
-    <div id="acc-list" style="margin-top: 10px; border: 1px solid #333;"></div>
+    <div class="section-title">CARREGAR (LOCAL)</div>
+    <label style="color:#888; font-size:11px; display:block; margin-bottom:5px;">
+      <input type="checkbox" id="force-load"> FORÇAR TODOS (Apenas p/ Teste)
+    </label>
+    <button class="btn btn-green" onclick="App.loadChannels()">2. CARREGAR CANAIS LOCAL</button>
 
-    <div style="margin-top: 15px; border-top: 1px solid #333; padding-top: 10px;">
-      <label><input type="checkbox" id="force-load"> FORÇAR TODOS (IGNORAR FILTRO)</label>
-      <button class="btn btn-green" style="margin-top: 5px;" onclick="App.loadChannels()">3. CARREGAR CANAIS</button>
+    <div class="section-title" style="margin-top:20px; color:#0088ff;">SYNC TO WORKER (FILTERED)</div>
+    <div style="background:#111; padding:10px; border-radius:4px; border:1px solid #222;">
+      <input type="password" id="cf-token" placeholder="API Token">
+      <input type="text" id="cf-acc" placeholder="Account ID">
+      <input type="text" id="cf-ns" placeholder="Namespace ID">
+      <input type="text" id="cf-key" placeholder="KV Key Name (channels_data)">
+      <button class="btn btn-blue" onclick="App.syncWorker()">⚡ SYNC STEALTH LIST</button>
+      <div style="font-size:10px; color:#666; margin-top:5px;">
+        Filtra: HD Only, No 4K/SD, Prioridade Tourobox. Nomes ofuscados.
+      </div>
     </div>
   </div>
 
   <!-- LISTA -->
   <div id="list" class="hidden">
-    <input type="text" id="search" placeholder="Buscar..." onkeyup="App.renderList()">
+    <input type="text" id="search" placeholder="🔍 Buscar..." onkeyup="App.renderList()">
     <div id="channel-grid" class="grid"></div>
   </div>
 
   <!-- LOGS -->
   <div id="logs-tab" class="hidden">
-    <button class="btn" onclick="document.getElementById('logs').innerHTML=''">LIMPAR LOGS</button>
+    <button class="btn" onclick="document.getElementById('logs').innerHTML=''">LIMPAR</button>
     <div id="logs"></div>
   </div>
 </div>
@@ -120,13 +127,11 @@
   <!-- MENU EXTERNO -->
   <div id="ext-menu">
     <h2 style="color:#f00; margin-bottom: 20px;">STREAM BLOQUEADO</h2>
-    
-    <button class="ext-btn" onclick="App.cast('vlc')">🦆 VLC Player</button>
-    <button class="ext-btn" onclick="App.cast('mx')">🤖 MX Player</button>
-    <button class="ext-btn" onclick="App.cast('wvc')">📡 Web Video Caster</button>
-    <button class="ext-btn" onclick="App.cast('copy')">📋 Copiar URL</button>
-    
-    <button class="btn" style="margin-top: 20px; background: transparent; border: 1px solid #555;" onclick="App.retry()">Tentar Novamente</button>
+    <button class="ext-btn" onclick="App.cast('vlc')">🦆 VLC</button>
+    <button class="ext-btn" onclick="App.cast('mx')">🤖 MX</button>
+    <button class="ext-btn" onclick="App.cast('wvc')">📡 WVC</button>
+    <button class="ext-btn" onclick="App.cast('copy')">📋 Copiar</button>
+    <button class="btn" style="margin-top: 20px; background: transparent; border: 1px solid #555;" onclick="App.retry()">TENTAR</button>
   </div>
 </div>
 
@@ -135,47 +140,43 @@ const App = {
   data: { acc: [], ch: [] },
   hls: null,
   curUrl: '',
-  // Proxy Chain
-  proxies: [
-    'https://api.allorigins.win/raw?url=', 
-    'https://corsproxy.io/?'
-  ],
-  // State
-  useProxyMode: false,
-
+  
   init() {
-    // Detecta protocolo para sugerir uso de proxy
-    const isHttps = location.protocol === 'https:';
-    this.useProxyMode = isHttps; 
-    
-    // Carrega preferência salva se existir
-    const savedProxy = localStorage.getItem('iplinks_use_proxy');
-    if(savedProxy !== null) {
-      this.useProxyMode = (savedProxy === 'true');
+    const prot = location.protocol;
+    document.getElementById('sb-prot').innerText = prot.toUpperCase();
+    if(prot === 'file:') {
+        document.getElementById('sb-msg').innerText = 'MODO LOCAL (OTIMIZADO)';
+    } else {
+        document.getElementById('sb-msg').innerText = 'MODO ONLINE (HTTPS - PODE BLOQUEAR)';
+        document.getElementById('sb-msg').style.color = '#ffaa00';
     }
 
-    // Atualiza UI
-    document.getElementById('use-proxy').checked = this.useProxyMode;
-    
-    this.log(`SISTEMA V11 INIT - Proxy: ${this.useProxyMode ? 'ON' : 'OFF'}`);
-    
-    const s = localStorage.getItem('iplinks_v11');
+    const s = localStorage.getItem('iplinks_v14');
     if(s) this.data = JSON.parse(s);
+    const cf = JSON.parse(localStorage.getItem('iplinks_cf') || '{}');
+    if(cf.t) document.getElementById('cf-token').value = cf.t;
+    if(cf.a) document.getElementById('cf-acc').value = cf.a;
+    if(cf.n) document.getElementById('cf-ns').value = cf.n;
+    if(cf.k) document.getElementById('cf-key').value = cf.k;
+
     this.renderAcc();
+    this.log('V14 STEALTH INITIALIZED');
   },
 
-  toggleProxy() {
-    this.useProxyMode = document.getElementById('use-proxy').checked;
-    localStorage.setItem('iplinks_use_proxy', this.useProxyMode);
-    this.log(`Modo Proxy alterado para: ${this.useProxyMode ? 'ON' : 'OFF'}`, 'warn');
+  save() { localStorage.setItem('iplinks_v14', JSON.stringify(this.data)); },
+  saveCf() { 
+    localStorage.setItem('iplinks_cf', JSON.stringify({
+      t: document.getElementById('cf-token').value,
+      a: document.getElementById('cf-acc').value,
+      n: document.getElementById('cf-ns').value,
+      k: document.getElementById('cf-key').value
+    }));
   },
-
-  save() { localStorage.setItem('iplinks_v11', JSON.stringify(this.data)); },
   
   log(msg, type='info') {
     const div = document.getElementById('logs');
     const t = new Date().toLocaleTimeString();
-    const color = type === 'err' ? '#f00' : (type === 'warn' ? '#ffaa00' : '#0f0');
+    const color = type === 'err' ? '#f55' : (type === 'ok' ? '#5f5' : '#0f0');
     div.innerHTML += `<div style="color:${color}">[${t}] ${msg}</div>`;
     div.scrollTop = div.scrollHeight;
   },
@@ -183,7 +184,6 @@ const App = {
   show(tab) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('#config, #list, #logs-tab').forEach(d => d.classList.add('hidden'));
-    
     if(tab === 'config') {
       document.getElementById('config').classList.remove('hidden');
       document.querySelectorAll('.tab')[0].classList.add('active');
@@ -197,20 +197,15 @@ const App = {
     }
   },
 
-  // --- CORE ---
   import() {
     const txt = document.getElementById('input-logs').value;
     if(!txt.trim()) return alert('Cole os logs!');
-    
     const re = /https?:\/\/([^\/:]+)(?::(\d+))?\/get\.php\?username=([^&]+)&password=([^&\s]+)/gi;
-    let c = 0;
-    let m;
+    let c = 0, m;
     while((m = re.exec(txt)) !== null) {
       const u = `http://${m[3]}:${m[4]}@${m[1]}:${m[2]||80}`;
       if(!this.data.acc.find(x => x.url === u)) {
-        this.data.acc.push({ 
-          url: u, h: m[1], p: m[2]||80, u: m[3], pw: m[4], s: '?' 
-        });
+        this.data.acc.push({ url: u, h: m[1], p: m[2]||80, u: m[3], pw: m[4], s: '?' });
         c++;
       }
     }
@@ -218,11 +213,9 @@ const App = {
       document.getElementById('input-logs').value = '';
       this.save();
       this.renderAcc();
-      this.log(`Importadas ${c} contas.`);
+      this.log(`+${c} contas.`);
       this.check();
-    } else {
-      alert('Nenhuma conta encontrada.');
-    }
+    } else { alert('Nada encontrado.'); }
   },
 
   async check() {
@@ -231,105 +224,275 @@ const App = {
       this.renderAcc();
       try {
         const url = `http://${a.h}:${a.p}/player_api.php?username=${a.u}&password=${a.pw}`;
-        const finalUrl = this.useProxyMode ? (this.proxies[0] + encodeURIComponent(url)) : url;
-        
-        this.log(`Check ${a.h} via ${this.useProxyMode ? 'Proxy' : 'Direto'}`);
-        const res = await fetch(finalUrl);
-        if(!res.ok) throw new Error(`Status ${res.status}`);
-        
+        this.log(`Check: ${a.h}`);
+        const res = await fetch(url);
+        if(!res.ok) throw new Error(res.status);
         const j = await res.json();
         a.s = (j.user_info && j.user_info.status === 'Active') ? 'ON' : 'OFF';
-        this.log(`Check ${a.h}: ${a.s}`);
+        this.log(`Status: ${a.s}`);
       } catch(e) {
         a.s = 'OFF';
-        this.log(`Erro check ${a.h}: ${e.message}`, 'err');
+        this.log(`Erro: ${e.message}`, 'err');
       }
     }
     this.save();
     this.renderAcc();
   },
 
-  // --- LOAD CHANNELS (WITH MANUAL PROXY SWITCH) ---
   async loadChannels() {
     const valid = this.data.acc.filter(a => a.s === 'ON');
     const target = valid.length ? valid : this.data.acc;
-    if(!target.length) return alert('Sem contas online!');
+    if(!target.length) return alert('Sem contas!');
     
     this.data.ch = [];
-    this.log(`Iniciando carregamento (Proxy: ${this.useProxyMode ? 'ON' : 'OFF'})...`, 'warn');
+    this.log('Carregando (Simples)...');
     
     const force = document.getElementById('force-load').checked;
-    const keys = ['PREMIERE', 'ESPN', 'SPORTV', 'AMAZON', 'PRIME', 'HBO', 'DAZN', 'TNT'];
-
-    // Helper de fetch ajustado
-    const fetchList = async (host, port, user, pass) => {
-      const url = `http://${host}:${port}/player_api.php?username=${user}&password=${pass}&action=get_live_streams`;
-      
-      // Se não usar proxy, tenta direto
-      if (!this.useProxyMode) {
-        try {
-          this.log(`Tentando direto (sem proxy)...`);
-          const res = await fetch(url);
-          if(!res.ok) throw new Error(`Status ${res.status}`);
-          const text = await res.text();
-          this.log(`Baixado ${Math.round(text.length/1024)}KB direto.`);
-          if(text.trim().startsWith('<')) throw new Error('Resposta HTML (Erro)');
-          return JSON.parse(text);
-        } catch(e) {
-          this.log(`Falha direto: ${e.message}`, 'err');
-          return null;
-        }
-      } 
-      // Se usar proxy, tenta a rotação
-      else {
-        for(let i=0; i < this.proxies.length; i++) {
-          try {
-            this.log(`Tentando Proxy ${i+1}...`);
-            const res = await fetch(this.proxies[i] + encodeURIComponent(url));
-            if(!res.ok) throw new Error(`Status ${res.status}`);
-            const text = await res.text();
-            this.log(`Baixado ${Math.round(text.length/1024)}KB via Proxy ${i+1}.`);
-            if(text.trim().startsWith('<')) throw new Error('Resposta HTML (Erro)');
-            return JSON.parse(text);
-          } catch(e) {
-            this.log(`Falha Proxy ${i+1}: ${e.message}`, 'err');
-          }
-        }
-      }
-      return null;
-    };
+    const keys = ['PREMIERE', 'SPORTV', 'AMAZON', 'ESPN', 'DAZN', 'HBO', 'TNT'];
 
     for(const a of target) {
-      const data = await fetchList(a.h, a.p, a.u, a.pw);
-      
-      if(data && Array.isArray(data)) {
-        this.log(`Sucesso! ${data.length} canais brutos.`);
-        let added = 0;
-        
-        data.forEach(x => {
-          const n = x.name.toUpperCase();
-          const isTarget = force ? true : keys.some(k => n.includes(k));
-          if(isTarget) {
-            this.data.ch.push({
-              n: x.name,
-              u: `http://${a.h}:${a.p}/live/${a.u}/${a.pw}/${x.stream_id}.m3u8`,
-              q: n.includes('4K')?'4K':(n.includes('HD')?'HD':'SD')
-            });
-            added++;
-          }
-        });
-        this.log(`Filtrados: +${added} canais.`);
-      } else {
-        this.log(`Falha total em ${a.h}`, 'err');
-      }
+      try {
+        const url = `http://${a.h}:${a.p}/player_api.php?username=${a.u}&password=${a.pw}&action=get_live_streams`;
+        const res = await fetch(url);
+        if(!res.ok) continue;
+        const data = await res.json();
+        if(Array.isArray(data)) {
+          data.forEach(x => {
+            const n = x.name.toUpperCase();
+            const isTarget = force ? true : keys.some(k => n.includes(k));
+            if(isTarget) {
+              this.data.ch.push({
+                n: x.name,
+                u: `http://${a.h}:${a.p}/live/${a.u}/${a.pw}/${x.stream_id}.m3u8`,
+                q: n.includes('4K')?'4K':(n.includes('HD')?'HD':'SD'),
+                acc: a.h 
+              });
+            }
+          });
+        }
+      } catch(e) { this.log(`Erro ${a.h}`, 'err'); }
     }
-    
     this.save();
     this.show('list');
-    this.log(`Finalizado. Total: ${this.data.ch.length}`, 'warn');
+    this.log(`Total: ${this.data.ch.length}`);
   },
 
-  // --- RENDER ---
+  // ═════════════════════════════════════════════════════════════
+  // ⚡ SYNC WORKER (LÓGICA V8 ADAPTADA PARA BROWSER)
+  // ═════════════════════════════════════════════════════════════
+  async syncWorker() {
+    const token = document.getElementById('cf-token').value;
+    const accId = document.getElementById('cf-acc').value;
+    const nsId = document.getElementById('cf-ns').value;
+    const keyName = document.getElementById('cf-key').value || 'channels_data';
+
+    if(!token || !accId || !nsId) return alert('Preencha Cloudflare!');
+    
+    // 1. SETUP
+    this.saveCf();
+    this.log('🚀 INICIANDO SYNC STEALTH...', 'ok');
+    
+    // CONSTANTS
+    const TARGET_KEYWORDS = ['PREMIERE', 'SPORTV', 'ESPN', 'DAZN', 'HBO MAX', 'AMAZON PRIME', 'TNT SPORTS'];
+    const MAX_CHANNELS = 90;
+    
+    // 2. FUNÇÕES DE FILTRO (Do seu script Node)
+    const cleanName = (lower) => {
+      return lower
+        .replace(/\s*(HD|SD|4K|UHD|FHD|FULLHD|HEVC|HDR|1080p|720p|H265)\s*/gi, '') 
+        .replace(/\s*(ESPN|SPORTV|PREMIERE|DAZN|HBO MAX|PRIME|TNT|CL)\s*/gi, '') 
+        .replace(/[^\s\-\.]+/g, '') 
+        .replace(/\s+/g, ' ').trim();
+    };
+
+    const isStableHD = (name) => {
+      const upper = name.toUpperCase();
+      const isTarget = TARGET_KEYWORDS.some(k => upper.includes(k));
+      if (!isTarget) return false;
+      if (!upper.includes('HD')) return false;
+      // Regex do seu script: Exclui SD, FHD, 4K, UHD
+      const isBadQuality = /\b(SD|FHD|4K|UHD)\b/.test(upper); 
+      return !isBadQuality;
+    };
+
+    // 3. SMART CACHE (Mapa de Hosts)
+    const hostCache = new Map();
+    
+    // Função para pegar lista (Cacheada)
+    const getChannelsForHost = async (endpoint, user, pass, hostName) => {
+      if (hostCache.has(hostName)) {
+        this.log(`   📂 CACHE HIT: ${hostName}`);
+        return hostCache.get(hostName);
+      }
+      this.log(`   ⬇️  BAIXANDO: ${hostName}`);
+      try {
+        const url = `${endpoint}/player_api.php?username=${user}&password=${pass}&action=get_live_streams`;
+        const res = await fetch(url);
+        if(!res.ok) throw new Error('Falha download');
+        const data = await res.json();
+        if(!Array.isArray(data)) throw new Error('JSON inválido');
+        hostCache.set(hostName, data);
+        this.log(`   ✅ CACHEADO: ${data.length} canais`);
+        return data;
+      } catch(e) {
+        this.log(`   ❌ ERRO HOST ${hostName}: ${e.message}`, 'err');
+        return null;
+      }
+    };
+
+    // 4. PROCESSAMENTO DAS CONTAS
+    let allSources = [];
+    
+    for (const acc of this.data.acc) {
+      if(acc.s !== 'ON') {
+        this.log(`   ⚠️  PULANDO: ${acc.h} (Offline)`);
+        continue;
+      }
+      
+      try {
+        // A. Auth Rapida
+        const authUrl = `http://${acc.h}:${acc.p}/player_api.php?username=${acc.u}&password=${acc.pw}`;
+        const authRes = await fetch(authUrl);
+        if(!authRes.ok) throw new Error('Auth Fail');
+        const authData = await authRes.json();
+        
+        if (!authData.user_info?.auth) throw new Error('Nao Autorizado');
+        
+        // Verifica se conta está cheia
+        const active = parseInt(authData.user_info.active_cons || 0);
+        const max = parseInt(authData.user_info.max_connections || 1);
+        if (active >= max) {
+          this.log(`   🚫 CHEIA: ${acc.h} (${active}/${max})`);
+          continue;
+        }
+
+        // B. Pegar Lista (Usando Cache)
+        const channels = await getChannelsForHost(`http://${acc.h}:${acc.p}`, acc.u, acc.pw, acc.h);
+        if(!channels) continue;
+
+        // C. Filtrar Localmente
+        const serverUrl = authData.server_info.url;
+        const serverPort = authData.server_info.port;
+
+        for (const ch of channels) {
+          if(!isStableHD(ch.name)) continue;
+          
+          const lower = ch.name.toLowerCase();
+          const clean = cleanName(lower);
+          if(!clean) continue;
+
+          // Definir Marca
+          let brand = 'OUTRO';
+          if (lower.includes('premiere')) brand = 'PREMIERE';
+          else if (lower.includes('sportv')) brand = 'SPORTV';
+          else if (lower.includes('espn')) brand = 'ESPN';
+          else if (lower.includes('dazn')) brand = 'DAZN';
+          else if (lower.includes('hbo max')) brand = 'HBO MAX';
+          else if (lower.includes('amazon prime') || lower.includes('amazonvideo')) brand = 'PRIME';
+          else if (lower.includes('tnt sports')) brand = 'TNT SPORTS';
+
+          const streamUrl = `http://${serverUrl}:${serverPort}/live/${acc.u}/${acc.pw}/${ch.stream_id}.m3u8`;
+          allSources.push({ brand, clean, name: ch.name, url: streamUrl, account: acc.h });
+        }
+
+      } catch(e) {
+        this.log(`   ❌ ERRO PROCESSAR ${acc.h}: ${e.message}`, 'err');
+      }
+    }
+
+    // 5. AGRUPAMENTO E ORDENAÇÃO
+    this.log(`📊 BRUTO: ${allSources.length} canais encontrados.`);
+    
+    const channelMap = new Map();
+    allSources.forEach(ch => {
+      const key = `${ch.brand}::${ch.clean}`;
+      if (!channelMap.has(key)) {
+        channelMap.set(key, { brand: ch.brand, clean: ch.clean, sources: [] });
+      }
+      const existing = channelMap.get(key);
+      // Evita duplicatas de URL exata
+      if (!existing.sources.some(s => s.url === ch.url)) {
+        existing.sources.push({ name: ch.name, url: ch.url, account: ch.account });
+      }
+    });
+
+    // Ordenação de Marcas (Vasco Priority)
+    const brandOrder = ['PREMIERE', 'SPORTV', 'ESPN', 'DAZN', 'HBO MAX', 'TNT SPORTS', 'PRIME', 'OUTRO'];
+    
+    const sortedChannels = Array.from(channelMap.values()).sort((a, b) => {
+      return brandOrder.indexOf(a.brand) - brandOrder.indexOf(b.brand);
+    });
+
+    // 6. MONTAGEM FINAL (OBFUSCAÇÃO)
+    const finalChannels = [];
+    const finalStreams = {};
+    let count = 0;
+    const counters = {};
+    const prefixMap = { 
+      'PREMIERE': 'P', 'SPORTV': 'S', 'ESPN': 'E', 'DAZN': 'Z', 
+      'HBO MAX': 'H', 'PRIME': 'A', 'TNT SPORTS': 'T', 'OUTRO': 'X' 
+    };
+
+    for (const data of sortedChannels) {
+      if (finalChannels.length >= MAX_CHANNELS) break;
+      
+      const { brand, clean, sources } = data;
+      counters[brand] = (counters[brand] || 0) + 1;
+      
+      // NOME OFUSCADO: Ex: P1, S2, E3
+      const displayName = `${prefixMap[brand] || 'X'}${counters[brand]}`;
+      const id = `ch_${count++}`;
+
+      finalChannels.push({ 
+        id, 
+        type: 'tv', 
+        name: displayName, // Nome Não Explícito
+        poster: `https://via.placeholder.com/300x450/000000/FFFFFF?text=${displayName}` 
+      });
+
+      // Prioridade de Fonte (Tourobox > NewUltra)
+      sources.sort((a, b) => {
+        const getRank = (n) => n.includes('Tourobox') ? 1 : n.includes('NewUltra') ? 2 : 10;
+        return getRank(a.account) - getRank(b.account);
+      });
+
+      // Pega top 2 fontes
+      const topSources = sources.slice(0, 2);
+      
+      // Principal
+      finalStreams[id] = topSources[0].url;
+      
+      // Backup (se existir)
+      if(topSources[1]) {
+        finalStreams[`${id}_b1`] = topSources[1].url;
+      }
+    }
+
+    // 7. ENVIO PARA CLOUDFLARE
+    const payload = { channels: finalChannels, streams: finalStreams, t: Date.now() };
+    
+    this.log('💾 Enviando para KV...');
+    try {
+      const kvUrl = `https://api.cloudflare.com/client/v4/accounts/${accId}/storage/kv/namespaces/${nsId}/values/${keyName}`;
+      const res = await fetch(kvUrl, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if(res.ok) {
+        this.log(`✅ SUCESSO! ${finalChannels.length} Canais Stealth Upados.`, 'ok');
+        alert('Worker atualizado com sucesso!');
+      } else {
+        const err = await res.text();
+        this.log(`❌ ERRO KV: ${err}`, 'err');
+      }
+    } catch(e) {
+      this.log(`❌ ERRO REDE: ${e.message}`, 'err');
+    }
+  },
+
+  // --- RENDER & PLAYER (IGUAL V13) ---
   renderAcc() {
     const el = document.getElementById('acc-list');
     el.innerHTML = this.data.acc.map((a, i) => `
@@ -337,14 +500,13 @@ const App = {
         <div><span class="status-dot ${a.s==='ON'?'on':'off'}"></span> ${a.h}</div>
         <button onclick="App.del(${i})" style="background:none;border:none;color:red;cursor:pointer;">X</button>
       </div>
-    `).join('') || '<div style="padding:10px;color:#555">Vazio</div>';
+    `).join('') || '<div style="padding:10px;color:#444">Vazio</div>';
   },
 
   renderList() {
     const q = document.getElementById('search').value.toUpperCase();
     const el = document.getElementById('channel-grid');
     document.getElementById('count').innerText = this.data.ch.length;
-
     const flt = this.data.ch.filter(c => c.n.toUpperCase().includes(q));
     
     el.innerHTML = flt.map(c => `
@@ -354,17 +516,15 @@ const App = {
           <div class="c-meta" style="color:${c.q==='HD'?'#0f0':'#888'}">${c.q}</div>
         </div>
         <div class="c-btns">
-          <button class="btn btn-green" style="font-size:10px;padding:5px;" onclick="App.play('${encodeURIComponent(c.u)}','${c.n.replace(/'/g,"\\'")}')">PLAY</button>
-          <button class="btn" style="font-size:10px;padding:5px;" onclick="App.copyUrl('${c.u}')">LINK</button>
+          <button class="btn btn-green" onclick="App.play('${encodeURIComponent(c.u)}','${c.n.replace(/'/g,"\\'")}')">PLAY</button>
+          <button class="btn" onclick="App.copyUrl('${c.u}')">LINK</button>
         </div>
       </div>
-    `).join('') || '<div style="padding:20px;text-align:center">Nenhum canal</div>';
+    `).join('') || '<div style="grid-column:1/-1; text-align:center; padding:20px; color:#444">Vazio</div>';
   },
 
-  // --- PLAYER ---
   play(url, name) {
     this.curUrl = decodeURIComponent(url);
-    this.pIdx = 0;
     const v = document.getElementById('video');
     const modal = document.getElementById('player-modal');
     const menu = document.getElementById('ext-menu');
@@ -374,43 +534,24 @@ const App = {
     menu.style.display = 'none';
     ctrl.style.display = 'flex';
     v.style.display = 'block';
-    
     this.log(`Play: ${name}`);
     this.initHls(v, menu);
   },
 
   initHls(video, menu) {
     if(this.hls) this.hls.destroy();
-    
     if(Hls.isSupported()) {
-      this.hls = new Hls({ 
-        enableWorker: true,
-        xhrSetup: (xhr, reqUrl) => {
-          if(this.useProxyMode) {
-            xhr.open('GET', this.proxies[this.pIdx] + encodeURIComponent(reqUrl), true);
-          } else {
-            xhr.open('GET', reqUrl, true);
-          }
-        }
-      });
-      
+      this.hls = new Hls({ enableWorker: true });
       this.hls.loadSource(this.curUrl);
       this.hls.attachMedia(video);
       this.hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(()=>{}));
-      
       this.hls.on(Hls.Events.ERROR, (e, d) => {
         if(d.fatal) {
-          this.log(`HLS Erro: ${d.type}`);
-          if(this.pIdx < this.proxies.length - 1 && this.useProxyMode) {
-            this.pIdx++;
-            this.hls.destroy();
-            this.initHls(video, menu);
-          } else {
-            video.pause();
-            video.style.display = 'none';
-            document.getElementById('p-ctrl').style.display = 'none';
-            menu.style.display = 'flex';
-          }
+          this.log(`HLS Erro: ${d.type}`, 'err');
+          video.pause();
+          video.style.display = 'none';
+          document.getElementById('p-ctrl').style.display = 'none';
+          menu.style.display = 'flex';
         }
       });
     } else {
@@ -425,7 +566,6 @@ const App = {
     m.style.display = 'none';
     v.style.display = 'block';
     document.getElementById('p-ctrl').style.display = 'flex';
-    this.pIdx = 0;
     this.initHls(v, m);
   },
 
@@ -446,7 +586,7 @@ const App = {
 
   copyUrl(u) {
     const url = u || this.curUrl;
-    if(url) { navigator.clipboard.writeText(url); alert('Link copiado!'); }
+    if(url) { navigator.clipboard.writeText(url); alert('Copiado!'); }
   },
 
   del(i) { this.data.acc.splice(i,1); this.save(); this.renderAcc(); },
