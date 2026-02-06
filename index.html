@@ -3,19 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IPLINKS V4 DEBUGGER</title>
+  <title>IPLINKS V5 HYBRID</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
-    :root { --bg: #050505; --fg: #0f0; --err: #f00; --dim: #333; --panel: #111; }
+    :root { --bg: #050505; --fg: #00ff9d; --err: #ff4444; --dim: #333; --panel: #111; --warn: #ffbb00; }
     * { box-sizing: border-box; margin: 0; padding: 0; outline: none; font-family: 'Consolas', monospace; }
     body { background: var(--bg); color: #ccc; font-size: 12px; overflow-x: hidden; }
     
-    /* LAYOUT */
     .c { max-width: 1000px; margin: 0 auto; padding: 10px; display: flex; flex-direction: column; height: 100vh; }
     .top { flex: 0 0 auto; }
     .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; margin-top: 10px; }
     
-    /* HEADER & NAV */
     .hd { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--dim); padding-bottom: 10px; }
     h1 { color: var(--fg); font-size: 18px; letter-spacing: -1px; }
     
@@ -23,7 +21,6 @@
     nav button { background: none; border: none; color: #555; cursor: pointer; padding: 5px 10px; text-transform: uppercase; font-weight: bold; font-size: 11px; }
     nav button.on { color: var(--bg); background: var(--fg); }
 
-    /* UI ELEMENTS */
     .btn { background: var(--panel); border: 1px solid var(--dim); color: #fff; cursor: pointer; padding: 8px 12px; font-family: inherit; font-size: 11px; text-transform: uppercase; transition: 0.2s; }
     .btn:hover { border-color: var(--fg); color: var(--fg); }
     .btn:active { background: var(--fg); color: #000; }
@@ -32,20 +29,20 @@
     input, textarea, select { background: #000; border: 1px solid var(--dim); color: var(--fg); padding: 8px; font-family: inherit; width: 100%; margin-bottom: 5px; }
     textarea { height: 60px; font-size: 11px; resize: vertical; }
     
-    /* DEBUG CONSOLE */
+    /* CONSOLE */
     #console-box {
       flex: 1; background: #000; border: 1px solid var(--dim);
       padding: 10px; overflow-y: auto; font-size: 11px; color: #888;
-      margin-bottom: 10px; display: flex; flex-direction: column-reverse; /* Auto scroll bottom */
+      margin-bottom: 10px; display: flex; flex-direction: column-reverse;
     }
     .log-line { padding: 2px 0; border-bottom: 1px solid #111; }
     .log-ok { color: var(--fg); }
     .log-err { color: var(--err); }
-    .log-warn { color: yellow; }
+    .log-warn { color: var(--warn); }
     .log-info { color: #666; font-style: italic; }
     .ts { color: #444; margin-right: 10px; user-select: none; }
 
-    /* LISTS & GRID */
+    /* LISTS */
     .list { border-top: 1px solid var(--dim); max-height: 150px; overflow-y: auto; }
     .row { border-bottom: 1px solid var(--dim); padding: 6px; display: flex; justify-content: space-between; align-items: center; }
     .row:hover { background: #0a0a0a; }
@@ -59,12 +56,15 @@
     .c-act { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
     
     /* MODAL */
-    #m { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 999; display: none; align-items: center; justify-content: center; }
+    #m { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 999; display: none; align-items: center; justify-content: center; flex-direction: column; }
     #m.open { display: flex; }
-    #v { width: 100%; max-width: 900px; aspect-ratio: 16/9; background: #000; }
-    .ctrl { position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; }
-
-    /* UTILS */
+    #v { width: 100%; max-width: 900px; aspect-ratio: 16/9; background: #000; box-shadow: 0 0 20px rgba(0,255,157,0.1); }
+    .ctrl { position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; z-index: 10; }
+    .proxy-badge { 
+      position: absolute; bottom: 10px; right: 10px; background: var(--warn); color: #000; 
+      padding: 2px 6px; font-size: 10px; font-weight: bold; border-radius: 2px; pointer-events: none;
+    }
+    
     .hidden { display: none !important; }
     .w-full { width: 100%; }
     .flex { display: flex; gap: 5px; }
@@ -77,7 +77,7 @@
   <div class="top">
     <div class="hd">
       <div>
-        <h1>IPLINKS <span style="font-size:0.6em; vertical-align:middle; color:var(--err)">DEBUG_V4</span></h1>
+        <h1>IPLINKS <span style="font-size:0.6em; vertical-align:middle; color:var(--warn)">HYBRID_V5</span></h1>
       </div>
       <nav>
         <button id="b-cfg" class="on" onclick="V.go('cfg')">CONFIG</button>
@@ -86,7 +86,6 @@
       </nav>
     </div>
 
-    <!-- CONFIG TAB -->
     <div id="cfg">
       <textarea id="in" placeholder="PASTE LOGS (SUZANOR/M3U)"></textarea>
       <div class="flex">
@@ -108,7 +107,6 @@
       </div>
     </div>
 
-    <!-- LIST TAB -->
     <div id="lst" class="hidden" style="height: 100%; display: flex; flex-direction: column;">
       <div class="flex" style="flex:0 0 auto;">
         <input type="text" id="s" placeholder="FILTER..." onkeyup="V.rnd()" style="margin:0">
@@ -121,7 +119,6 @@
       <div class="grid mt-1" id="g" style="flex:1 1 auto;"></div>
     </div>
 
-    <!-- DEBUG TAB -->
     <div id="dbg" class="hidden" style="height: 100%; display: flex; flex-direction: column;">
       <div class="flex" style="justify-content: space-between; margin-bottom: 5px;">
         <span style="color:#666">SYSTEM LOGS</span>
@@ -140,6 +137,7 @@
       <button class="btn" onclick="V.cp()">COPY URL</button>
       <button class="btn" onclick="V.x()">CLOSE</button>
     </div>
+    <div id="proxy-badge" class="proxy-badge hidden">STREAM PROXY ACTIVE</div>
   </div>
 </div>
 
@@ -148,21 +146,27 @@ const V = {
   d: { acc: [], ch: [] },
   hls: null,
   cur: '',
-  // Configurações avançadas
-  useProxy: location.protocol === 'https:',
-  proxyUrl: 'https://api.allorigins.win/raw?url=', 
+  // PROXIES
+  // API Proxy: Para baixar listas (JSON). AllOrigins é mais estável para texto.
+  apiProxy: 'https://api.allorigins.win/raw?url=',
+  // Stream Proxy: Para vídeo (Binário). Corsproxy é melhor para streaming do que AllOrigins.
+  streamProxy: 'https://corsproxy.io/?',
   
+  // Auto Detect Environment
+  useProxy: location.protocol === 'https:',
+
   init() {
     this.log("SYSTEM INIT", "info");
     this.log("Protocol: " + location.protocol.toUpperCase(), "info");
-    this.log("Proxy Mode: " + (this.useProxy ? "ENABLED (AllOrigins)" : "DISABLED (Direct)"), "info");
+    this.log("API Proxy: " + (this.useProxy ? "ENABLED" : "DISABLED"), "info");
+    this.log("Stream Proxy: " + (this.useProxy ? "ENABLED (Auto-Fix)" : "DISABLED"), "info");
     
-    const s = localStorage.getItem('iplinks_v4');
+    const s = localStorage.getItem('iplinks_v5');
     if (s) { this.d = JSON.parse(s); this.log(`Loaded ${this.d.acc.length} accounts from storage.`, "ok"); }
     this.rndAcc();
   },
 
-  sv() { localStorage.setItem('iplinks_v4', JSON.stringify(this.d)); },
+  sv() { localStorage.setItem('iplinks_v5', JSON.stringify(this.d)); },
 
   go(x) {
     ['cfg','lst','dbg'].forEach(id => document.getElementById(id).classList.add('hidden'));
@@ -173,20 +177,18 @@ const V = {
     if (x === 'lst') this.rnd();
   },
 
-  // --- LOGGER ---
   log(msg, type = 'info') {
     const box = document.getElementById('console-box');
     const div = document.createElement('div');
     div.className = `log-line log-${type}`;
     const time = new Date().toLocaleTimeString().split(' ')[0];
     div.innerHTML = `<span class="ts">[${time}]</span> ${msg}`;
-    box.prepend(div); // Adiciona no topo (flex-direction reverse visual)
-    // Limita logs
+    box.prepend(div);
     if(box.children.length > 100) box.lastChild.remove();
   },
   clrLog() { document.getElementById('console-box').innerHTML = ''; this.log("Logs cleared.", "info"); },
 
-  // --- FETCH COM DEBUG ---
+  // --- FETCH MULTI-PROXY ---
   async fetchRaw(url, label) {
     try {
       this.log(`REQ [${label}]: ${url.substring(0, 50)}...`, "info");
@@ -194,28 +196,23 @@ const V = {
       
       let res;
       if (this.useProxy) {
-        // Codifica a URL para o proxy
-        res = await fetch(this.proxyUrl + encodeURIComponent(url));
+        res = await fetch(this.apiProxy + encodeURIComponent(url));
       } else {
         res = await fetch(url);
       }
       
       const t1 = performance.now();
-      const size = res.headers.get('content-length') || '?';
-      
       this.log(`RES [${label}]: Status ${res.status} (${Math.round(t1-t0)}ms)`, res.ok ? "ok" : "err");
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const text = await res.text();
-      this.log(`DATA [${label}]: Size ~${Math.round(text.length/1024)}KB. Parsing...`, "info");
+      this.log(`DATA [${label}]: Size ~${Math.round(text.length/1024)}KB.`, "info");
       
-      // Verifica se voltou vazio (possível falha de proxy em lista grande)
       if (text.length < 50 && text.trim().startsWith('<')) {
-        this.log(`WARN [${label}]: Proxy returned HTML (Blocking?). Try HTTP server.`, "warn");
+        this.log(`WARN [${label}]: Proxy blocked content (HTML returned).`, "warn");
         return null;
       }
-
       return JSON.parse(text);
     } catch (e) {
       this.log(`ERR [${label}]: ${e.message}`, "err");
@@ -223,7 +220,6 @@ const V = {
     }
   },
 
-  // --- IMPORT ---
   imp() {
     const txt = document.getElementById('in').value;
     if (!txt.trim()) return this.log("Input empty.", "err");
@@ -244,11 +240,10 @@ const V = {
       this.log(`Imported ${c} accounts.`, "ok");
       this.chk();
     } else {
-      this.log("No valid access found in text.", "warn");
+      this.log("No valid access found.", "warn");
     }
   },
 
-  // --- CHECK ---
   async chk() {
     if (this.d.acc.length === 0) return;
     this.log("Starting Account Check...", "info");
@@ -264,21 +259,17 @@ const V = {
     this.rndAcc();
   },
 
-  // --- LOAD COM DEBUG DETALHADO ---
   async load() {
     const valid = this.d.acc.filter(a => a.s === 'ON');
-    // Se nenhum ON, tenta de todos (force mode)
     const target = valid.length ? valid : this.d.acc;
-    
     if (!target.length) return this.log("No accounts to load.", "err");
     
     this.d.ch = [];
     this.log("Starting Load Process...", "info");
     
-    // Verifica modo força
     const forceAll = document.getElementById('force-all').checked;
     const keys = ['PREMIERE', 'ESPN', 'SPORTV', 'AMAZON', 'PRIME', 'HBO', 'DAZN', 'TNT'];
-    this.log(`Filter Mode: ${forceAll ? 'DISABLED (Loading ALL)' : 'ENABLED (Keywords only)'}`, "info");
+    this.log(`Filter Mode: ${forceAll ? 'DISABLED (All)' : 'ENABLED (Keywords)'}`, "info");
 
     for (const a of target) {
       this.log(`Processing Account: ${a.h}...`, "info");
@@ -290,19 +281,9 @@ const V = {
         this.log(`  >> Received ${totalRaw} channels.`, "ok");
         
         let added = 0;
-        // Processamento em lote para não travar se for mt grande
-        // Mas para debug, processamos normal
         data.forEach(x => {
           const n = x.name.toUpperCase();
-          
-          // Lógica de Filtro
-          let isTarget = false;
-          if (forceAll) {
-            isTarget = true; // Pega tudo
-          } else {
-            isTarget = keys.some(k => n.includes(k)); // Pega só keywords
-          }
-
+          let isTarget = forceAll ? true : keys.some(k => n.includes(k));
           if (isTarget) {
             this.d.ch.push({
               n: x.name,
@@ -312,31 +293,25 @@ const V = {
             added++;
           }
         });
-        
         this.log(`  >> Filtered: ${added} channels added.`, "ok");
-        
-        // Early stop se for força all e já tiver muitos para não estourar memória
         if (forceAll && this.d.ch.length > 500) {
-           this.log("Limit reached (500 channels) to prevent crash in Force Mode.", "warn");
+           this.log("Limit reached (500 channels).", "warn");
            break;
         }
-
       } else {
-        this.log(`  >> Failed to parse channels from ${a.h}.`, "err");
+        this.log(`  >> Failed to parse channels.`, "err");
       }
     }
-    
     this.sv();
     this.go('lst');
     this.log(`Process Complete. Total in list: ${this.d.ch.length}`, "ok");
   },
 
-  // --- RENDER ---
   rndAcc() {
     document.getElementById('acc').innerHTML = this.d.acc.map((a, i) => `
       <div class="row">
         <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-          <span class="dot" style="color:${a.s==='ON'?'#0f0':(a.s==='OFF'?'#f00':'#666')}"></span>
+          <span class="dot" style="color:${a.s==='ON'?'#00ff9d':(a.s==='OFF'?'#ff4444':'#666')}"></span>
           <span style="color:#444; font-size:10px;">[${a.h}]</span> ${a.u}
         </div>
         <button class="btn" style="color:red; padding:2px 5px; font-size:10px;" onclick="V.del(${i})">X</button>
@@ -348,7 +323,6 @@ const V = {
     const q = document.getElementById('s').value.toUpperCase();
     const fq = document.getElementById('f-q').value;
     const el = document.getElementById('g');
-    
     const flt = this.d.ch.filter(c => {
       const ok = c.n.toUpperCase().includes(q);
       const okQ = fq === 'all' || c.q === fq.toUpperCase();
@@ -359,33 +333,66 @@ const V = {
       <div class="card">
         <div>
           <div class="c-name">${c.n}</div>
-          <div class="c-meta" style="color:${c.q==='HD'?'#0f0':'#555'}">${c.q}</div>
+          <div class="c-meta" style="color:${c.q==='HD'?'#00ff9d':'#555'}">${c.q}</div>
         </div>
         <div class="c-act">
-          <button class="btn" style="border-color:#0f0; color:#0f0" onclick="V.pl('${encodeURIComponent(c.u)}','${c.n.replace(/'/g,"\\'")}')">PLAY</button>
+          <button class="btn" style="border-color:#00ff9d; color:#00ff9d" onclick="V.pl('${encodeURIComponent(c.u)}','${c.n.replace(/'/g,"\\'")}')">PLAY</button>
           <button class="btn" onclick="V.cpU('${c.u}')">LINK</button>
         </div>
       </div>
     `).join('') || '<div style="grid-column:1/-1; text-align:center; color:#333; padding:20px">EMPTY LIST</div>';
   },
 
-  // --- PLAYER ---
+  // --- PLAYER COM STREAM PROXY ---
   pl(url, name) {
     this.cur = decodeURIComponent(url);
     const v = document.getElementById('v');
     const m = document.getElementById('m');
+    const pb = document.getElementById('proxy-badge');
     m.classList.add('open');
     this.log(`Playing: ${name}`, "info");
     
+    // Mostra se o proxy de stream está ativo
+    if (this.useProxy) {
+      pb.classList.remove('hidden');
+      this.log("Stream Proxy ACTIVE (corsproxy.io)", "warn");
+    } else {
+      pb.classList.add('hidden');
+    }
+
     if (this.hls) this.hls.destroy();
     
     if (Hls.isSupported()) {
-      this.hls = new Hls({ enableWorker: true });
+      this.hls = new Hls({ 
+        enableWorker: true,
+        // Configuração CRÍTICA: Interceptar as requisições do HLS
+        xhrSetup: (xhr, reqUrl) => {
+          if (this.useProxy) {
+            // Se estiver em HTTPS, usa o proxy para o stream
+            // Usa corsproxy.io pois ele lida melhor com vídeo binário
+            const proxyUrl = this.streamProxy + encodeURIComponent(reqUrl);
+            this.log(`HLS Request Proxied: ${reqUrl.substring(0,30)}...`, "info");
+            xhr.open('GET', proxyUrl, true);
+          } else {
+            xhr.open('GET', reqUrl, true);
+          }
+        }
+      });
+      
       this.hls.loadSource(this.cur);
       this.hls.attachMedia(v);
-      this.hls.on(Hls.Events.MANIFEST_PARSED, () => v.play().catch(()=>this.log("Autoplay blocked by browser", "warn")));
-      this.hls.on(Hls.Events.ERROR, (e, d) => this.log(`HLS Error: ${d.type}`, "err"));
+      this.hls.on(Hls.Events.MANIFEST_PARSED, () => v.play().catch(()=>this.log("Autoplay blocked", "warn")));
+      
+      this.hls.on(Hls.Events.ERROR, (e, d) => {
+        if(d.fatal) {
+          this.log(`HLS Fatal Error: ${d.type} - ${d.details}`, "err");
+          if (d.type === Hls.ErrorTypes.NETWORK_ERROR) {
+            this.log("Network Error: Possibly Proxy limit or Server down.", "err");
+          }
+        }
+      });
     } else if (v.canPlayType('application/vnd.apple.mpegurl')) {
+      // Safari nativo (não suporta override de XHR da mesma forma, falhará se for Mixed Content)
       v.src = this.cur;
       v.play().catch(()=>{});
     }
@@ -397,7 +404,7 @@ const V = {
     if (this.hls) this.hls.destroy();
   },
 
-  cpU(u) { navigator.clipboard.writeText(u); this.log("URL Copied to clipboard", "ok"); },
+  cpU(u) { navigator.clipboard.writeText(u); this.log("URL Copied", "ok"); },
   cp() { if(this.cur) this.cpU(this.cur); },
   del(i) { this.d.acc.splice(i,1); this.sv(); this.rndAcc(); },
   rst() { if(confirm('RESET ALL?')) { this.d = { acc:[], ch:[] }; this.sv(); this.rndAcc(); this.rnd(); this.log("System Reset.", "warn"); }}
