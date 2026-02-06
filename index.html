@@ -2,598 +2,379 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>IPLINKS V14 STEALTH</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>V15.3 ARCHITECT</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
-    body { background: #000; color: #ddd; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 10px; font-size: 14px; }
+    body { background: #000; color: #0f0; font-family: monospace; margin: 0; padding: 5px; font-size: 13px; }
     
-    .box { max-width: 800px; margin: 0 auto; }
+    .hidden { display: none; }
+    .w-full { width: 100%; }
+    .flex { display: flex; gap: 5px; }
+    .mt-1 { margin-top: 5px; }
     
-    /* STATUS BAR */
-    .status-bar { background: #111; padding: 8px; font-size: 11px; color: #666; border-bottom: 1px solid #333; margin-bottom: 15px; display: flex; justify-content: space-between; }
-    .sb-ok { color: #5f5; font-weight: bold; }
+    /* INPUTS */
+    input, textarea, select { background: #000; border: 1px solid #0f0; color: #0f0; padding: 8px; font-family: monospace; width: 100%; box-sizing: border-box; margin-bottom: 5px; }
+    
+    /* Input do Worker (Destaque) */
+    #wurl { border-color: #ff00ff; color: #ff00ff; } 
 
-    /* UI ELEMENTS */
-    .btn { background: #222; color: #fff; border: 1px solid #444; padding: 12px; width: 100%; margin-bottom: 8px; border-radius: 4px; font-weight: 600; cursor: pointer; text-transform: uppercase; font-size: 12px; }
-    .btn:active { background: #444; transform: scale(0.99); }
-    .btn-green { background: #004411; border-color: #004411; color: #fff; }
-    .btn-blue { background: #002244; border-color: #003366; color: #fff; }
-    .btn-red { background: #660000; border-color: #660000; color: #fff; }
-    
-    input, textarea, select { background: #111; border: 1px solid #333; color: #fff; padding: 12px; width: 100%; margin-bottom: 10px; border-radius: 4px; box-sizing: border-box; font-family: monospace; font-size: 12px; }
-    
-    /* TABS */
-    .tabs { display: flex; margin-bottom: 15px; border-bottom: 1px solid #333; }
-    .tab { flex: 1; padding: 12px; text-align: center; background: #111; cursor: pointer; border: 1px solid #333; border-bottom: none; margin-bottom: -1px; }
-    .tab.active { background: #000; border-bottom: 1px solid #000; color: #0f0; font-weight: bold; }
+    button { background: #002200; border: 1px solid #0f0; color: #0f0; padding: 10px; cursor: pointer; font-family: monospace; text-transform: uppercase; font-weight: bold; }
+    button:active { background: #0f0; color: #000; }
+    button.red { border-color: #f00; color: #f00; background: #220000; }
+    button.blue { border-color: #00f; color: #00f; background: #000022; }
+    button.purple { border-color: #ff00ff; color: #ff00ff; background: #220022; }
 
-    /* LISTS */
-    .item { padding: 10px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100%, 1fr)); gap: 8px; }
+    /* LAYOUT */
+    #tabs { display: flex; border-bottom: 1px solid #0f0; margin-bottom: 10px; }
+    .tab { flex: 1; padding: 8px; text-align: center; cursor: pointer; border: 1px solid #0f0; border-bottom: none; margin-bottom: -1px; background: #111; }
+    .tab.on { background: #000; border-bottom: 1px solid #000; color: #fff; }
+    
+    .row { border-bottom: 1px dashed #333; padding: 5px; display: flex; justify-content: space-between; align-items: center; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 5px; }
     @media (min-width: 600px) { .grid { grid-template-columns: 1fr 1fr; } }
     
-    .card { background: #111; padding: 10px; border: 1px solid #333; border-radius: 4px; display: flex; flex-direction: column; justify-content: space-between; min-height: 80px; }
-    .c-name { font-weight: 600; margin-bottom: 4px; color: #eee; font-size: 13px; line-height: 1.2; }
-    .c-meta { font-size: 10px; color: #666; margin-bottom: 8px; }
-    .c-btns { display: flex; gap: 6px; }
-    .c-btns button { flex: 1; padding: 6px; font-size: 11px; }
+    .card { border: 1px solid #0f0; padding: 5px; display: flex; justify-content: space-between; align-items: center; }
+    .card:active { background: #111; }
 
-    /* LOGS */
-    #logs { background: #050505; color: #0f0; font-family: monospace; padding: 10px; height: 250px; overflow-y: auto; border: 1px solid #333; font-size: 11px; margin-top: 10px; white-space: pre-wrap; }
+    #logs { background: #000; border: 1px solid #333; color: #888; height: 150px; overflow-y: auto; padding: 5px; font-size: 11px; white-space: pre-wrap; }
 
-    /* MODAL */
-    #player-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 999; display: none; flex-direction: column; }
-    #player-modal.open { display: flex; }
+    #modal { position: fixed; inset: 0; background: #000; z-index: 99; display: none; flex-direction: column; }
+    #modal.open { display: flex; }
     video { width: 100%; height: 100%; background: #000; }
-    .p-controls { padding: 10px; display: flex; gap: 10px; background: #111; }
-    #ext-menu { position: absolute; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-    .ext-btn { width: 100%; max-width: 300px; margin-bottom: 10px; padding: 15px; background: #222; border: 1px solid #555; color: #fff; text-align: left; font-size: 13px; display: flex; align-items: center; gap: 10px; border-radius: 4px; }
-
-    .hidden { display: none !important; }
-    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
-    .on { background: #0f0; } .off { background: #f00; } 
-    .section-title { font-size: 11px; color: #555; text-transform: uppercase; margin: 15px 0 5px 0; font-weight: bold; border-bottom: 1px solid #222; padding-bottom: 2px; }
+    #ctrl { padding: 10px; display: flex; gap: 10px; background: #111; }
+    #err { position: absolute; inset: 0; background: #000; display: none; align-items: center; justify-content: center; flex-direction: column; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
   </style>
 </head>
 <body>
 
-<div class="box">
-  <div class="status-bar">
-    <span id="sb-prot">Checking Protocol...</span>
-    <span id="sb-msg" class="sb-ok">READY</span>
+<div id="tabs">
+  <div class="tab on" onclick="V.go('cfg')">CFG</div>
+  <div class="tab" onclick="V.go('lst')">LST (<span id="cnt">0</span>)</div>
+  <div class="tab" onclick="V.go('log')">LOG</div>
+</div>
+
+<!-- CFG -->
+<div id="cfg">
+  <!-- WORKER PROXY CONFIG -->
+  <div style="border: 1px dashed #ff00ff; padding: 5px; margin-bottom: 10px;">
+    <label style="font-size: 10px; color: #ff00ff;">MEU WORKER PROXY (MELHOR OPÇÃO)</label>
+    <input id="wurl" placeholder="https://seu-worker.workers.dev/proxy">
+    <div style="font-size: 9px; color: #666; margin-top: 2px;">
+      Preencha se upou o código do Proxy no Worker. Resolve bloqueio HTTP/HTTPS.
+    </div>
   </div>
 
-  <h1 style="text-align: center; margin-bottom: 15px; letter-spacing: -1px;">IPLINKS <span style="color:#0f0">V14 STEALTH</span></h1>
+  <textarea id="in" rows="3" placeholder="LOGS..."></textarea>
+  <div class="flex">
+    <button class="w-full" onclick="V.imp()">IMPORT</button>
+    <button onclick="V.chk()">CHECK</button>
+  </div>
+  <div id="acc" style="max-height: 100px; overflow-y: auto; border: 1px solid #222; margin-bottom: 5px;"></div>
   
-  <div class="tabs">
-    <div class="tab active" onclick="App.show('config')">CONFIG</div>
-    <div class="tab" onclick="App.show('list')">LISTA (<span id="count">0</span>)</div>
-    <div class="tab" onclick="App.show('logs')">LOGS</div>
-  </div>
+  <label><input type="checkbox" id="force"> FORÇAR TUDO</label>
+  <button onclick="V.load()">CARREGAR</button>
 
-  <!-- CONFIG -->
-  <div id="config">
-    <textarea id="input-logs" rows="4" placeholder="Cole os logs (M3U/Suzanor)..."></textarea>
-    <button class="btn btn-green" onclick="App.import()">1. IMPORTAR LOGS</button>
-    
-    <div class="section-title">CONTAS</div>
-    <div style="display:flex; gap:10px;">
-      <button class="btn" style="flex:1" onclick="App.check()">VERIFICAR</button>
-      <button class="btn btn-red" style="width:60px" onclick="App.reset()">CLR</button>
-    </div>
-    <div id="acc-list" style="margin-top: 5px; border: 1px solid #333; border-radius: 4px; max-height: 150px; overflow-y: auto;"></div>
-
-    <div class="section-title">CARREGAR (LOCAL)</div>
-    <label style="color:#888; font-size:11px; display:block; margin-bottom:5px;">
-      <input type="checkbox" id="force-load"> FORÇAR TODOS (Apenas p/ Teste)
-    </label>
-    <button class="btn btn-green" onclick="App.loadChannels()">2. CARREGAR CANAIS LOCAL</button>
-
-    <div class="section-title" style="margin-top:20px; color:#0088ff;">SYNC TO WORKER (FILTERED)</div>
-    <div style="background:#111; padding:10px; border-radius:4px; border:1px solid #222;">
-      <input type="password" id="cf-token" placeholder="API Token">
-      <input type="text" id="cf-acc" placeholder="Account ID">
-      <input type="text" id="cf-ns" placeholder="Namespace ID">
-      <input type="text" id="cf-key" placeholder="KV Key Name (channels_data)">
-      <button class="btn btn-blue" onclick="App.syncWorker()">⚡ SYNC STEALTH LIST</button>
-      <div style="font-size:10px; color:#666; margin-top:5px;">
-        Filtra: HD Only, No 4K/SD, Prioridade Tourobox. Nomes ofuscados.
-      </div>
-    </div>
-  </div>
-
-  <!-- LISTA -->
-  <div id="list" class="hidden">
-    <input type="text" id="search" placeholder="🔍 Buscar..." onkeyup="App.renderList()">
-    <div id="channel-grid" class="grid"></div>
-  </div>
-
-  <!-- LOGS -->
-  <div id="logs-tab" class="hidden">
-    <button class="btn" onclick="document.getElementById('logs').innerHTML=''">LIMPAR</button>
-    <div id="logs"></div>
+  <div class="mt-1" style="border-top: 1px solid #333; padding-top: 5px;">
+    <div class="flex"><input id="t" placeholder="TOKEN"><input id="a" placeholder="ACC ID"></div>
+    <div class="flex"><input id="n" placeholder="NS ID"><input id="k" placeholder="KEY"></div>
+    <button class="purple w-full" onclick="V.sync()">SYNC STEALTH</button>
   </div>
 </div>
 
-<!-- PLAYER -->
-<div id="player-modal">
-  <video id="video" controls playsinline></video>
-  <div class="p-controls" id="p-ctrl">
-    <button class="btn" style="flex:1" onclick="App.copyUrl()">COPIAR LINK</button>
-    <button class="btn btn-red" style="flex:1" onclick="App.closePlayer()">FECHAR</button>
-  </div>
+<!-- LST -->
+<div id="lst" class="hidden">
+  <input id="s" placeholder="SEARCH..." onkeyup="V.rnd()">
+  <div id="g" class="grid mt-1"></div>
+</div>
 
-  <!-- MENU EXTERNO -->
-  <div id="ext-menu">
-    <h2 style="color:#f00; margin-bottom: 20px;">STREAM BLOQUEADO</h2>
-    <button class="ext-btn" onclick="App.cast('vlc')">🦆 VLC</button>
-    <button class="ext-btn" onclick="App.cast('mx')">🤖 MX</button>
-    <button class="ext-btn" onclick="App.cast('wvc')">📡 WVC</button>
-    <button class="ext-btn" onclick="App.cast('copy')">📋 Copiar</button>
-    <button class="btn" style="margin-top: 20px; background: transparent; border: 1px solid #555;" onclick="App.retry()">TENTAR</button>
+<!-- LOG -->
+<div id="log" class="hidden">
+  <button onclick="document.getElementById('logs').innerHTML=''">CLR</button>
+  <div id="logs"></div>
+</div>
+
+<!-- PLAYER -->
+<div id="modal">
+  <video id="v" controls playsinline></video>
+  <div id="ctrl">
+    <button style="flex:1" onclick="V.cp()">CP</button>
+    <button class="red" style="flex:1" onclick="V.x()">X</button>
+  </div>
+  <div id="err">
+    <h2 style="color:#f00">ERRO</h2>
+    <button onclick="V.cast('vlc')">VLC</button>
+    <button onclick="V.cast('wvc')">WVC</button>
+    <button onclick="V.retry()">RET</button>
   </div>
 </div>
 
 <script>
-const App = {
-  data: { acc: [], ch: [] },
-  hls: null,
-  curUrl: '',
-  
+const V = {
+  d: { acc: [], ch: [] }, hls: null, cur: '',
+
   init() {
-    const prot = location.protocol;
-    document.getElementById('sb-prot').innerText = prot.toUpperCase();
-    if(prot === 'file:') {
-        document.getElementById('sb-msg').innerText = 'MODO LOCAL (OTIMIZADO)';
-    } else {
-        document.getElementById('sb-msg').innerText = 'MODO ONLINE (HTTPS - PODE BLOQUEAR)';
-        document.getElementById('sb-msg').style.color = '#ffaa00';
-    }
-
-    const s = localStorage.getItem('iplinks_v14');
-    if(s) this.data = JSON.parse(s);
-    const cf = JSON.parse(localStorage.getItem('iplinks_cf') || '{}');
-    if(cf.t) document.getElementById('cf-token').value = cf.t;
-    if(cf.a) document.getElementById('cf-acc').value = cf.a;
-    if(cf.n) document.getElementById('cf-ns').value = cf.n;
-    if(cf.k) document.getElementById('cf-key').value = cf.k;
-
-    this.renderAcc();
-    this.log('V14 STEALTH INITIALIZED');
+    const x = localStorage.getItem('v15_3');
+    if(x) this.d = JSON.parse(x);
+    const c = JSON.parse(localStorage.getItem('v15_cf')||'{}');
+    if(c.t) document.getElementById('t').value=c.t;
+    if(c.a) document.getElementById('a').value=c.a;
+    if(c.n) document.getElementById('n').value=c.n;
+    if(c.k) document.getElementById('k').value=c.k;
+    if(c.w) document.getElementById('wurl').value=c.w;
+    this.rndAcc();
   },
 
-  save() { localStorage.setItem('iplinks_v14', JSON.stringify(this.data)); },
-  saveCf() { 
-    localStorage.setItem('iplinks_cf', JSON.stringify({
-      t: document.getElementById('cf-token').value,
-      a: document.getElementById('cf-acc').value,
-      n: document.getElementById('cf-ns').value,
-      k: document.getElementById('cf-key').value
+  save() { 
+    localStorage.setItem('v15_3', JSON.stringify(this.d)); 
+    localStorage.setItem('v15_cf', JSON.stringify({
+      t: document.getElementById('t').value,
+      a: document.getElementById('a').value,
+      n: document.getElementById('n').value,
+      k: document.getElementById('k').value,
+      w: document.getElementById('wurl').value
     }));
   },
-  
-  log(msg, type='info') {
-    const div = document.getElementById('logs');
-    const t = new Date().toLocaleTimeString();
-    const color = type === 'err' ? '#f55' : (type === 'ok' ? '#5f5' : '#0f0');
-    div.innerHTML += `<div style="color:${color}">[${t}] ${msg}</div>`;
-    div.scrollTop = div.scrollHeight;
+
+  log(m) { 
+    const d = document.getElementById('logs'); 
+    d.innerHTML += `[${new Date().toLocaleTimeString().split(' ')[0]}] ${m}\n`; 
+    d.scrollTop = d.scrollHeight; 
   },
 
-  show(tab) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('#config, #list, #logs-tab').forEach(d => d.classList.add('hidden'));
-    if(tab === 'config') {
-      document.getElementById('config').classList.remove('hidden');
-      document.querySelectorAll('.tab')[0].classList.add('active');
-    } else if(tab === 'list') {
-      document.getElementById('list').classList.remove('hidden');
-      document.querySelectorAll('.tab')[1].classList.add('active');
-      this.renderList();
-    } else if(tab === 'logs') {
-      document.getElementById('logs-tab').classList.remove('hidden');
-      document.querySelectorAll('.tab')[2].classList.add('active');
+  // LÓGICA DE PROXY INTELIGENTE
+  getProxy() {
+    const myWorker = document.getElementById('wurl').value.trim();
+    if (myWorker) {
+      this.log(`USANDO MEU WORKER: ${myWorker}`);
+      return (url) => myWorker + '?url=' + encodeURIComponent(url);
     }
+    // Se não tiver worker, usa padrão AllOrigins (fallback)
+    this.log(`USANDO PROXY PÚBLICO (ALLORIGINS)`);
+    return (url) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
   },
 
-  import() {
-    const txt = document.getElementById('input-logs').value;
-    if(!txt.trim()) return alert('Cole os logs!');
-    const re = /https?:\/\/([^\/:]+)(?::(\d+))?\/get\.php\?username=([^&]+)&password=([^&\s]+)/gi;
-    let c = 0, m;
-    while((m = re.exec(txt)) !== null) {
-      const u = `http://${m[3]}:${m[4]}@${m[1]}:${m[2]||80}`;
-      if(!this.data.acc.find(x => x.url === u)) {
-        this.data.acc.push({ url: u, h: m[1], p: m[2]||80, u: m[3], pw: m[4], s: '?' });
+  go(p) {
+    document.querySelectorAll('.tab').forEach(e=>e.classList.remove('on'));
+    document.querySelectorAll('#cfg,#lst,#log').forEach(e=>e.classList.add('hidden'));
+    document.getElementById(p==='cfg'?'cfg':(p==='lst'?'lst':'log')).classList.remove('hidden');
+    document.querySelectorAll('.tab')[p==='cfg'?0:(p==='lst'?1:2)].classList.add('on');
+    if(p==='lst') this.rnd();
+  },
+
+  imp() {
+    const txt = document.getElementById('in').value;
+    const r = /https?:\/\/([^\/:]+):([^@]+)@([^:\/]+):?(\d+)?/gi;
+    let m, c=0;
+    while((m=r.exec(txt))!==null) {
+      const u=`http://${m[1]}:${m[2]}@${m[3]}:${m[4]||80}`;
+      if(!this.d.acc.find(x=>x.url===u)) {
+        this.d.acc.push({url:u,h:m[3],p:m[4]||80,u:m[1],pw:m[2],s:'?'});
         c++;
       }
     }
-    if(c > 0) {
-      document.getElementById('input-logs').value = '';
-      this.save();
-      this.renderAcc();
-      this.log(`+${c} contas.`);
-      this.check();
-    } else { alert('Nada encontrado.'); }
+    if(c>0) { document.getElementById('in').value=''; this.save(); this.rndAcc(); this.chk(); }
   },
 
-  async check() {
-    for(let a of this.data.acc) {
-      a.s = '..';
-      this.renderAcc();
+  async chk() {
+    const proxyFn = this.getProxy();
+    for(let a of this.d.acc) {
+      a.s='..'; this.rndAcc();
       try {
-        const url = `http://${a.h}:${a.p}/player_api.php?username=${a.u}&password=${a.pw}`;
-        this.log(`Check: ${a.h}`);
-        const res = await fetch(url);
-        if(!res.ok) throw new Error(res.status);
-        const j = await res.json();
-        a.s = (j.user_info && j.user_info.status === 'Active') ? 'ON' : 'OFF';
-        this.log(`Status: ${a.s}`);
-      } catch(e) {
-        a.s = 'OFF';
-        this.log(`Erro: ${e.message}`, 'err');
-      }
+        const u=`http://${a.h}:${a.p}/player_api.php?username=${a.u}&password=${a.pw}`;
+        const r=await fetch(proxyFn(u));
+        const j=await r.json();
+        a.s=(j.user_info?.auth)?'ON':'OFF';
+      } catch(e) { a.s='OFF'; }
     }
-    this.save();
-    this.renderAcc();
+    this.save(); this.rndAcc();
   },
 
-  async loadChannels() {
-    const valid = this.data.acc.filter(a => a.s === 'ON');
-    const target = valid.length ? valid : this.data.acc;
-    if(!target.length) return alert('Sem contas!');
-    
-    this.data.ch = [];
-    this.log('Carregando (Simples)...');
-    
-    const force = document.getElementById('force-load').checked;
-    const keys = ['PREMIERE', 'SPORTV', 'AMAZON', 'ESPN', 'DAZN', 'HBO', 'TNT'];
+  async load() {
+    const v = this.d.acc.filter(a=>a.s==='ON');
+    const t = v.length?v:this.d.acc;
+    if(!t.length) return alert('SEM CONTAS');
+    this.d.ch=[]; 
+    const f = document.getElementById('force').checked;
+    const k = ['PREMIERE','SPORTV','ESPN','DAZN','HBO','TNT'];
+    const proxyFn = this.getProxy();
 
-    for(const a of target) {
+    for(const a of t) {
       try {
-        const url = `http://${a.h}:${a.p}/player_api.php?username=${a.u}&password=${a.pw}&action=get_live_streams`;
-        const res = await fetch(url);
-        if(!res.ok) continue;
-        const data = await res.json();
-        if(Array.isArray(data)) {
-          data.forEach(x => {
-            const n = x.name.toUpperCase();
-            const isTarget = force ? true : keys.some(k => n.includes(k));
-            if(isTarget) {
-              this.data.ch.push({
-                n: x.name,
-                u: `http://${a.h}:${a.p}/live/${a.u}/${a.pw}/${x.stream_id}.m3u8`,
-                q: n.includes('4K')?'4K':(n.includes('HD')?'HD':'SD'),
-                acc: a.h 
-              });
-            }
-          });
-        }
-      } catch(e) { this.log(`Erro ${a.h}`, 'err'); }
+        const u=`http://${a.h}:${a.p}/player_api.php?username=${a.u}&password=${a.pw}&action=get_live_streams`;
+        const r=await fetch(proxyFn(u));
+        const d=await r.json();
+        if(Array.isArray(d)) d.forEach(x=>{
+          const n=x.name.toUpperCase();
+          if(f||k.some(kw=>n.includes(kw))) {
+            this.d.ch.push({
+              n:x.name, u:`http://${a.h}:${a.p}/live/${a.u}/${a.pw}/${x.stream_id}.m3u8`,
+              q:n.includes('4K')?'4K':(n.includes('HD')?'HD':'SD')
+            });
+          }
+        });
+      } catch(e){}
     }
-    this.save();
-    this.show('list');
-    this.log(`Total: ${this.data.ch.length}`);
+    this.save(); this.go('lst');
   },
 
-  // ═════════════════════════════════════════════════════════════
-  // ⚡ SYNC WORKER (LÓGICA V8 ADAPTADA PARA BROWSER)
-  // ═════════════════════════════════════════════════════════════
-  async syncWorker() {
-    const token = document.getElementById('cf-token').value;
-    const accId = document.getElementById('cf-acc').value;
-    const nsId = document.getElementById('cf-ns').value;
-    const keyName = document.getElementById('cf-key').value || 'channels_data';
-
-    if(!token || !accId || !nsId) return alert('Preencha Cloudflare!');
+  // --- SYNC ---
+  async sync() {
+    const T=document.getElementById('t').value, A=document.getElementById('a').value, N=document.getElementById('n').value, K=document.getElementById('k').value||'channels_data';
+    if(!T||!A||!N) return alert('Falta CF');
     
-    // 1. SETUP
-    this.saveCf();
-    this.log('🚀 INICIANDO SYNC STEALTH...', 'ok');
+    this.log('SYNC START...');
+    const KW=['PREMIERE','SPORTV','ESPN','DAZN','HBO MAX','AMAZON PRIME','TNT SPORTS'];
+    const MAX=90;
+    const proxyFn = this.getProxy(); // Usa o proxy (Worker ou Público) para baixar as listas
     
-    // CONSTANTS
-    const TARGET_KEYWORDS = ['PREMIERE', 'SPORTV', 'ESPN', 'DAZN', 'HBO MAX', 'AMAZON PRIME', 'TNT SPORTS'];
-    const MAX_CHANNELS = 90;
-    
-    // 2. FUNÇÕES DE FILTRO (Do seu script Node)
-    const cleanName = (lower) => {
-      return lower
-        .replace(/\s*(HD|SD|4K|UHD|FHD|FULLHD|HEVC|HDR|1080p|720p|H265)\s*/gi, '') 
-        .replace(/\s*(ESPN|SPORTV|PREMIERE|DAZN|HBO MAX|PRIME|TNT|CL)\s*/gi, '') 
-        .replace(/[^\s\-\.]+/g, '') 
-        .replace(/\s+/g, ' ').trim();
+    // HELPERS
+    const cln=n=>n.replace(/\s*(HD|SD|4K|UHD|FHD)\s*/gi,'').replace(/[^\s\-\.]+/g,'').replace(/\s+/g,' ').trim();
+    const ok=n=>{
+      const u=n.toUpperCase();
+      return KW.some(k=>u.includes(k)) && u.includes('HD') && !/\b(SD|FHD|4K|UHD)\b/.test(u);
     };
-
-    const isStableHD = (name) => {
-      const upper = name.toUpperCase();
-      const isTarget = TARGET_KEYWORDS.some(k => upper.includes(k));
-      if (!isTarget) return false;
-      if (!upper.includes('HD')) return false;
-      // Regex do seu script: Exclui SD, FHD, 4K, UHD
-      const isBadQuality = /\b(SD|FHD|4K|UHD)\b/.test(upper); 
-      return !isBadQuality;
-    };
-
-    // 3. SMART CACHE (Mapa de Hosts)
-    const hostCache = new Map();
     
-    // Função para pegar lista (Cacheada)
-    const getChannelsForHost = async (endpoint, user, pass, hostName) => {
-      if (hostCache.has(hostName)) {
-        this.log(`   📂 CACHE HIT: ${hostName}`);
-        return hostCache.get(hostName);
-      }
-      this.log(`   ⬇️  BAIXANDO: ${hostName}`);
+    const cache=new Map();
+    const get=async(e,u,p,h)=>{
+      if(cache.has(h)) return cache.get(h);
       try {
-        const url = `${endpoint}/player_api.php?username=${user}&password=${pass}&action=get_live_streams`;
-        const res = await fetch(url);
-        if(!res.ok) throw new Error('Falha download');
-        const data = await res.json();
-        if(!Array.isArray(data)) throw new Error('JSON inválido');
-        hostCache.set(hostName, data);
-        this.log(`   ✅ CACHEADO: ${data.length} canais`);
-        return data;
-      } catch(e) {
-        this.log(`   ❌ ERRO HOST ${hostName}: ${e.message}`, 'err');
-        return null;
-      }
+        const r=await fetch(proxyFn(`${e}/player_api.php?username=${u}&password=${p}&action=get_live_streams`));
+        const d=await r.json();
+        if(Array.isArray(d)) { cache.set(h,d); return d; }
+      } catch(e){}
+      return null;
     };
 
-    // 4. PROCESSAMENTO DAS CONTAS
-    let allSources = [];
-    
-    for (const acc of this.data.acc) {
-      if(acc.s !== 'ON') {
-        this.log(`   ⚠️  PULANDO: ${acc.h} (Offline)`);
-        continue;
-      }
-      
+    let all=[];
+    for(const a of this.d.acc) {
+      if(a.s!=='ON') continue;
       try {
-        // A. Auth Rapida
-        const authUrl = `http://${acc.h}:${acc.p}/player_api.php?username=${acc.u}&password=${acc.pw}`;
-        const authRes = await fetch(authUrl);
-        if(!authRes.ok) throw new Error('Auth Fail');
-        const authData = await authRes.json();
+        const au=`http://${a.h}:${a.p}/player_api.php?username=${a.u}&password=${a.pw}`;
+        const ar=await fetch(proxyFn(au));
+        const ad=await ar.json();
+        if(!ad.user_info?.auth) continue;
         
-        if (!authData.user_info?.auth) throw new Error('Nao Autorizado');
-        
-        // Verifica se conta está cheia
-        const active = parseInt(authData.user_info.active_cons || 0);
-        const max = parseInt(authData.user_info.max_connections || 1);
-        if (active >= max) {
-          this.log(`   🚫 CHEIA: ${acc.h} (${active}/${max})`);
-          continue;
-        }
+        const lst=await get(`http://${a.h}:${a.p}`,a.u,a.pw,a.h);
+        if(!lst) continue;
 
-        // B. Pegar Lista (Usando Cache)
-        const channels = await getChannelsForHost(`http://${acc.h}:${acc.p}`, acc.u, acc.pw, acc.h);
-        if(!channels) continue;
-
-        // C. Filtrar Localmente
-        const serverUrl = authData.server_info.url;
-        const serverPort = authData.server_info.port;
-
-        for (const ch of channels) {
-          if(!isStableHD(ch.name)) continue;
+        const srv=ad.server_info.url, prt=ad.server_info.port;
+        lst.forEach(c=>{
+          if(!ok(c.name)) return;
+          const l=c.name.toLowerCase(), cl=cln(l);
+          if(!cl) return;
           
-          const lower = ch.name.toLowerCase();
-          const clean = cleanName(lower);
-          if(!clean) continue;
+          let b='OUTRO';
+          if(l.includes('premiere'))b='PREMIERE';
+          else if(l.includes('sportv'))b='SPORTV';
+          else if(l.includes('espn'))b='ESPN';
+          else if(l.includes('dazn'))b='DAZN';
+          else if(l.includes('hbo max'))b='HBO MAX';
+          else if(l.includes('amazon'))b='PRIME';
+          else if(l.includes('tnt'))b='TNT SPORTS';
 
-          // Definir Marca
-          let brand = 'OUTRO';
-          if (lower.includes('premiere')) brand = 'PREMIERE';
-          else if (lower.includes('sportv')) brand = 'SPORTV';
-          else if (lower.includes('espn')) brand = 'ESPN';
-          else if (lower.includes('dazn')) brand = 'DAZN';
-          else if (lower.includes('hbo max')) brand = 'HBO MAX';
-          else if (lower.includes('amazon prime') || lower.includes('amazonvideo')) brand = 'PRIME';
-          else if (lower.includes('tnt sports')) brand = 'TNT SPORTS';
-
-          const streamUrl = `http://${serverUrl}:${serverPort}/live/${acc.u}/${acc.pw}/${ch.stream_id}.m3u8`;
-          allSources.push({ brand, clean, name: ch.name, url: streamUrl, account: acc.h });
-        }
-
-      } catch(e) {
-        this.log(`   ❌ ERRO PROCESSAR ${acc.h}: ${e.message}`, 'err');
-      }
+          all.push({b,cl,n:c.name,u:`http://${srv}:${prt}/live/${a.u}/${a.pw}/${c.stream_id}.m3u8`,a:a.h});
+        });
+      } catch(e){}
     }
 
-    // 5. AGRUPAMENTO E ORDENAÇÃO
-    this.log(`📊 BRUTO: ${allSources.length} canais encontrados.`);
-    
-    const channelMap = new Map();
-    allSources.forEach(ch => {
-      const key = `${ch.brand}::${ch.clean}`;
-      if (!channelMap.has(key)) {
-        channelMap.set(key, { brand: ch.brand, clean: ch.clean, sources: [] });
-      }
-      const existing = channelMap.get(key);
-      // Evita duplicatas de URL exata
-      if (!existing.sources.some(s => s.url === ch.url)) {
-        existing.sources.push({ name: ch.name, url: ch.url, account: ch.account });
-      }
+    const map=new Map();
+    all.forEach(c=>{
+      const k=`${c.b}::${c.cl}`;
+      if(!map.has(k)) map.set(k,{b:c.b,cl:c.cl,s:[]});
+      if(!map.get(k).s.some(x=>x.u===c.u)) map.get(k).s.push({n:c.name,u:c.u,a:c.a});
     });
 
-    // Ordenação de Marcas (Vasco Priority)
-    const brandOrder = ['PREMIERE', 'SPORTV', 'ESPN', 'DAZN', 'HBO MAX', 'TNT SPORTS', 'PRIME', 'OUTRO'];
-    
-    const sortedChannels = Array.from(channelMap.values()).sort((a, b) => {
-      return brandOrder.indexOf(a.brand) - brandOrder.indexOf(b.brand);
+    const order=['PREMIERE','SPORTV','ESPN','DAZN','HBO MAX','TNT SPORTS','PRIME','OUTRO'];
+    const finC=[], finS={};
+    let i=0, cnt={};
+    const pre={'PREMIERE':'P','SPORTV':'S','ESPN':'E','DAZN':'Z','HBO MAX':'H','PRIME':'A','TNT SPORTS':'T','OUTRO':'X'};
+
+    Array.from(map.values()).sort((a,b)=>order.indexOf(a.b)-order.indexOf(b.b)).forEach(d=>{
+      if(finC.length>=MAX) return;
+      cnt[d.b]=(cnt[d.b]||0)+1;
+      const id=`ch_${i++}`, nm=`${pre[d.b]||'X'}${cnt[d.b]}`;
+      finC.push({id,type:'tv',name:nm,poster:''});
+      
+      d.s.sort((x,y)=>(x.a.includes('Tourobox')?-1:(y.a.includes('Tourobox')?1:0)));
+      if(d.s[0]) finS[id]=d.s[0].u;
+      if(d.s[1]) finS[`${id}_b1`]=d.s[1].u;
     });
 
-    // 6. MONTAGEM FINAL (OBFUSCAÇÃO)
-    const finalChannels = [];
-    const finalStreams = {};
-    let count = 0;
-    const counters = {};
-    const prefixMap = { 
-      'PREMIERE': 'P', 'SPORTV': 'S', 'ESPN': 'E', 'DAZN': 'Z', 
-      'HBO MAX': 'H', 'PRIME': 'A', 'TNT SPORTS': 'T', 'OUTRO': 'X' 
-    };
-
-    for (const data of sortedChannels) {
-      if (finalChannels.length >= MAX_CHANNELS) break;
-      
-      const { brand, clean, sources } = data;
-      counters[brand] = (counters[brand] || 0) + 1;
-      
-      // NOME OFUSCADO: Ex: P1, S2, E3
-      const displayName = `${prefixMap[brand] || 'X'}${counters[brand]}`;
-      const id = `ch_${count++}`;
-
-      finalChannels.push({ 
-        id, 
-        type: 'tv', 
-        name: displayName, // Nome Não Explícito
-        poster: `https://via.placeholder.com/300x450/000000/FFFFFF?text=${displayName}` 
-      });
-
-      // Prioridade de Fonte (Tourobox > NewUltra)
-      sources.sort((a, b) => {
-        const getRank = (n) => n.includes('Tourobox') ? 1 : n.includes('NewUltra') ? 2 : 10;
-        return getRank(a.account) - getRank(b.account);
-      });
-
-      // Pega top 2 fontes
-      const topSources = sources.slice(0, 2);
-      
-      // Principal
-      finalStreams[id] = topSources[0].url;
-      
-      // Backup (se existir)
-      if(topSources[1]) {
-        finalStreams[`${id}_b1`] = topSources[1].url;
-      }
-    }
-
-    // 7. ENVIO PARA CLOUDFLARE
-    const payload = { channels: finalChannels, streams: finalStreams, t: Date.now() };
-    
-    this.log('💾 Enviando para KV...');
     try {
-      const kvUrl = `https://api.cloudflare.com/client/v4/accounts/${accId}/storage/kv/namespaces/${nsId}/values/${keyName}`;
-      const res = await fetch(kvUrl, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+      const r=await fetch(`https://api.cloudflare.com/client/v4/accounts/${A}/storage/kv/namespaces/${N}/values/${K}`,{
+        method:'PUT',headers:{'Authorization':`Bearer ${T}`,'Content-Type':'application/json'},
+        body:JSON.stringify({channels:finC,streams:finS,t:Date.now()})
       });
-
-      if(res.ok) {
-        this.log(`✅ SUCESSO! ${finalChannels.length} Canais Stealth Upados.`, 'ok');
-        alert('Worker atualizado com sucesso!');
-      } else {
-        const err = await res.text();
-        this.log(`❌ ERRO KV: ${err}`, 'err');
-      }
-    } catch(e) {
-      this.log(`❌ ERRO REDE: ${e.message}`, 'err');
-    }
+      if(r.ok) { this.log(`OK: ${finC.length} CH UPADOS`); alert('SYNC OK'); }
+      else { const e=await r.text(); this.log(`ERR: ${e}`); }
+    } catch(e){ this.log(`NET ERR`); }
   },
 
-  // --- RENDER & PLAYER (IGUAL V13) ---
-  renderAcc() {
-    const el = document.getElementById('acc-list');
-    el.innerHTML = this.data.acc.map((a, i) => `
-      <div class="item">
-        <div><span class="status-dot ${a.s==='ON'?'on':'off'}"></span> ${a.h}</div>
-        <button onclick="App.del(${i})" style="background:none;border:none;color:red;cursor:pointer;">X</button>
-      </div>
-    `).join('') || '<div style="padding:10px;color:#444">Vazio</div>';
+  rndAcc() {
+    document.getElementById('acc').innerHTML=this.d.acc.map((a,i)=>`
+      <div class="row"><span class="dot" style="background:${a.s==='ON'?'#0f0':'#f00'}"></span>${a.h}<button onclick="V.del(${i})" style="color:red;border:none;background:none">X</button></div>
+    `).join('')||'<div style="padding:5px;color:#444">VAZIO</div>';
   },
 
-  renderList() {
-    const q = document.getElementById('search').value.toUpperCase();
-    const el = document.getElementById('channel-grid');
-    document.getElementById('count').innerText = this.data.ch.length;
-    const flt = this.data.ch.filter(c => c.n.toUpperCase().includes(q));
-    
-    el.innerHTML = flt.map(c => `
+  rnd() {
+    const q=document.getElementById('s').value.toUpperCase(), el=document.getElementById('g');
+    document.getElementById('cnt').innerText=this.d.ch.length;
+    el.innerHTML=this.d.ch.filter(c=>c.n.toUpperCase().includes(q)).map(c=>`
       <div class="card">
-        <div>
-          <div class="c-name">${c.n}</div>
-          <div class="c-meta" style="color:${c.q==='HD'?'#0f0':'#888'}">${c.q}</div>
-        </div>
-        <div class="c-btns">
-          <button class="btn btn-green" onclick="App.play('${encodeURIComponent(c.u)}','${c.n.replace(/'/g,"\\'")}')">PLAY</button>
-          <button class="btn" onclick="App.copyUrl('${c.u}')">LINK</button>
-        </div>
+        <span>${c.n}</span>
+        <button onclick="V.pl('${encodeURIComponent(c.u)}','${c.n.replace(/'/g,"\\'")}')">PLAY</button>
       </div>
-    `).join('') || '<div style="grid-column:1/-1; text-align:center; padding:20px; color:#444">Vazio</div>';
+    `).join('')||'<div style="padding:20px;text-align:center">VAZIO</div>';
   },
 
-  play(url, name) {
-    this.curUrl = decodeURIComponent(url);
-    const v = document.getElementById('video');
-    const modal = document.getElementById('player-modal');
-    const menu = document.getElementById('ext-menu');
-    const ctrl = document.getElementById('p-ctrl');
+  pl(u,n){
+    this.cur=decodeURIComponent(u);
+    const v=document.getElementById('v'), m=document.getElementById('modal'), e=document.getElementById('err');
+    m.classList.add('open'); e.style.display='none'; v.style.display='block';
+    this.log(`PLAY: ${n}`);
     
-    modal.classList.add('open');
-    menu.style.display = 'none';
-    ctrl.style.display = 'flex';
-    v.style.display = 'block';
-    this.log(`Play: ${name}`);
-    this.initHls(v, menu);
-  },
-
-  initHls(video, menu) {
-    if(this.hls) this.hls.destroy();
-    if(Hls.isSupported()) {
-      this.hls = new Hls({ enableWorker: true });
-      this.hls.loadSource(this.curUrl);
-      this.hls.attachMedia(video);
-      this.hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(()=>{}));
-      this.hls.on(Hls.Events.ERROR, (e, d) => {
-        if(d.fatal) {
-          this.log(`HLS Erro: ${d.type}`, 'err');
-          video.pause();
-          video.style.display = 'none';
-          document.getElementById('p-ctrl').style.display = 'none';
-          menu.style.display = 'flex';
+    if(this.hls)this.hls.destroy();
+    if(Hls.isSupported()){
+      // Usa a função getProxy() que agora retorna a URL do Worker se configurado
+      const proxyFn = this.getProxy();
+      
+      this.hls=new Hls({
+        xhrSetup: (xhr, reqUrl) => {
+           const target = typeof proxyFn === 'function' ? proxyFn(reqUrl) : reqUrl;
+           xhr.open('GET', target, true);
         }
       });
-    } else {
-      video.src = this.curUrl;
-      video.play();
-    }
+      
+      this.hls.loadSource(this.cur);
+      this.hls.attachMedia(v);
+      this.hls.on(Hls.Events.MANIFEST_PARSED,()=>v.play().catch(()=>{}));
+      this.hls.on(Hls.Events.ERROR,()=>{
+        v.pause(); v.style.display='none'; e.style.display='flex';
+      });
+    }else{ v.src=this.cur; v.play(); }
   },
 
-  retry() {
-    const v = document.getElementById('video');
-    const m = document.getElementById('ext-menu');
-    m.style.display = 'none';
-    v.style.display = 'block';
-    document.getElementById('p-ctrl').style.display = 'flex';
-    this.initHls(v, m);
+  retry(){
+    const v=document.getElementById('v'), e=document.getElementById('err');
+    e.style.display='none'; v.style.display='block';
+    this.initHls(v,e);
   },
 
-  cast(type) {
-    const u = this.curUrl;
-    if(!u) return;
-    if(type === 'vlc') window.location.href = `vlc://${u}`;
-    if(type === 'mx') window.location.href = `intent://${u}#Intent;package=com.mxtech.videoplayer.ad;S.type=video/x-mpegurl;end`;
-    if(type === 'wvc') window.location.href = `intent://x#Intent;package=com.instantbits.cast.webvideo;S.url=${encodeURIComponent(u)};end`;
-    if(type === 'copy') { navigator.clipboard.writeText(u); alert('Copiado!'); }
+  cast(t){
+    const u=this.cur; if(!u)return;
+    if(t==='vlc')window.location.href=`vlc://${u}`;
+    if(t==='wvc')window.location.href=`intent://x#Intent;package=com.instantbits.cast.webvideo;S.url=${encodeURIComponent(u)};end`;
   },
 
-  closePlayer() {
-    document.getElementById('player-modal').classList.remove('open');
-    document.getElementById('video').pause();
-    if(this.hls) this.hls.destroy();
-  },
-
-  copyUrl(u) {
-    const url = u || this.curUrl;
-    if(url) { navigator.clipboard.writeText(url); alert('Copiado!'); }
-  },
-
-  del(i) { this.data.acc.splice(i,1); this.save(); this.renderAcc(); },
-  reset() { if(confirm('Resetar?')) { this.data = {acc:[], ch:[]}; this.save(); this.renderAcc(); this.renderList(); }}
+  x(){ document.getElementById('modal').classList.remove('open'); document.getElementById('v').pause(); if(this.hls)this.hls.destroy(); },
+  cp(){ if(this.cur){navigator.clipboard.writeText(this.cur); alert('CP');}},
+  del(i){ this.d.acc.splice(i,1); this.save(); this.rndAcc(); },
+  reset(){ if(confirm('RST?')){ this.d={acc:[], ch:[]}; this.save(); this.rndAcc(); this.rnd(); }}
 };
 
-window.onload = () => App.init();
+window.onload=()=>V.init();
 </script>
 </body>
 </html>
