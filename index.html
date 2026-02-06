@@ -2,87 +2,89 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IPLINKS V7 UNIVERSAL</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>IPLINKS V8 MOBILE</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
     :root { --bg: #050505; --fg: #00ff9d; --err: #ff4444; --dim: #333; --panel: #111; --warn: #ffbb00; }
-    * { box-sizing: border-box; margin: 0; padding: 0; outline: none; font-family: 'Consolas', monospace; }
-    body { background: var(--bg); color: #ccc; font-size: 12px; overflow-x: hidden; }
+    * { box-sizing: border-box; margin: 0; padding: 0; outline: none; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background: var(--bg); color: #ccc; font-size: 14px; overflow-x: hidden; touch-action: manipulation; }
     
-    .c { max-width: 1000px; margin: 0 auto; padding: 10px; display: flex; flex-direction: column; height: 100vh; }
+    .c { max-width: 1000px; margin: 0 auto; padding: 10px; display: flex; flex-direction: column; min-height: 100vh; }
     .top { flex: 0 0 auto; }
     .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; margin-top: 10px; }
     
-    .hd { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--dim); padding-bottom: 10px; }
-    h1 { color: var(--fg); font-size: 18px; letter-spacing: -1px; }
+    .hd { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--dim); padding-bottom: 15px; margin-bottom: 15px; }
+    h1 { color: var(--fg); font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
     
-    nav { display: flex; gap: 5px; }
-    nav button { background: none; border: none; color: #555; cursor: pointer; padding: 5px 10px; text-transform: uppercase; font-weight: bold; font-size: 11px; }
+    nav { display: flex; gap: 5px; background: var(--panel); padding: 5px; border-radius: 8px; }
+    nav button { background: none; border: none; color: #666; cursor: pointer; padding: 8px 12px; text-transform: uppercase; font-weight: bold; font-size: 11px; flex: 1; border-radius: 4px; transition: 0.2s; }
     nav button.on { color: var(--bg); background: var(--fg); }
 
-    .btn { background: var(--panel); border: 1px solid var(--dim); color: #fff; cursor: pointer; padding: 8px 12px; font-family: inherit; font-size: 11px; text-transform: uppercase; transition: 0.2s; }
-    .btn:hover { border-color: var(--fg); color: var(--fg); }
-    .btn:active { background: var(--fg); color: #000; }
+    /* INPUTS & BUTTONS (MOBILE FRIENDLY) */
+    .btn { background: var(--panel); border: 1px solid var(--dim); color: #fff; cursor: pointer; padding: 12px 16px; font-family: inherit; font-size: 13px; text-transform: uppercase; font-weight: 600; transition: 0.2s; border-radius: 6px; width: 100%; margin-bottom: 8px; }
+    .btn:active { transform: scale(0.98); }
     .btn.danger { border-color: var(--err); color: var(--err); }
+    .btn-primary { background: var(--fg); color: #000; border: none; }
     
-    input, textarea, select { background: #000; border: 1px solid var(--dim); color: var(--fg); padding: 8px; font-family: inherit; width: 100%; margin-bottom: 5px; }
-    textarea { height: 60px; font-size: 11px; resize: vertical; }
+    input, textarea, select { background: #000; border: 1px solid var(--dim); color: #fff; padding: 12px; font-family: inherit; width: 100%; margin-bottom: 10px; border-radius: 6px; font-size: 14px; }
+    textarea { height: 80px; resize: vertical; }
     
     /* CONSOLE */
     #console-box {
       flex: 1; background: #000; border: 1px solid var(--dim);
-      padding: 10px; overflow-y: auto; font-size: 11px; color: #888;
-      margin-bottom: 10px; display: flex; flex-direction: column-reverse;
+      padding: 10px; overflow-y: auto; font-size: 11px; color: #888; font-family: monospace;
+      margin-bottom: 10px; display: none; /* Hidden by default on mobile */
+      flex-direction: column-reverse; border-radius: 6px;
     }
-    .log-line { padding: 2px 0; border-bottom: 1px solid #111; }
+    .log-line { padding: 4px 0; border-bottom: 1px solid #111; }
     .log-ok { color: var(--fg); }
     .log-err { color: var(--err); }
     .log-warn { color: var(--warn); }
-    .log-info { color: #666; font-style: italic; }
-    .ts { color: #444; margin-right: 10px; user-select: none; }
 
     /* LISTS */
-    .list { border-top: 1px solid var(--dim); max-height: 150px; overflow-y: auto; }
-    .row { border-bottom: 1px solid var(--dim); padding: 6px; display: flex; justify-content: space-between; align-items: center; }
-    .row:hover { background: #0a0a0a; }
-    .ok { color: var(--fg); } .err { color: var(--err); } .dot { width: 6px; height: 6px; background: currentColor; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .list { border-top: 1px solid var(--dim); max-height: 200px; overflow-y: auto; margin-bottom: 15px; }
+    .row { border-bottom: 1px solid var(--dim); padding: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .row:active { background: #0a0a0a; }
+    .dot { width: 10px; height: 10px; background: currentColor; border-radius: 50%; display: inline-block; margin-right: 10px; }
     
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 5px; overflow-y: auto; padding-right: 5px; }
-    .card { border: 1px solid var(--dim); padding: 8px; display: flex; flex-direction: column; justify-content: space-between; min-height: 70px; }
-    .card:hover { border-color: var(--fg); }
-    .c-name { font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; color: #eee; font-size: 11px; }
-    .c-meta { font-size: 10px; color: #555; margin-bottom: 5px; }
-    .c-act { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100%, 1fr)); gap: 10px; overflow-y: auto; padding-bottom: 50px; }
+    @media(min-width: 600px) {
+      .grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+    }
     
-    /* MODAL */
-    #m { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 999; display: none; align-items: center; justify-content: center; flex-direction: column; }
+    .card { background: var(--panel); border: 1px solid var(--dim); padding: 12px; border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between; min-height: 90px; }
+    .card:active { border-color: var(--fg); }
+    .c-name { font-weight: 600; font-size: 14px; margin-bottom: 6px; color: #eee; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .c-meta { font-size: 11px; color: #666; margin-bottom: 10px; }
+    .c-act { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    
+    /* MODAL FULLSCREEN ON MOBILE */
+    #m { position: fixed; inset: 0; background: #000; z-index: 999; display: none; align-items: center; justify-content: center; flex-direction: column; }
     #m.open { display: flex; }
-    #v { width: 100%; max-width: 900px; aspect-ratio: 16/9; background: #000; box-shadow: 0 0 20px rgba(0,255,157,0.1); }
-    .ctrl { position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; z-index: 10; }
+    #v { width: 100%; height: 100%; object-fit: contain; background: #000; }
     
-    .proxy-status { 
-      position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); color: var(--warn); 
-      padding: 4px 8px; font-size: 10px; border: 1px solid var(--warn); pointer-events: none;
+    .ctrl-mobile { 
+      position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.8); 
+      padding: 15px; display: flex; gap: 10px; z-index: 10; backdrop-filter: blur(5px);
     }
-
-    /* EXTERNAL LAUNCHER (COMMAND CENTER) */
+    
+    /* COMMAND CENTER (EXTERNAL LAUNCHER) */
     #cmd-center {
-      position: absolute; inset: 0; background: rgba(0,0,0,0.95); 
-      display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 30; text-align: center;
+      position: absolute; inset: 0; background: #000; 
+      display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 20; padding: 20px; text-align: center;
     }
-    .cmd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; max-width: 500px; width: 90%; }
+    .cmd-grid { display: grid; grid-template-columns: 1fr; gap: 15px; margin-top: 20px; width: 100%; max-width: 400px; }
+    
     .cmd-btn {
-      background: #222; border: 1px solid #444; padding: 15px; color: #fff; cursor: pointer; 
-      display: flex; flex-direction: column; align-items: center; gap: 8px; transition: 0.2s;
+      background: #222; border: 1px solid #444; padding: 20px; color: #fff; cursor: pointer; 
+      display: flex; align-items: center; gap: 15px; border-radius: 12px; transition: 0.2s; font-weight: 600;
     }
-    .cmd-btn:hover { border-color: var(--fg); background: #2a2a2a; }
-    .cmd-icon { font-size: 24px; }
+    .cmd-btn:active { background: #333; transform: scale(0.98); }
+    .cmd-icon { font-size: 28px; min-width: 40px; }
     
     .hidden { display: none !important; }
-    .w-full { width: 100%; }
-    .flex { display: flex; gap: 5px; }
-    .mt-1 { margin-top: 5px; }
+    .mt-1 { margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -90,100 +92,117 @@
 <div class="c">
   <div class="top">
     <div class="hd">
-      <div>
-        <h1>IPLINKS <span style="font-size:0.6em; vertical-align:middle; color:var(--fg)">UNIVERSAL_V7</span></h1>
-      </div>
-      <nav>
-        <button id="b-cfg" class="on" onclick="V.go('cfg')">CONFIG</button>
-        <button id="b-lst" onclick="V.go('lst')">LIST</button>
-        <button id="b-dbg" onclick="V.go('dbg')">LOGS</button>
-      </nav>
+      <h1>IPLINKS <span style="font-size:0.5em; vertical-align:top; color:var(--fg)">V8 MOBILE</span></h1>
     </div>
+    <nav>
+      <button id="b-cfg" class="on" onclick="V.go('cfg')">CONFIG</button>
+      <button id="b-lst" onclick="V.go('lst')">LIST</button>
+      <button id="b-dbg" onclick="V.go('dbg')">LOGS</button>
+    </nav>
+  </div>
 
-    <div id="cfg">
-      <textarea id="in" placeholder="PASTE LOGS (SUZANOR/M3U)"></textarea>
-      <div class="flex">
-        <button class="btn" style="border-color:var(--fg)" onclick="V.imp()">IMPORT</button>
-        <button class="btn" onclick="V.chk()">CHECK AUTH</button>
-        <button class="btn danger" onclick="V.rst()">RESET</button>
-      </div>
-      
-      <div class="list" id="acc"></div>
-      
-      <div class="mt-1" style="border-top:1px dashed #333; padding-top:10px;">
-        <div class="flex" style="align-items:center; color:#666; font-size:10px; margin-bottom:5px;">
-          <span>FORCE LOAD:</span>
-          <input type="checkbox" id="force-all" style="width:auto; margin:0;">
-        </div>
-        <div class="flex">
-          <button class="btn w-full" onclick="V.load()">LOAD CHANNELS</button>
-        </div>
-      </div>
+  <!-- CONFIG TAB -->
+  <div id="cfg" class="main">
+    <textarea id="in" placeholder="Cole seus logs ou links M3U aqui..."></textarea>
+    <button class="btn btn-primary" onclick="V.imp()">IMPORTAR LOGS</button>
+    
+    <div style="display:flex; gap:10px; margin-bottom:10px;">
+      <button class="btn" onclick="V.chk()">VERIFICAR CONTA</button>
+      <button class="btn danger" onclick="V.rst()">LIMPAR</button>
     </div>
+    
+    <div class="list" id="acc"></div>
+    
+    <div style="border-top:1px solid #333; padding-top:15px; margin-top:10px;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; color:#888; font-size:12px;">
+        <input type="checkbox" id="force-all" style="width:20px; height:20px;">
+        <span>Carregar TODOS os canais (Ignorar filtro)</span>
+      </div>
+      <button class="btn btn-primary" onclick="V.load()">CARREGAR CANAIS</button>
+    </div>
+  </div>
 
-    <div id="lst" class="hidden" style="height: 100%; display: flex; flex-direction: column;">
-      <div class="flex" style="flex:0 0 auto;">
-        <input type="text" id="s" placeholder="FILTER..." onkeyup="V.rnd()" style="margin:0">
-        <select id="f-q" onchange="V.rnd()" style="width:70px; margin:0">
-          <option value="all">ALL</option>
-          <option value="hd">HD</option>
-          <option value="sd">SD</option>
-        </select>
-      </div>
-      <div class="grid mt-1" id="g" style="flex:1 1 auto;"></div>
+  <!-- LIST TAB -->
+  <div id="lst" class="main hidden">
+    <div style="position:sticky; top:0; background:var(--bg); z-index:5; padding-bottom:10px; border-bottom:1px solid var(--dim);">
+      <input type="text" id="s" placeholder="🔍 Buscar canal..." onkeyup="V.rnd()" style="margin:0 0 10px 0;">
+      <select id="f-q" onchange="V.rnd()" style="margin:0;">
+        <option value="all">TODAS QUALIDADES</option>
+        <option value="hd">HD / FHD</option>
+        <option value="sd">SD</option>
+        <option value="4k">4K</option>
+      </select>
     </div>
+    <div class="grid" id="g" style="margin-top:10px;"></div>
+  </div>
 
-    <div id="dbg" class="hidden" style="height: 100%; display: flex; flex-direction: column;">
-      <div class="flex" style="justify-content: space-between; margin-bottom: 5px;">
-        <span style="color:#666">SYSTEM LOGS</span>
-        <button class="btn" style="padding:2px 8px;" onclick="V.clrLog()">CLEAR</button>
-      </div>
-      <div id="console-box"></div>
+  <!-- LOGS TAB -->
+  <div id="dbg" class="main hidden">
+    <div style="display:flex; justify-content: space-between; margin-bottom: 10px;">
+      <span style="color:#666; font-weight:bold;">SYSTEM LOGS</span>
+      <button class="btn" style="width:auto; padding:5px 10px;" onclick="V.clrLog()">LIMPAR</button>
     </div>
+    <div id="console-box"></div>
   </div>
 </div>
 
-<!-- PLAYER -->
+<!-- PLAYER MODAL -->
 <div id="m">
-  <div style="position:relative; width:100%; max-width:900px;">
-    <video id="v" controls autoplay></video>
-    
-    <div id="proxy-badge" class="proxy-status">INIT</div>
-    
-    <div class="ctrl">
-      <button class="btn" onclick="V.cp()">COPY URL</button>
-      <button class="btn" onclick="V.x()">CLOSE</button>
-    </div>
+  <video id="v" controls playsinline></video>
+  
+  <!-- CONTROLES MOBILE -->
+  <div class="ctrl-mobile" id="ctrl-ui">
+    <button class="btn" style="background:rgba(255,255,255,0.2); backdrop-filter:none;" onclick="V.cp()">COPIAR LINK</button>
+    <button class="btn danger" style="background:rgba(255,68,68,0.2); backdrop-filter:none; border-color:var(--err);" onclick="V.x()">FECHAR</button>
+  </div>
 
-    <!-- COMMAND CENTER: EXTERNAL LAUNCHER -->
-    <div id="cmd-center">
-      <h2 style="color:var(--err); margin-bottom:10px;">STREAM BLOCKED (MIXED CONTENT)</h2>
-      <p style="color:#aaa; font-size:12px; max-width:400px; line-height:1.4;">
-        Browser blocked HTTP stream on HTTPS site.<br>
-        Use an external player to bypass this restriction.
-      </p>
+  <!-- COMMAND CENTER (OVERRIDES VIDEO ON ERROR) -->
+  <div id="cmd-center">
+    <h2 style="color:var(--err); margin-bottom:15px; font-size:18px;">⚠️ STREAM BLOQUEADO</h2>
+    <p style="color:#ccc; font-size:13px; max-width:300px; line-height:1.5; margin-bottom:20px;">
+      O navegador bloqueou o vídeo inseguro (HTTP) neste site seguro (HTTPS).<br>
+      <strong>Solução:</strong> Use um player externo abaixo.
+    </p>
+    
+    <div class="cmd-grid">
+      <!-- MX PLAYER -->
+      <button class="cmd-btn" onclick="V.launch('mx')">
+        <span class="cmd-icon">🤖</span>
+        <div style="text-align:left;">
+          <div>MX Player</div>
+          <div style="font-size:10px; color:#888; font-weight:normal;">Melhor para Android</div>
+        </div>
+      </button>
       
-      <div class="cmd-grid">
-        <button class="cmd-btn" onclick="V.launch('vlc')">
-          <span class="cmd-icon">🦆</span>
-          <span>VLC Media Player</span>
-        </button>
-        <button class="cmd-btn" onclick="V.launch('mx')">
-          <span class="cmd-icon">🤖</span>
-          <span>MX Player (Android)</span>
-        </button>
-        <button class="cmd-btn" onclick="V.launch('web')">
-          <span class="cmd-icon">🌐</span>
-          <span>HLS.js Web Player</span>
-        </button>
-        <button class="cmd-btn" onclick="V.launch('copy')">
-          <span class="cmd-icon">📋</span>
-          <span>Copy Link Only</span>
-        </button>
-      </div>
+      <!-- WEB VIDEO CASTER -->
+      <button class="cmd-btn" onclick="V.launch('wvc')">
+        <span class="cmd-icon">📡</span>
+        <div style="text-align:left;">
+          <div>Web Video Caster</div>
+          <div style="font-size:10px; color:#888; font-weight:normal;">Enviar para TV/Chromecast</div>
+        </div>
+      </button>
       
-      <button class="btn mt-1" style="border:none; color:#555;" onclick="V.retryInternal()">Try Internal Player Again</button>
+      <!-- VLC -->
+      <button class="cmd-btn" onclick="V.launch('vlc')">
+        <span class="cmd-icon">🦆</span>
+        <div style="text-align:left;">
+          <div>VLC</div>
+          <div style="font-size:10px; color:#888; font-weight:normal;">Universal</div>
+        </div>
+      </button>
+
+      <!-- COPY -->
+      <button class="cmd-btn" onclick="V.launch('copy')">
+        <span class="cmd-icon">📋</span>
+        <div style="text-align:left;">
+          <div>Copiar Link</div>
+          <div style="font-size:10px; color:#888; font-weight:normal;">Colar em outro app</div>
+        </div>
+      </button>
     </div>
+    
+    <button class="btn mt-1" style="width:200px; margin-top:30px; background:none; border:1px solid #444; color:#888;" onclick="V.retryInternal()">Tentar Player Interno</button>
   </div>
 </div>
 
@@ -193,24 +212,24 @@ const V = {
   hls: null,
   cur: '',
   
-  // Proxy Chain
-  proxies: [
-    'https://api.allorigins.win/raw?url=',
-    'https://corsproxy.io/?'
-  ],
+  // Configs
+  proxies: ['https://api.allorigins.win/raw?url=', 'https://corsproxy.io/?'],
   proxyIdx: 0,
   apiProxy: 'https://api.allorigins.win/raw?url=',
   useProxy: location.protocol === 'https:',
 
   init() {
-    this.log("SYSTEM INIT [UNIVERSAL]", "info");
-    this.log("Protocol: " + location.protocol.toUpperCase(), "info");
-    const s = localStorage.getItem('iplinks_v7');
-    if (s) { this.d = JSON.parse(s); this.log(`Loaded ${this.d.acc.length} accounts.`, "ok"); }
+    console.log("IPLINKS V8 MOBILE INIT");
+    const s = localStorage.getItem('iplinks_v8');
+    if (s) this.d = JSON.parse(s);
     this.rndAcc();
+    // Previne zoom duplo no mobile
+    document.addEventListener('dblclick', function(event) {
+      event.preventDefault();
+    }, { passive: false });
   },
 
-  sv() { localStorage.setItem('iplinks_v7', JSON.stringify(this.d)); },
+  sv() { localStorage.setItem('iplinks_v8', JSON.stringify(this.d)); },
 
   go(x) {
     ['cfg','lst','dbg'].forEach(id => document.getElementById(id).classList.add('hidden'));
@@ -222,33 +241,29 @@ const V = {
 
   log(msg, type = 'info') {
     const box = document.getElementById('console-box');
+    if(!box) return;
     const div = document.createElement('div');
     div.className = `log-line log-${type}`;
     const time = new Date().toLocaleTimeString().split(' ')[0];
-    div.innerHTML = `<span class="ts">[${time}]</span> ${msg}`;
+    div.innerHTML = `<span style="color:#444">[${time}]</span> ${msg}`;
     box.prepend(div);
-    if(box.children.length > 100) box.lastChild.remove();
+    if(box.children.length > 50) box.lastChild.remove();
   },
-  clrLog() { document.getElementById('console-box').innerHTML = ''; },
+  clrLog() { const b = document.getElementById('console-box'); if(b) b.innerHTML = ''; },
 
   async fetchRaw(url, label) {
     try {
-      this.log(`REQ [${label}]...`, "info");
       let res = this.useProxy ? await fetch(this.apiProxy + encodeURIComponent(url)) : await fetch(url);
-      this.log(`RES [${label}]: ${res.status}`, res.ok ? "ok" : "err");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw new Error(res.status);
       const text = await res.text();
       if (text.length < 50 && text.trim().startsWith('<')) return null;
       return JSON.parse(text);
-    } catch (e) {
-      this.log(`ERR [${label}]: ${e.message}`, "err");
-      return null;
-    }
+    } catch (e) { return null; }
   },
 
   imp() {
     const txt = document.getElementById('in').value;
-    if (!txt.trim()) return this.log("Input empty.", "err");
+    if (!txt.trim()) return alert('Cole os logs primeiro!');
     let c = 0;
     const re = /https?:\/\/([^\/:]+)(?::(\d+))?\/get\.php\?username=([^&]+)&password=([^&\s]+)/gi;
     let m;
@@ -263,18 +278,17 @@ const V = {
       document.getElementById('in').value = '';
       this.sv();
       this.rndAcc();
-      this.log(`+${c} ACCOUNTS`, "ok");
       this.chk();
-    } else { this.log("No access found.", "warn"); }
+      alert(`${c} contas importadas!`);
+    } else { alert('Nenhum acesso encontrado.'); }
   },
 
   async chk() {
-    if (this.d.acc.length === 0) return;
     for (let a of this.d.acc) {
       a.s = '..';
       this.rndAcc();
       const url = `http://${a.h}:${a.p}/player_api.php?username=${a.u}&password=${a.pw}`;
-      const data = await this.fetchRaw(url, `CHK ${a.h}`);
+      const data = await this.fetchRaw(url, `CHK`);
       a.s = (data && data.user_info && data.user_info.status === 'Active') ? 'ON' : 'OFF';
     }
     this.sv();
@@ -284,19 +298,17 @@ const V = {
   async load() {
     const valid = this.d.acc.filter(a => a.s === 'ON');
     const target = valid.length ? valid : this.d.acc;
-    if (!target.length) return this.log("No accounts.", "err");
+    if (!target.length) return alert('Nenhuma conta online.');
     
     this.d.ch = [];
-    this.log("LOADING CHANNELS...", "info");
     const forceAll = document.getElementById('force-all').checked;
     const keys = ['PREMIERE', 'ESPN', 'SPORTV', 'AMAZON', 'PRIME', 'HBO', 'DAZN', 'TNT'];
     
     for (const a of target) {
       const url = `http://${a.h}:${a.p}/player_api.php?username=${a.u}&password=${a.pw}&action=get_live_streams`;
-      const data = await this.fetchRaw(url, `LOAD ${a.h}`);
+      const data = await this.fetchRaw(url, `LOAD`);
       
       if (Array.isArray(data)) {
-        let added = 0;
         data.forEach(x => {
           const n = x.name.toUpperCase();
           let isTarget = forceAll ? true : keys.some(k => n.includes(k));
@@ -306,16 +318,12 @@ const V = {
               u: `http://${a.h}:${a.p}/live/${a.u}/${a.pw}/${x.stream_id}.m3u8`,
               q: n.includes('4K')?'4K':(n.includes('HD')?'HD':'SD')
             });
-            added++;
           }
         });
-        this.log(`>> ${a.h}: +${added} ch`, "ok");
-        if (forceAll && this.d.ch.length > 500) break;
       }
     }
     this.sv();
     this.go('lst');
-    this.log(`TOTAL: ${this.d.ch.length} CHANNELS`, "ok");
   },
 
   rndAcc() {
@@ -323,11 +331,11 @@ const V = {
       <div class="row">
         <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
           <span class="dot" style="color:${a.s==='ON'?'#00ff9d':(a.s==='OFF'?'#ff4444':'#666')}"></span>
-          <span style="color:#444; font-size:10px;">[${a.h}]</span> ${a.u}
+          <span style="color:#888; font-size:12px;">${a.h}</span>
         </div>
-        <button class="btn" style="color:red; padding:2px 5px; font-size:10px;" onclick="V.del(${i})">X</button>
+        <button onclick="V.del(${i})" style="background:none; border:none; color:red; font-size:18px;">&times;</button>
       </div>
-    `).join('') || '<div style="padding:10px; text-align:center; color:#333">NO ACCOUNTS</div>';
+    `).join('') || '<div style="padding:20px; text-align:center; color:#555">Nenhuma conta</div>';
   },
 
   rnd() {
@@ -347,70 +355,56 @@ const V = {
           <div class="c-meta" style="color:${c.q==='HD'?'#00ff9d':'#555'}">${c.q}</div>
         </div>
         <div class="c-act">
-          <button class="btn" style="border-color:#00ff9d; color:#00ff9d" onclick="V.pl('${encodeURIComponent(c.u)}','${c.n.replace(/'/g,"\\'")}')">PLAY</button>
+          <button class="btn btn-primary" onclick="V.pl('${encodeURIComponent(c.u)}','${c.n.replace(/'/g,"\\'")}')">PLAY</button>
           <button class="btn" onclick="V.cpU('${c.u}')">LINK</button>
         </div>
       </div>
-    `).join('') || '<div style="grid-column:1/-1; text-align:center; color:#333; padding:20px">EMPTY</div>';
+    `).join('') || '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#444">Nenhum canal encontrado</div>';
   },
 
-  // --- PLAYER & EXTERNAL LAUNCHER ---
   pl(url, name) {
     this.cur = decodeURIComponent(url);
     this.proxyIdx = 0;
     const v = document.getElementById('v');
     const m = document.getElementById('m');
-    const pb = document.getElementById('proxy-badge');
     const cc = document.getElementById('cmd-center');
+    const ctrl = document.getElementById('ctrl-ui');
     
     m.classList.add('open');
     cc.style.display = 'none';
+    ctrl.style.display = 'flex';
     v.style.display = 'block';
-    this.log(`Playing: ${name}`, "info");
-    this.initHls(v, pb, cc);
+    this.initHls(v, cc);
   },
 
-  initHls(video, badge, fallback) {
+  initHls(video, fallback) {
     if (this.hls) this.hls.destroy();
     
     if (Hls.isSupported()) {
       this.hls = new Hls({ enableWorker: true, debug: false, xhrSetup: (xhr, reqUrl) => {
         if (this.useProxy) {
           const pUrl = this.proxies[this.proxyIdx] + encodeURIComponent(reqUrl);
-          this.log(`Proxy[${this.proxyIdx}]...`, "info");
-          badge.innerText = `PROXY ${this.proxyIdx+1}/${this.proxies.length}`;
-          badge.style.color = '#ffbb00';
           xhr.open('GET', pUrl, true);
         } else {
           xhr.open('GET', reqUrl, true);
-          badge.innerText = "DIRECT";
-          badge.style.color = '#00ff9d';
         }
       }});
       
       this.hls.loadSource(this.cur);
       this.hls.attachMedia(video);
-      
-      this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        video.play().catch(()=>this.log("Autoplay blocked", "warn"));
-        badge.innerText = "PLAYING";
-        badge.style.color = "#00ff9d";
-      });
-
+      this.hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(()=>{}));
       this.hls.on(Hls.Events.ERROR, (e, d) => {
         if (d.fatal) {
-          this.log(`HLS Error: ${d.type}`, "err");
           if (this.proxyIdx < this.proxies.length - 1 && this.useProxy) {
             this.proxyIdx++;
             this.hls.destroy();
-            this.initHls(video, badge, fallback);
+            this.initHls(video, fallback);
           } else {
-            // ALL PROXIES FAILED -> SHOW COMMAND CENTER
-            badge.innerText = "FAILED";
-            badge.style.color = "#ff4444";
-            fallback.style.display = 'flex';
+            // SHOW COMMAND CENTER
             video.pause();
             video.style.display = 'none';
+            document.getElementById('ctrl-ui').style.display = 'none';
+            fallback.style.display = 'flex';
           }
         }
       });
@@ -422,37 +416,34 @@ const V = {
 
   retryInternal() {
     const v = document.getElementById('v');
-    const pb = document.getElementById('proxy-badge');
     const cc = document.getElementById('cmd-center');
     cc.style.display = 'none';
     v.style.display = 'block';
-    this.proxyIdx = 0; // Reset proxies
-    this.initHls(v, pb, cc);
+    document.getElementById('ctrl-ui').style.display = 'flex';
+    this.proxyIdx = 0;
+    this.initHls(v, cc);
   },
 
-  // --- EXTERNAL LAUNCHER LOGIC ---
+  // --- EXTERNAL LAUNCHER (WEB VIDEO CASTER INCLUDED) ---
   launch(type) {
     const url = this.cur;
     if(!url) return;
     
-    this.log(`Launching external: ${type}`, "info");
-
     if (type === 'vlc') {
-      // VLC Protocol (Works on Desktop mostly, and some mobiles)
       window.location.href = `vlc://${url}`;
     } 
     else if (type === 'mx') {
-      // MX Player Android Intent
       window.location.href = `intent://${url}#Intent;package=com.mxtech.videoplayer.ad;S.type=video/x-mpegurl;end`;
     } 
-    else if (type === 'web') {
-      // Opens the official HLS.js demo page in a new tab
-      // This sometimes works if the user allows mixed content in the new tab, or if the demo site handles proxying
-      window.open(`https://hls-js.github.io/hls.js/demo/?src=${encodeURIComponent(url)}`, '_blank');
+    else if (type === 'wvc') {
+      // Web Video Caster Intent
+      // Package: com.instantbits.cast.webvideo
+      // Params: url (stream), title (optional)
+      window.location.href = `intent://x#Intent;package=com.instantbits.cast.webvideo;S.url=${encodeURIComponent(url)};S.title=IPLINKS_Stream;end`;
     } 
     else if (type === 'copy') {
       navigator.clipboard.writeText(url);
-      this.log("URL Copied to clipboard", "ok");
+      alert('Link copiado!');
     }
   },
 
@@ -462,10 +453,10 @@ const V = {
     if (this.hls) this.hls.destroy();
   },
 
-  cpU(u) { navigator.clipboard.writeText(u); this.log("Copied", "ok"); },
+  cpU(u) { navigator.clipboard.writeText(u); alert('Copiado!'); },
   cp() { if(this.cur) this.cpU(this.cur); },
   del(i) { this.d.acc.splice(i,1); this.sv(); this.rndAcc(); },
-  rst() { if(confirm('RESET?')) { this.d = { acc:[], ch:[] }; this.sv(); this.rndAcc(); this.rnd(); this.log("Reset", "warn"); }}
+  rst() { if(confirm('Resetar tudo?')) { this.d = { acc:[], ch:[] }; this.sv(); this.rndAcc(); this.rnd(); }}
 };
 
 window.onload = () => V.init();
