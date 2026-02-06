@@ -4,690 +4,729 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IPTV Brasil Player</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        background: '#0a0a0a',
-                        foreground: '#fafafa',
-                        primary: '#3b82f6',
-                        'primary-foreground': '#ffffff',
-                        muted: '#6b7280',
-                    }
-                }
-            }
-        }
-    </script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.15/dist/hls.min.js"></script>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
         body {
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background-color: #0a0a0a;
             color: #fafafa;
         }
-        
-        .scrollbar-custom::-webkit-scrollbar {
-            width: 8px;
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 16px;
         }
-        .scrollbar-custom::-webkit-scrollbar-track {
-            background: #1a1a1a;
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1f 100%);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 24px;
         }
-        .scrollbar-custom::-webkit-scrollbar-thumb {
-            background: #3b82f6;
-            border-radius: 4px;
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-        
-        .loading-spinner {
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #3b82f6;
+            font-weight: bold;
+            font-size: 24px;
+        }
+        .app-title {
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .card {
+            background: #1e1e1e;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #e5e5e5;
+            margin-bottom: 16px;
+        }
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #0f0f1f;
+            color: #e5e5e5;
+            font-size: 14px;
+            font-family: monospace;
+        }
+        .button {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: opacity 0.2s;
+        }
+        .button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        .category-btn {
+            background: #1e1e1e;
+            color: #e5e5e5;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .category-btn:hover {
+            background: #2a2a2a;
+            border-color: #3b82f6;
+            transform: translateX(2px);
+        }
+        .channel-list {
+            max-height: 400px;
+            overflow-y: auto;
+            background: #1e1e1e;
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .channel-item {
+            padding: 12px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .channel-item:hover {
+            background: #2a2a2a;
+            border-color: #3b82f6;
+            transform: translateX(2px);
+        }
+        .channel-item.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border-color: #2563eb;
+            color: #ffffff;
+        }
+        .player-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+        }
+        .player-content {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 800px;
+            background: #000000;
+            border-radius: 16px;
+            padding: 24px;
+        }
+        .player-content video {
+            width: 100%;
+            border-radius: 8px;
+            background: #000000;
+        }
+        .close-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(255,255,255,0.3);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-size: 24px;
+            color: #ffffff;
+        }
+        .error {
+            background: #dc2626;
+            color: #ffffff;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 16px;
+            font-size: 14px;
+        }
+        .loading {
+            text-align: center;
+            padding: 24px;
+            color: #888;
+        }
+        .spinner {
+            border: 4px solid #3b82f6;
+            border-top: 4px solid transparent;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
             animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
         }
-        
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
+        .cast-btn {
+            background: #3b82f6;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #0f0f1f;
+            color: #e5e5e5;
+            font-size: 16px;
+            margin-bottom: 16px;
+        }
+        .hidden {
+            display: none;
+        }
+        .info-box {
+            background: #1e3a5f;
+            border: 1px solid #2563eb;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
-    <div id="app"></div>
-    
-    <!-- React & ReactDOM -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    
-    <!-- Babel -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- HLS.js -->
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.15/dist/hls.min.js"></script>
-    
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
-        
-        // Ícones simples
-        const Icons = {
-            tv: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 12 2"/></svg>`,
-            play: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 3 19 12"/></svg>`,
-            loader: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 1 18 0" class="loading-spinner"/></svg>`,
-            trash: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 0 2-2H7a2 2 0 0 0 2 2v14"/></svg>`,
-            folder: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1 2 2V5a2 2 0 0 1 2-2h5l2 3h9l2 3h5a2 2 0 0 1 2 2z"/><path d="m2 13 4 3"/></svg>`,
-            search: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>`,
-            cast: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 7-7 7 7"/><line x1="12" y1="5" x2="12" y2="19"/></svg>`,
-            x: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
-        };
-        
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-content">
+                <div class="logo">📺</div>
+                <div class="app-title">IPTV Brasil Player</div>
+            </div>
+        </div>
+
+        <!-- Info -->
+        <div class="info-box">
+            ℹ️ Este player funciona como arquivo HTML standalone. Use um servidor IPTV com CORS habilitado ou use um proxy CORS.
+        </div>
+
+        <!-- Conexão -->
+        <div id="connection-section">
+            <div class="card">
+                <div class="card-title">📡 Conectar ao Servidor</div>
+                <textarea 
+                    id="credentials-input"
+                    placeholder="Cole suas credenciais (servidor, usuário, senha)...&#10;&#10;Exemplo:&#10;&#10;Servidor: tv14s.xyz:8080&#10;&#10;Usuário: KD3zn5&#10;&#10;Senha: 468612"
+                ></textarea>
+                <br><br>
+                <button id="connect-btn" onclick="connect()">CONECTAR</button>
+                <div id="connection-error" class="error hidden"></div>
+            </div>
+        </div>
+
+        <!-- Categorias -->
+        <div id="categories-section" class="hidden">
+            <div class="card">
+                <div class="card-title">📁 Categorias Brasileiras</div>
+                <div class="categories-grid" id="categories-grid"></div>
+            </div>
+        </div>
+
+        <!-- Canais -->
+        <div id="channels-section" class="hidden">
+            <div class="card">
+                <div class="card-title">📺 Canais</div>
+                <input 
+                    type="text" 
+                    id="search-input" 
+                    placeholder="Buscar canais..."
+                >
+                <div class="channel-list" id="channel-list"></div>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <div>Carregando...</div>
+        </div>
+    </div>
+
+    <!-- Player Modal -->
+    <div id="player-modal" class="player-modal">
+        <div class="player-content">
+            <button class="close-btn" onclick="closePlayer()">✕</button>
+            <video 
+                id="video-player" 
+                controls 
+                playsinline 
+                autoplay
+                style="width:100%; height:100%;"
+            ></video>
+            <button class="cast-btn" onclick="openInWebVideoCaster()">
+                📡 Web Video Caster
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Estado global
+        let host = '';
+        let username = '';
+        let password = '';
+        let categories = [];
+        let allChannels = [];
+        let currentChannel = null;
+        let hls = null;
+
         const CACHE_KEY = 'iptv-cache';
         const CACHE_TTL = 3600000;
-        
-        const EXCLUDED_CATEGORIES = [
-            'filme', 'movie', 'film', 'vod', 'series', 'series4k', '4kseries',
-            'radio', 'rádio', 'music', 'musica', 'audio', 'som',
-            'adult', 'xxx', 'porn'
-        ];
-        
-        const BRAZILIAN_KEYWORDS = [
-            'brasil', 'brazil', 'brasileira', 'brasileiro', 'globo',
-            'record', 'sbt', 'band', 'rede', 'aberta', 'aberto',
-            'sao paulo', 'rio', 'minas', 'bahia', 'parana',
-            'catarinense', 'gaucha', 'brasilia', 'df', 'sp', 'rj',
-            'mg', 'rs', 'pr', 'sc', 'ba', 'pe', 'go', 'es', 'ce', 'am', 'pa', 'rn'
-        ];
-        
-        function App() {
-            const [rawInput, setRawInput] = useState('');
-            const [host, setHost] = useState('');
-            const [username, setUsername] = useState('');
-            const [password, setPassword] = useState('');
-            
-            const [categories, setCategories] = useState([]);
-            const [selectedCategory, setSelectedCategory] = useState(null);
-            const [allChannels, setAllChannels] = useState([]);
-            const [displayedChannels, setDisplayedChannels] = useState([]);
-            const [currentChannel, setCurrentChannel] = useState(null);
-            const [showPlayer, setShowPlayer] = useState(false);
-            
-            const [isLoading, setIsLoading] = useState(false);
-            const [isLoadingCategories, setIsLoadingCategories] = useState(false);
-            const [isVideoLoading, setIsVideoLoading] = useState(false);
-            const [error, setError] = useState(null);
-            
-            const [searchQuery, setSearchQuery] = useState('');
-            const [cacheInfo, setCacheInfo] = useState({ exists: false, age: 0 });
-            
-            const videoRef = useRef(null);
-            const hlsRef = useRef(null);
-            const channelsScrollRef = useRef(null);
-            const [scrollPosition, setScrollPosition] = useState(0);
-            
-            // Carregar cache
-            useEffect(() => {
-                try {
-                    const cached = localStorage.getItem(CACHE_KEY);
-                    if (cached) {
-                        const data = JSON.parse(cached);
-                        const age = Date.now() - data.timestamp;
-                        if (age < CACHE_TTL) {
-                            setCacheInfo({ exists: true, age: Math.floor(age / 60000) });
-                            setCategories(data.categories || []);
-                        } else {
-                            localStorage.removeItem(CACHE_KEY);
-                        }
-                    }
-                } catch (e) {
-                    console.error('Cache error:', e);
+        const EXCLUDED_CATS = ['filme', 'movie', 'film', 'vod', 'series', 'series4k', '4kseries', 'radio', 'rádio', 'music', 'musica', 'audio', 'som', 'adult', 'xxx', 'porn'];
+        const BRAZIL_KEYWORDS = ['brasil', 'brazil', 'brasileira', 'brasileiro', 'globo', 'record', 'sbt', 'band', 'rede', 'aberta', 'aberto', 'sao paulo', 'rio', 'minas', 'bahia', 'parana', 'catarinense', 'gaucha', 'brasilia', 'df', 'sp', 'rj', 'mg', 'rs', 'pr', 'sc', 'ba', 'pe', 'go', 'es', 'ce', 'am', 'pa', 'rn'];
+
+        // Funções auxiliares
+        function showElement(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function hideElement(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('connection-error');
+            errorEl.textContent = '❌ ' + message;
+            errorEl.classList.remove('hidden');
+        }
+
+        function setLoading(loading) {
+            const loadingEl = document.getElementById('loading');
+            if (loading) {
+                loadingEl.classList.remove('hidden');
+            } else {
+                loadingEl.classList.add('hidden');
+            }
+        }
+
+        // CORS Proxy - usa proxy público para bypass CORS
+        async function fetchWithCORS(url) {
+            // Tenta direto primeiro
+            try {
+                const response = await fetch(url);
+                if (response.ok) return response;
+            } catch (e) {
+                console.log('Direto falhou, tentando proxy...');
+            }
+
+            // Usa proxy público (corsproxy.io)
+            const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(url);
+            const response = await fetch(proxyUrl);
+            return response;
+        }
+
+        // Parser de credenciais
+        function parseCredentials(text) {
+            const lines = text.split('\n');
+            let extractedHost = '';
+            let extractedUser = '';
+            let extractedPass = '';
+
+            lines.forEach(line => {
+                const lower = line.toLowerCase().trim();
+                if (lower.includes('servidor:') || lower.includes('*servidor:')) {
+                    const match = line.match(/[:*]\s*([^:\s]+)[^\d]*/);
+                    if (match) extractedHost = match[1].trim();
                 }
-            }, []);
-            
-            // Filtrar canais
-            useEffect(() => {
-                let filtered = allChannels;
-                if (searchQuery && searchQuery.trim()) {
-                    const query = searchQuery.toLowerCase();
-                    filtered = allChannels.filter(channel =>
-                        channel.name.toLowerCase().includes(query) ||
-                        (channel.group && channel.group.toLowerCase().includes(query))
-                    );
+                if (lower.includes('m3u+:')) {
+                    const urlMatch = line.match(/https?:\/\/([^\/]+)/);
+                    if (urlMatch) extractedHost = urlMatch[1].trim();
                 }
-                setDisplayedChannels(filtered);
-            }, [allChannels, searchQuery]);
-            
-            // Parser de credenciais
-            const parseCredentials = (text) => {
-                const lines = text.split('\n');
-                let extractedHost = '';
-                let extractedUser = '';
-                let extractedPass = '';
+                if (lower.includes('usuário:') || lower.includes('usuario:') || lower.includes('*usuário:') || lower.includes('*usuario:')) {
+                    const match = line.match(/[:*]\s*([^\s]+)/);
+                    if (match) extractedUser = match[1].trim();
+                }
+                if (lower.includes('senha:') || lower.includes('*senha:')) {
+                    const match = line.match(/[:*]\s*([^\s]+)/);
+                    if (match) extractedPass = match[1].trim();
+                }
+            });
+
+            if (!extractedHost || !extractedUser || !extractedPass) {
+                const urlMatch = text.match(/https?:\/\/([^\/]+)\/get\.php\?username=([^&]+)&password=([^&]+)/);
+                if (urlMatch) {
+                    extractedHost = urlMatch[1];
+                    extractedUser = urlMatch[2];
+                    extractedPass = urlMatch[3];
+                }
+            }
+
+            return { host: extractedHost, username: extractedUser, password: extractedPass };
+        }
+
+        // Conectar
+        async function connect() {
+            const text = document.getElementById('credentials-input').value.trim();
+            if (!text) {
+                showError('Por favor, cole suas credenciais');
+                return;
+            }
+
+            const creds = parseCredentials(text);
+            if (!creds.host || !creds.username || !creds.password) {
+                showError('Não foi possível extrair as credenciais');
+                return;
+            }
+
+            host = creds.host;
+            username = creds.username;
+            password = creds.password;
+
+            setLoading(true);
+            hideElement('categories-section');
+            hideElement('channels-section');
+            document.getElementById('connection-error').classList.add('hidden');
+
+            try {
+                const baseUrl = host.startsWith('http') ? host : 'http://' + host;
                 
-                lines.forEach(line => {
-                    const lower = line.toLowerCase().trim();
+                // Verificar cache
+                const cached = localStorage.getItem(CACHE_KEY);
+                if (cached) {
+                    const cacheData = JSON.parse(cached);
+                    const age = Date.now() - cacheData.timestamp;
+                    const cacheCreds = cacheData.credentials;
+                    const currentCreds = baseUrl + ':' + username + ':' + password;
                     
-                    if (lower.includes('servidor:') || lower.includes('*servidor:')) {
-                        const match = line.match(/[:*]\s*([^:\s]+)[^\d]*/);
-                        if (match) extractedHost = match[1].trim();
+                    if (age < CACHE_TTL && cacheCreds === currentCreds) {
+                        categories = cacheData.categories;
+                        renderCategories();
+                        showElement('categories-section');
+                        setLoading(false);
+                        return;
                     }
-                    
-                    if (lower.includes('m3u+:')) {
-                        const urlMatch = line.match(/https?:\/\/([^\/]+)/);
-                        if (urlMatch) extractedHost = urlMatch[1].trim();
-                    }
-                    
-                    if (lower.includes('usuário:') || lower.includes('usuario:') || lower.includes('*usuário:') || lower.includes('*usuario:')) {
-                        const match = line.match(/[:*]\s*([^\s]+)/);
-                        if (match) extractedUser = match[1].trim();
-                    }
-                    
-                    if (lower.includes('senha:') || lower.includes('*senha:')) {
-                        const match = line.match(/[:*]\s*([^\s]+)/);
-                        if (match) extractedPass = match[1].trim();
-                    }
+                }
+
+                // Buscar categorias via Xtream Codes API direto
+                const categoriesUrl = `${baseUrl}/player_api.php?username=${username}&password=${password}&action=get_live_categories`;
+                
+                const response = await fetchWithCORS(categoriesUrl);
+                
+                if (!response.ok) {
+                    throw new Error('Erro ao conectar com servidor. Verifique se o servidor suporta CORS.');
+                }
+
+                const data = await response.json();
+
+                if (!Array.isArray(data)) {
+                    throw new Error('Resposta inválida do servidor');
+                }
+
+                // Filtrar categorias brasileiras
+                categories = data.filter(cat => {
+                    const name = (cat.category_name || '').toLowerCase();
+                    const isExcluded = EXCLUDED_CATS.some(e => name.includes(e));
+                    const isBrazilian = BRAZIL_KEYWORDS.some(kw => name.includes(kw));
+                    return isBrazilian && !isExcluded;
                 });
-                
-                if (!extractedHost || !extractedUser || !extractedPass) {
-                    const urlMatch = text.match(/https?:\/\/([^\/]+)\/get\.php\?username=([^&]+)&password=([^&]+)/);
-                    if (urlMatch) {
-                        extractedHost = extractedHost || urlMatch[1];
-                        extractedUser = extractedUser || urlMatch[2];
-                        extractedPass = extractedPass || urlMatch[3];
-                    }
+
+                if (categories.length === 0) {
+                    throw new Error('Nenhuma categoria brasileira encontrada');
                 }
+
+                // Renderizar categorias
+                renderCategories();
+
+                // Salvar cache
+                const cacheData = {
+                    categories: categories,
+                    timestamp: Date.now(),
+                    credentials: baseUrl + ':' + username + ':' + password
+                };
+                localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+
+                showElement('categories-section');
+
+            } catch (err) {
+                console.error('Erro:', err);
+                showError('Erro ao conectar: ' + (err.message || 'Erro desconhecido') + '. Se o servidor não tiver CORS habilitado, você precisará usar o Next.js app.');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Renderizar categorias
+        function renderCategories() {
+            const grid = document.getElementById('categories-grid');
+            grid.innerHTML = categories.map(cat => `
+                <button class="category-btn" onclick="loadStreams('${cat.category_id}')">
+                    ${cat.category_name}
+                </button>
+            `).join('');
+        }
+
+        // Carregar canais de uma categoria
+        async function loadStreams(categoryId) {
+            setLoading(true);
+            hideElement('channels-section');
+
+            try {
+                const baseUrl = host.startsWith('http') ? host : 'http://' + host;
                 
-                return { host: extractedHost, username: extractedUser, password: extractedPass };
-            };
-            
-            const handleRawInput = async () => {
-                if (!rawInput.trim()) return;
+                // Buscar canais via Xtream Codes API
+                const streamsUrl = `${baseUrl}/player_api.php?username=${username}&password=${password}&action=get_live_streams&category_id=${categoryId}`;
                 
-                const creds = parseCredentials(rawInput);
+                const response = await fetchWithCORS(streamsUrl);
                 
-                if (creds.host && creds.username && creds.password) {
-                    setHost(creds.host);
-                    setUsername(creds.username);
-                    setPassword(creds.password);
-                    setRawInput('');
-                    await connect(creds.host, creds.username, creds.password);
-                } else {
-                    setError('Não foi possível extrair as credenciais');
+                if (!response.ok) {
+                    throw new Error('Erro ao buscar canais');
                 }
-            };
-            
-            const connect = async (hostOverride, userOverride, passOverride) => {
-                const targetHost = hostOverride || host;
-                const targetUser = userOverride || username;
-                const targetPass = passOverride || password;
-                
-                if (!targetHost || !targetUser || !targetPass) {
-                    setError('Preencha suas credenciais');
-                    return;
+
+                const data = await response.json();
+
+                if (!Array.isArray(data)) {
+                    throw new Error('Resposta inválida do servidor');
                 }
-                
-                setIsLoadingCategories(true);
-                setError(null);
-                
-                try {
-                    const baseUrl = targetHost.startsWith('http') ? targetHost : 'http://' + targetHost;
-                    
-                    const response = await fetch('/api/iptv/xtream/categories', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            host: baseUrl,
-                            username: targetUser,
-                            password: targetPass,
-                            type: 'live'
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.error) {
-                        throw new Error(data.error);
-                    }
-                    
-                    const filteredCategories = (data.categories || []).filter(cat => {
-                        const catName = cat.category_name.toLowerCase();
-                        const isExcluded = EXCLUDED_CATEGORIES.some(excl => catName.includes(excl));
-                        if (isExcluded) return false;
-                        const isBrazilian = BRAZILIAN_KEYWORDS.some(kw => catName.includes(kw));
-                        return isBrazilian || !EXCLUDED_CATEGORIES.some(excl => catName.includes(excl));
-                    });
-                    
-                    setCategories(filteredCategories);
-                    setSelectedCategory(null);
-                    setAllChannels([]);
-                    setDisplayedChannels([]);
-                    
-                    const cacheData = {
-                        categories: filteredCategories,
-                        timestamp: Date.now(),
-                        credentials: baseUrl + ':' + targetUser + ':' + targetPass
-                    };
-                    localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-                    setCacheInfo({ exists: true, age: 0 });
-                    
-                } catch (err) {
-                    setError(err.message || 'Erro ao conectar');
-                } finally {
-                    setIsLoadingCategories(false);
-                }
-            };
-            
-            const loadStreams = async (category) => {
-                setSelectedCategory(category);
-                setIsLoading(true);
-                setError(null);
-                
-                try {
-                    const baseUrl = host.startsWith('http') ? host : 'http://' + host;
-                    
-                    const response = await fetch('/api/iptv/xtream/streams', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            host: baseUrl,
-                            username,
-                            password,
-                            type: 'live',
-                            category_id: category.category_id
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.error) {
-                        throw new Error(data.error);
-                    }
-                    
-                    const channels = (data.streams || []).map(s => ({
+
+                // Construir URLs dos streams
+                allChannels = data.map(s => {
+                    const streamUrl = `${baseUrl}/live/${username}/${password}/${s.stream_id}.m3u8`;
+                    return {
+                        id: s.stream_id,
                         name: s.name,
-                        url: s.url,
-                        logo: s.stream_icon,
-                        group: category.category_name
-                    }));
-                    
-                    setAllChannels(channels);
-                    setDisplayedChannels(channels);
-                    setSearchQuery('');
-                    
-                } catch (err) {
-                    setError(err.message || 'Erro ao carregar');
-                } finally {
-                    setIsLoading(false);
-                }
-            };
+                        url: streamUrl,
+                        icon: s.stream_icon
+                    };
+                });
+
+                // Renderizar canais
+                renderChannels(allChannels);
+                showElement('channels-section');
+
+            } catch (err) {
+                showError('Erro ao carregar canais: ' + (err.message || 'Erro desconhecido'));
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Renderizar canais
+        function renderChannels(channels) {
+            const list = document.getElementById('channel-list');
             
-            const playChannel = (channel) => {
-                if (channelsScrollRef.current) {
-                    setScrollPosition(channelsScrollRef.current.scrollTop);
-                }
-                
-                setCurrentChannel(channel);
-                setShowPlayer(true);
-                setError(null);
-                setIsVideoLoading(true);
-            };
-            
-            const openInWebVideoCaster = () => {
-                if (!currentChannel) return;
-                
-                const encodedUrl = encodeURIComponent(currentChannel.url);
-                const wvcUrl = 'webvideocaster://play?url=' + encodedUrl;
-                
-                let success = false;
+            if (channels.length === 0) {
+                list.innerHTML = '<div style="padding: 16px; color: #888;">Nenhum canal encontrado</div>';
+                return;
+            }
+
+            list.innerHTML = channels.map(channel => `
+                <div class="channel-item" onclick="playChannel('${channel.id}', '${channel.name.replace(/'/g, "\\'")}', '${channel.url}')">
+                    📺 ${channel.name}
+                </div>
+            `).join('');
+        }
+
+        // Buscar canais
+        document.getElementById('search-input').addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+            if (!query) {
+                renderChannels(allChannels);
+                return;
+            }
+
+            const filtered = allChannels.filter(ch => 
+                ch.name.toLowerCase().includes(query)
+            );
+            renderChannels(filtered);
+        });
+
+        // Tocar canal
+        function playChannel(id, name, url) {
+            currentChannel = { id, name, url };
+
+            // Destacar canal ativo
+            document.querySelectorAll('.channel-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+
+            // Mostrar player
+            const modal = document.getElementById('player-modal');
+            modal.style.display = 'block';
+
+            // Configurar HLS
+            const video = document.getElementById('video-player');
+
+            // Destruir instância anterior
+            if (hls) {
                 try {
-                    window.location.href = wvcUrl;
-                    success = true;
-                } catch {}
-                
-                if (!success) {
-                    try {
-                        window.open(wvcUrl, '_self');
-                        success = true;
-                    } catch {}
-                }
-                
-                if (!success) {
-                    setError('Web Video Caster não detectado. Instale o app para usar esta função.');
-                }
-            };
-            
-            const clearCache = () => {
-                localStorage.removeItem(CACHE_KEY);
-                setCacheInfo({ exists: false, age: 0 });
-                setCategories([]);
-                setAllChannels([]);
-                setDisplayedChannels([]);
-                setSelectedCategory(null);
-                setSearchQuery('');
-                setHost('');
-                setUsername('');
-                setPassword('');
-                setRawInput('');
-                setShowPlayer(false);
-                
-                if (hlsRef.current) {
-                    try {
-                        hlsRef.current.destroy();
-                    } catch (e) {
-                        console.error('HLS destroy error:', e);
-                    }
-                    hlsRef.current = null;
-                }
-            };
-            
-            const closePlayer = () => {
-                setShowPlayer(false);
-                
-                if (hlsRef.current) {
-                    try {
-                        hlsRef.current.destroy();
-                    } catch (e) {
-                        console.error('HLS destroy error:', e);
-                    }
-                    hlsRef.current = null;
-                }
-                
-                if (videoRef.current) {
-                    videoRef.current.pause();
-                    videoRef.current.removeAttribute('src');
-                    videoRef.current.load();
-                }
-                
-                setIsVideoLoading(false);
-                setCurrentChannel(null);
-                
-                setTimeout(() => {
-                    if (channelsScrollRef.current) {
-                        channelsScrollRef.current.scrollTop = scrollPosition;
-                    }
-                }, 100);
-            };
-            
-            // Setup HLS player
-            useEffect(() => {
-                if (!currentChannel || !showPlayer || !videoRef.current) {
-                    return;
-                }
-                
-                const videoElement = videoRef.current;
-                const streamUrl = currentChannel.url;
-                
-                // Cleanup anterior
-                if (hlsRef.current) {
-                    try {
-                        hlsRef.current.destroy();
-                    } catch (e) {
-                        console.error('HLS destroy error:', e);
-                    }
-                    hlsRef.current = null;
-                }
-                
-                // Reset video
-                videoElement.pause();
-                videoElement.removeAttribute('src');
-                videoElement.load();
-                
-                // Check se é HLS
-                const isHls = streamUrl.includes('.m3u8') || streamUrl.includes('m3u8');
-                
-                if (isHls && typeof Hls !== 'undefined' && Hls.isSupported()) {
-                    const hls = new Hls({
-                        debug: false,
+                    hls.destroy();
+                } catch (e) {}
+                hls = null;
+            }
+
+            // Resetar video element
+            video.pause();
+            video.removeAttribute('src');
+            video.load();
+
+            // Tentar usar HLS.js
+            if (Hls.isSupported()) {
+                try {
+                    hls = new Hls({
                         enableWorker: true,
                         lowLatencyMode: true,
-                        backBufferLength: 90,
-                        maxBufferLength: 90
+                        backBufferLength: 90
                     });
-                    
-                    hls.loadSource(streamUrl);
-                    hls.attachMedia(videoElement);
-                    
-                    hls.on('error', (event, data) => {
+
+                    hls.loadSource(url);
+                    hls.attachMedia(video);
+
+                    hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                        video.play().catch(e => console.log('Autoplay bloqueado:', e));
+                    });
+
+                    hls.on('error', function(event, data) {
                         if (data.fatal) {
-                            setError('Erro ao carregar vídeo. Tente outro canal.');
-                            hls.destroy();
+                            console.error('Erro HLS:', data);
                         }
                     });
-                    
-                    hls.on('manifestParsed', () => {
-                        setError(null);
-                        setIsVideoLoading(false);
-                    });
-                    
-                    hlsRef.current = hls;
-                } else {
-                    videoElement.src = streamUrl;
-                    
-                    videoElement.addEventListener('error', () => {
-                        setError('Erro ao carregar vídeo. Tente outro canal.');
-                        setIsVideoLoading(false);
-                    });
-                    
-                    videoElement.addEventListener('canplay', () => {
-                        setError(null);
-                        setIsVideoLoading(false);
-                    });
-                    
-                    videoElement.load();
+
+                } catch (e) {
+                    console.error('Erro ao iniciar HLS:', e);
                 }
-                
-                // Auto-play
-                const playPromise = videoElement.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(e => {
-                        console.log('Autoplay prevented:', e);
-                        videoElement.muted = true;
-                        videoElement.play();
-                    });
-                }
-                
-            }, [currentChannel, showPlayer]);
-            
-            // Renderizar
-            return React.createElement('div', { className: 'min-h-screen flex flex-col' },
-                // Header
-                React.createElement('header', { className: 'sticky top-0 z-50 border-b border-gray-800 bg-gray-900' },
-                    React.createElement('div', { className: 'container mx-auto px-4 py-3' },
-                        React.createElement('div', { className: 'flex items-center justify-between' },
-                            React.createElement('div', { className: 'flex items-center gap-3' },
-                                React.createElement('div', { 
-                                    dangerouslySetInnerHTML: { __html: `<div class="p-2 bg-primary rounded-lg">${Icons.tv}</div>` },
-                                    className: 'bg-primary rounded-lg'
-                                }),
-                                React.createElement('div', null,
-                                    React.createElement('h1', { className: 'text-xl font-bold text-white' }, 'IPTV Brasil'),
-                                    React.createElement('p', { className: 'text-xs text-gray-400' }, 'Canais ao Vivo')
-                                )
-                            ),
-                            cacheInfo.exists && React.createElement('button', {
-                                onClick: clearCache,
-                                className: 'p-2 text-gray-400 hover:text-white transition-colors',
-                                dangerouslySetInnerHTML: { __html: Icons.trash }
-                            })
-                        )
-                    )
-                ),
-                // Main Content
-                React.createElement('main', { className: 'flex-1 container mx-auto px-4 py-6 pb-20' },
-                    !categories.length && React.createElement('div', { className: 'max-w-md mx-auto space-y-6' },
-                        React.createElement('div', { className: 'bg-gray-800 rounded-xl p-6' },
-                            React.createElement('label', { className: 'text-sm font-semibold text-gray-300 mb-2 block' },
-                                'Cole suas credenciais'
-                            ),
-                            React.createElement('textarea', {
-                                placeholder: 'Cole aqui o texto com suas credenciais...\n\nExemplo:\n💥 USUÁRIO: KD3zn5\n💥 SENHA: 468612\n💥 EXPIRA: 19/09/2026 01:00\n💥 M3U+: http://tv14s.xyz:8080/get.php?username=KD3zn5&password=468612&type=m3u_plus',
-                                value: rawInput,
-                                onChange: (e) => setRawInput(e.target.value),
-                                className: 'w-full bg-gray-900 border border-gray-700 rounded-lg p-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[150px]'
-                            }),
-                            React.createElement('button', {
-                                onClick: handleRawInput,
-                                disabled: isLoadingCategories,
-                                className: 'w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg py-4 transition-colors disabled:opacity-50'
-                            },
-                                isLoadingCategories 
-                                    ? 'Conectando...'
-                                    : 'Conectar'
-                            )
-                        ),
-                        error && React.createElement('div', { className: 'p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm' }, error)
-                    ),
-                    
-                    categories.length > 0 && !selectedCategory && React.createElement('div', { className: 'space-y-6' },
-                        React.createElement('div', { className: 'flex items-center justify-between mb-4' },
-                            React.createElement('h2', { className: 'text-xl font-semibold text-white' }, 'Categorias Brasileiras'),
-                            React.createElement('span', { className: 'bg-gray-800 text-gray-300 px-3 py-1 rounded-full text-sm' }, categories.length + ' categorias')
-                        ),
-                        React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 gap-3' },
-                            ...categories.map(cat =>
-                                React.createElement('button', {
-                                    key: cat.category_id,
-                                    onClick: () => loadStreams(cat),
-                                    disabled: isLoading,
-                                    className: 'p-4 bg-gray-800 hover:bg-gray-700 rounded-xl text-left transition-colors disabled:opacity-50'
-                                },
-                                    React.createElement('div', { className: 'flex items-center gap-3' },
-                                        React.createElement('span', { dangerouslySetInnerHTML: { __html: Icons.folder } }),
-                                        React.createElement('span', { className: 'font-medium text-white' }, cat.category_name)
-                                    )
-                                )
-                            )
-                        )
-                    ),
-                    
-                    selectedCategory && displayedChannels.length > 0 && React.createElement('div', { className: 'space-y-4' },
-                        React.createElement('button', {
-                            onClick: () => {
-                                setSelectedCategory(null);
-                                setAllChannels([]);
-                                setDisplayedChannels([]);
-                                setSearchQuery('');
-                            },
-                            className: 'w-full bg-gray-800 hover:bg-gray-700 text-white rounded-lg py-3 transition-colors'
-                        },
-                            '← Voltar para Categorias'
-                        ),
-                        
-                        searchQuery && React.createElement('div', { className: 'relative mb-4' },
-                            React.createElement('input', {
-                                type: 'text',
-                                placeholder: 'Buscar canais...',
-                                value: searchQuery,
-                                onChange: (e) => setSearchQuery(e.target.value),
-                                className: 'w-full pl-12 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg'
-                            })
-                        ),
-                        
-                        React.createElement('div', { ref: channelsScrollRef, className: 'space-y-2 max-h-[50vh] overflow-y-auto scrollbar-custom' },
-                            ...displayedChannels.map((channel, index) =>
-                                React.createElement('button', {
-                                    key: channel.url + '-' + index,
-                                    onClick: () => playChannel(channel),
-                                    className: 'w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-xl text-left transition-colors'
-                                },
-                                    React.createElement('div', { className: 'flex items-center gap-3' },
-                                        channel.logo && React.createElement('img', {
-                                            src: channel.logo,
-                                            alt: channel.name,
-                                            className: 'w-14 h-14 rounded-lg object-cover bg-black flex-shrink-0',
-                                            onError: (e) => { e.currentTarget.style.display = 'none'; }
-                                        }),
-                                        !channel.logo && React.createElement('div', {
-                                            className: 'w-14 h-14 rounded-lg bg-gray-700 flex items-center justify-center flex-shrink-0',
-                                            dangerouslySetInnerHTML: { __html: Icons.tv }
-                                        }),
-                                        React.createElement('div', { className: 'flex-1 min-w-0' },
-                                            React.createElement('p', { className: 'font-medium text-white truncate' }, channel.name),
-                                            channel.group && React.createElement('span', { className: 'inline-block mt-1 bg-gray-700 text-gray-300 px-2 py-1 rounded text-xs' }, channel.group)
-                                        ),
-                                        currentChannel?.url === channel.url && React.createElement('span', { dangerouslySetInnerHTML: { __html: Icons.play } })
-                                    )
-                                )
-                            )
-                        ),
-                        
-                        displayedChannels.length === 0 && searchQuery && React.createElement('p', { className: 'text-center text-gray-500 py-8' },
-                            'Nenhum canal encontrado para "' + searchQuery + '"'
-                        )
-                    ),
-                    
-                    isLoading && React.createElement('div', { className: 'flex flex-col items-center justify-center py-12' },
-                        React.createElement('div', { 
-                            dangerouslySetInnerHTML: { __html: `<div class="text-blue-500 mb-4">${Icons.loader}</div>` },
-                            className: 'text-gray-400 text-sm'
-                        },
-                        'Carregando canais...'
-                    )
-                ),
-                
-                // Player Modal
-                showPlayer && currentChannel && React.createElement('div', { className: 'fixed inset-0 z-50 bg-black' },
-                    isVideoLoading && React.createElement('div', { className: 'absolute inset-0 z-20 bg-black/80 flex items-center justify-center' },
-                        React.createElement('div', { 
-                            dangerouslySetInnerHTML: { __html: `<div class="text-blue-500 mb-4">${Icons.loader}</div>` },
-                            className: 'text-white text-xl font-semibold'
-                        },
-                        'Carregando canal...'
-                    ),
-                    
-                    React.createElement('button', {
-                        onClick: closePlayer,
-                        className: 'absolute top-4 right-4 z-10 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors',
-                        dangerouslySetInnerHTML: { __html: Icons.x }
-                    }),
-                    
-                    React.createElement('div', { className: 'w-full h-full flex items-center justify-center' },
-                        React.createElement('video', {
-                            ref: videoRef,
-                            controls: true,
-                            playsInline: true,
-                            className: 'w-full h-full max-w-5xl mx-auto'
-                        })
-                    ),
-                    
-                    React.createElement('div', { className: 'absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 to-transparent' },
-                        React.createElement('div', { className: 'flex items-start justify-between gap-4 max-w-5xl mx-auto' },
-                            React.createElement('div', { className: 'flex-1' },
-                                React.createElement('h3', { className: 'text-white text-xl font-semibold mb-2' }, currentChannel.name),
-                                currentChannel.group && React.createElement('span', { className: 'inline-block bg-blue-600 text-white px-2 py-1 rounded text-sm' }, currentChannel.group)
-                            ),
-                            React.createElement('button', {
-                                onClick: openInWebVideoCaster,
-                                className: 'bg-white text-black hover:bg-gray-200 px-4 py-2 rounded-lg font-semibold transition-colors'
-                            },
-                                React.createElement('div', { className: 'flex items-center gap-2' },
-                                    React.createElement('span', { dangerouslySetInnerHTML: { __html: Icons.cast } }),
-                                    'Web Video Caster'
-                                )
-                            )
-                        )
-                    )
-                ),
-                
-                error && !showPlayer && React.createElement('div', { className: 'fixed bottom-4 left-4 right-4 z-40' },
-                    React.createElement('div', { className: 'p-4 bg-red-500 text-white rounded-lg shadow-xl max-w-md' }, error)
-                ),
-                
-                // Footer
-                React.createElement('footer', { className: 'border-t border-gray-800 bg-gray-900 mt-auto py-4' },
-                    React.createElement('div', { className: 'container mx-auto px-4 text-center' },
-                        React.createElement('p', { className: 'text-sm text-gray-500' }, 'IPTV Brasil Player v1.0 - Canais ao Vivo')
-                    )
-                )
-            );
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // Safari nativo
+                video.src = url;
+                video.addEventListener('loadedmetadata', function() {
+                    video.play().catch(e => console.log('Autoplay bloqueado:', e));
+                });
+            } else {
+                alert('Seu navegador não suporta HLS');
+            }
         }
-        
-        // Renderizar
-        const root = ReactDOM.createRoot(document.getElementById('app'));
-        root.render(React.createElement(App));
+
+        // Fechar player
+        function closePlayer() {
+            const modal = document.getElementById('player-modal');
+            modal.style.display = 'none';
+
+            const video = document.getElementById('video-player');
+            video.pause();
+
+            if (hls) {
+                try {
+                    hls.destroy();
+                } catch (e) {}
+                hls = null;
+            }
+
+            video.removeAttribute('src');
+            video.load();
+
+            // Remover destaque
+            document.querySelectorAll('.channel-item').forEach(item => {
+                item.classList.remove('active');
+            });
+        }
+
+        // Web Video Caster
+        function openInWebVideoCaster() {
+            if (!currentChannel) return;
+
+            const url = currentChannel.url;
+
+            // Método 1: esquema mobile://
+            try {
+                window.location.href = 'mobile://' + url;
+            } catch (e) {}
+
+            // Método 2: window.open
+            try {
+                window.open('mobile://' + url, '_blank');
+            } catch (e) {}
+
+            // Método 3: iframe
+            try {
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = 'mobile://' + url;
+                document.body.appendChild(iframe);
+                setTimeout(() => iframe.remove(), 100);
+            } catch (e) {}
+
+            alert('Tente abrir no Web Video Caster:\n' + url);
+        }
+
+        // Carregar cache ao iniciar
+        window.onload = function() {
+            const cached = localStorage.getItem(CACHE_KEY);
+            if (cached) {
+                const cacheData = JSON.parse(cached);
+                const age = Date.now() - cacheData.timestamp;
+                
+                if (age < CACHE_TTL) {
+                    categories = cacheData.categories;
+                    renderCategories();
+                    showElement('categories-section');
+                    
+                    // Preencher credenciais
+                    const parts = cacheData.credentials.split(':');
+                    if (parts.length >= 3) {
+                        const cachedHost = parts.slice(0, -2).join(':');
+                        const cachedUser = parts[parts.length - 2];
+                        const cachedPass = parts[parts.length - 1];
+                        document.getElementById('credentials-input').value = `Servidor: ${cachedHost}\n\nUsuário: ${cachedUser}\n\nSenha: ${cachedPass}`;
+                        host = cachedHost;
+                        username = cachedUser;
+                        password = cachedPass;
+                    }
+                }
+            }
+        };
     </script>
 </body>
 </html>
